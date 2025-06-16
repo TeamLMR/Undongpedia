@@ -4,7 +4,10 @@
   <!--  전역에서 사용하는 bean설정 파일 등록하기-->
   <context-param>
     <param-name>contextConfigLocation</param-name>
-    <param-value>/WEB-INF/spring/root-context.xml</param-value>
+    <param-value>
+      /WEB-INF/spring/root-context.xml
+      /WEB-INF/spring/security-context.xml
+    </param-value>
   </context-param>
   <!--  spring web모듈을 초기화 시키는 리스너 등록하기-->
   <listener>
