@@ -1,0 +1,15 @@
+// out: ../css/main.css
+// You can use the "Easy Compile" VS Code extension to easily compile the scss files https://marketplace.visualstudio.com/items?itemName=refgd.easy-compile
+
+@import 'variables';
+
+@import 'layouts/general';
+@import 'layouts/header';
+@import 'layouts/navmenu';
+@import 'layouts/footer';
+@import 'layouts/preloader';
+@import 'layouts/scrolltop';
+@import 'layouts/aos';
+@import 'layouts/page-titles';
+@import 'sections';
+@import 'widgets';

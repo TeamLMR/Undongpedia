@@ -1,0 +1,75 @@
+/*--------------------------------------------------------------
+# Global Sections
+--------------------------------------------------------------*/
+section,
+.section {
+  color: var(--default-color);
+  background-color: var(--background-color);
+  padding: 60px 0;
+  scroll-margin-top: 90px;
+  overflow: clip;
+}
+
+@media (max-width: 1199px) {
+
+  section,
+  .section {
+    scroll-margin-top: 66px;
+  }
+}
+
+/*--------------------------------------------------------------
+# Global Section Titles
+--------------------------------------------------------------*/
+.section-title {
+  text-align: center;
+  padding-bottom: 60px;
+  position: relative;
+
+  h2 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 15px;
+  }
+
+  p {
+    margin-bottom: 0;
+  }
+}
+
+@import 'sections/hero';
+@import 'sections/promo-cards';
+@import 'sections/category-cards';
+@import 'sections/best-sellers';
+@import 'sections/product-list';
+@import 'sections/product-details';
+@import 'sections/category-header';
+@import 'sections/category-product-list';
+@import 'sections/category-pagination';
+@import 'sections/cart';
+@import 'sections/checkout';
+@import 'sections/order-confirmation';
+@import 'sections/search-results-header';
+@import 'sections/search-product-list';
+@import 'sections/account';
+@import 'sections/login';
+@import 'sections/register';
+@import 'sections/about-2';
+@import 'sections/stats';
+@import 'sections/testimonials';
+@import 'sections/contact-2';
+@import 'sections/support';
+@import 'sections/faq';
+@import 'sections/blog-hero';
+@import 'sections/recent-posts';
+@import 'sections/blog-pagination';
+@import 'sections/blog-details';
+@import 'sections/blog-comments';
+@import 'sections/blog-comment-form';
+@import 'sections/terms-of-service';
+@import 'sections/privacy';
+@import 'sections/retun-policy';
+@import 'sections/paymnt-methods';
+@import 'sections/shipping-info';
+@import 'sections/error-404';
+@import 'sections/starter-section';
