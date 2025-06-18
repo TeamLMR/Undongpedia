@@ -17,4 +17,13 @@
     <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
         <constructor-arg index="0" ref="sessionFactory"/>
     </bean>
+    <bean id="proxyDataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+        <constructor-arg index="0" ref="dataSource"/>
+        <property name="logFormatter">
+            <bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+                <property name="loggingType" value="MULTI_LINE"/>
+                <property name="sqlPrefix" value="[SQL]"/>
+            </bean>
+        </property>
+    </bean>
 </beans>
