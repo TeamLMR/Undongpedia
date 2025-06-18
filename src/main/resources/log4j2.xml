@@ -30,7 +30,7 @@
         <Logger name="jdbc.resultsettable" additivity="false" level="INFO">
             <AppenderRef ref="sqlLogger"/>
         </Logger>
-        <Logger name="com.bs.spring" level="DEBUG">
+        <Logger name="com.up.spring" level="DEBUG">
             <AppenderRef ref="rollingFile"/>
         </Logger>
         <Logger name="org.springframework.context" level="INFO"/>
