@@ -16,7 +16,7 @@ public class MyWebAppConfig implements WebMvcConfigurer {
 //    화면전환용 매핑메소드 한번에 적용하기
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/enrollmember.do").setViewName("member/memberEnroll");
+//        registry.addViewController("/enrollmember.do").setViewName("member/memberEnroll");
     }
 
     //    ExceptionHandler
