@@ -156,6 +156,12 @@
             <artifactId>spring-websocket</artifactId>
             <version>${org.springframework-version}</version>
         </dependency>
+        <!--      json 변환-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.15.4</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>undongpedia</finalName>
