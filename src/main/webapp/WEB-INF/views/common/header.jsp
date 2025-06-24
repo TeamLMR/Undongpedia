@@ -7,11 +7,11 @@
 
 <c:if test="${empty loginMember}">
   <c:set var="linkedPath" value="${path}/login"/>
-  <c:set var="nickName" value="Guest"/>
+  <c:set var="nickname" value="Guest"/>
 </c:if>
 <c:if test="${not empty loginMember}">
   <c:set var="linkedPath" value="${path}/mypage"/>
-  <c:set var="nickName" value="${loginMember.memberNickName}"/>
+  <c:set var="nickname" value="${loginMember.memberNickname}"/>
 </c:if>
 <head>
   <meta charset="utf-8">
@@ -71,7 +71,7 @@
     </form>
     <!-- 유저/장바구니 -->
     <div class="d-flex align-items-center gap-3">
-      ${nickName} 님
+      ${nickname} 님
       <button class="btn btn-light" onclick="location.href='${linkedPath}'">
         <i class="bi bi-person"></i>
       </button>
