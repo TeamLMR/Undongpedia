@@ -3,6 +3,16 @@
 <!DOCTYPE html>
 
 <c:set var="path" value="${pageContext.request.contextPath}"/>
+<c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
+
+<c:if test="${empty loginMember}">
+  <c:set var="linkedPath" value="${path}/login"/>
+  <c:set var="nickName" value="Guest"/>
+</c:if>
+<c:if test="${not empty loginMember}">
+  <c:set var="linkedPath" value="${path}/mypage"/>
+  <c:set var="nickName" value="${loginMember.memberNickName}"/>
+</c:if>
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
@@ -36,7 +46,6 @@
 <!-- Header -->
 <header class="border-bottom bg-white">
   <div class="container py-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
-
     <!-- 로고 -->
     <a href="${path}" class="d-flex align-items-center gap-2 text-decoration-none">
       <img src="${path}/resources/assets/img/icon-192x192.png" alt="운동백과" width="32" height="32">
@@ -60,28 +69,13 @@
         </button>
       </div>
     </form>
-
     <!-- 유저/장바구니 -->
     <div class="d-flex align-items-center gap-3">
-      <div class="dropdown">
-        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
-          <%--TODO: 로그인 회원 분기처리--%>
-          <i class="bi bi-person me-1"> OOO 님 or Guest </i>
-        </button>
-        <div class="dropdown-menu p-3 ">
-          <%--TODO: 로그인 회원 분기처리
-              1. 로그인한 회원이면 바로 마이페이지로 가게
-              2. 로그인 안했으면 로그인창으로
-              작업 완료되면 아래 지워버릴것임못생겻어요..
-          --%>
-            <p>(임시) 이 토글 창은 사라집니다.</p>
-            <a href="${path}/coach/dashboard" class="btn btn-secondary w-100 mb-3">코치</a>
-            <a href="${path}/mypage" class="btn btn-secondary w-100 mb-3">마이페이지</a>
-            <a href="${path}/login" class="btn btn-secondary w-100 mb-3">로그인</a>
-            <a href="${path}/signup" class="btn btn-secondary w-100 ">회원가입</a>
-        </div>
-      </div>
-      <button class="btn btn-sm btn-outline-secondary" onclick="location.href='${path}/cart'">
+      ${nickName} 님
+      <button class="btn btn-light" onclick="location.href='${linkedPath}'">
+        <i class="bi bi-person"></i>
+      </button>
+      <button class="btn btn-light" onclick="location.href='${path}/cart'">
         <i class="bi bi-cart3"></i>
       </button>
     </div>
@@ -121,7 +115,7 @@
   });
 </script>
 
-<%--TODO: --%>
+<%--TODO: DB 연결 후 --%>
 <%--    <c:if test="${not empty category}">--%>
 <%--      <div id="categoryBar" class="bg-white border-bottom py-3" style="display: none;">--%>
 <%--        <div class="container d-flex flex-wrap justify-content-start gap-4 text-center">--%>
