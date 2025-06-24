@@ -6,7 +6,7 @@
 
     <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
         <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
-        <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+        <property name="url" value="jdbc:oracle:thin:@13.124.190.205:6379:xe"/>
         <property name="username" value="undongpedia"/>
         <property name="password" value="undongpedia"/>
     </bean>

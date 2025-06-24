@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="common">
+    <resultMap type="category" id="catemap">
+        <id column="cate_seq" property="cateSeq"/>
+        <result column="cate_key" property="cateKey"/>
+        <result column="cate_value" property="cateValue"/>
+        <result column="cate_icon" property="cateIcon"/>
+        <result column="cate_desc" property="cateDesc"/>
+    </resultMap>
+
+    <select id="getCategorys" resultMap="catemap">
+        SELECT * FROM CATEGORY
+    </select>
+</mapper>
