@@ -4,7 +4,7 @@
 <html lang="en">
 
 <c:set var="path" value="${pageContext.request.contextPath}"/>
-
+<c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
@@ -88,10 +88,12 @@
                   <span>마이페이지</span>
                 </a>
               </div>
+              <c:if test="${empty loginMember}">
               <div class="dropdown-footer">
                 <a href="${path}/login" class="btn btn-primary w-100 mb-2">로그인</a>
                 <a href="${path}/signup" class="btn btn-outline-primary w-100">회원가입</a>
               </div>
+              </c:if>
             </div>
           </div>
 

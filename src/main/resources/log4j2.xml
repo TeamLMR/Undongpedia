@@ -33,6 +33,7 @@
         <Logger name="com.up.spring" level="DEBUG">
             <AppenderRef ref="rollingFile"/>
         </Logger>
+        <logger name="member" level="DEBUG"/>
         <Logger name="org.springframework.context" level="INFO"/>
         <Logger name="org.springframework.core" level="INFO"/>
         <Logger name="org.springframework.web" level="INFO"/>
