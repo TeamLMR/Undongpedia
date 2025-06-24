@@ -68,6 +68,7 @@ public class RedisConfig {
 
     @Value("${redis.redisson.netty-threads}")
     private int redissonNettyThreads;
+
     /**
      * Redisson 클라이언트 설정 (분산 락 용도)
      */
