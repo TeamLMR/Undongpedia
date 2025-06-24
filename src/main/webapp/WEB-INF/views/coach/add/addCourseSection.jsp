@@ -17,7 +17,7 @@
                 </div>
                 <div class="row">
                     <div class="col-xl-12 col-lg-12">
-                        <form action="${pageContext.request.contextPath}/coach/addCourseSection" method="post" enctype="multipart/form-data" onsubmit="return courseFormCheck()">
+                        <form action="coach/addCourseData" method="post" enctype="multipart/form-data" onsubmit="courseFormCheck()">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                 <h6 class="m-0 font-weight-bold text-primary">코스 정보 입력</h6>
@@ -208,7 +208,7 @@
                                         <div class="row no-gutters align-items-center">
                                             <div class="col">
                                                 <div class="form-group d-flex justify-content-between">
-                                                    <button type="button" class="btn btn-lg btn-outline-primary">임시 저장</button>
+                                                    <button class="btn btn-lg btn-outline-primary">임시 저장</button>
                                                     <button class="btn btn-lg btn-primary">다음 입력 단계</button>
                                                 </div>
                                             </div>
@@ -216,6 +216,7 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                         </form>
                     </div>
@@ -337,7 +338,7 @@
                 alert("썸네일을 등록하고 크롭을 완료해주세요.");
                 return false;
             }
-            return false;
+            return true;
         };
 
         </script>
