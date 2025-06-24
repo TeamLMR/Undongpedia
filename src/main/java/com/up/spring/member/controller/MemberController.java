@@ -1,7 +1,13 @@
 package com.up.spring.member.controller;
 
+import com.up.spring.member.model.dto.Member;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
@@ -24,4 +30,8 @@ public class MemberController {
     public String login() {
         return "auth/login";
     }
+
+    @RequestMapping("/savemember")
+    public String savemember(@ModelAttribute("member") Member member) {return "auth/savemember";}
+
 }

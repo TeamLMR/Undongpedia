@@ -11,7 +11,7 @@
 </c:if>
 <c:if test="${not empty loginMember}">
   <c:set var="linkedPath" value="${path}/mypage"/>
-  <c:set var="nickName" value="${loginMember.memberNickname}"/>
+  <c:set var="nickName" value="${loginMember.memberNickName}"/>
 </c:if>
 <head>
   <meta charset="utf-8">
