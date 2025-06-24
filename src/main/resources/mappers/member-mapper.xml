@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="member">
+
+    <resultMap id="memberResultMap" type="member">
+        <id column="MEMBER_ID" property="memberId"/>
+        <result column="MEMBER_PASSWORD" property="memberPassword"/>
+        <result column="MEMBER_NAME" property="memberName"/>
+        <result column="MEMBER_NICKNAME" property="memberNickname"/>
+        <result column="MEMBER_ROLE" property="memberRole"/>
+        <result column="MEMBER_SIGN_TYPE" property="memberSignType"/>
+        <result column="MEMBER_ENROLL_DATE" property="memberEnrollDate"/>
+    </resultMap>
+<select id="searchById" resultMap="memberResultMap">
+    SELECT * FROM MEMBER WHERE MEMBER_ID=#{memberId}
+</select>
+
+</mapper>

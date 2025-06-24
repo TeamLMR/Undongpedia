@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTO Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
-    <!--    추가 설정 내용 settings, typealiases 등-->
+    <settings>
+        <setting name="jdbcTypeForNull" value="NULL"/>
+    </settings>
+    <typeAliases>
+        <typeAlias type="com.up.spring.member.model.dto.Member" alias="member"/>
+    </typeAliases>
 </configuration>

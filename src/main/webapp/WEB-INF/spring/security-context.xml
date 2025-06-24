@@ -6,4 +6,49 @@
        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.8.xsd">
 <!--    스프링 시큐리티 모듈에서 제공하는 비밀번호 암호화 클레스 bean으로 등록-->
     <bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+
+<security:http auto-config="true">
+    <security:form-login
+        username-parameter="memberId"
+        password-parameter="password"
+        login-processing-url="/login.do"
+        login-page="/loginpage"
+        authentication-success-forward-url="/loginsuccess"
+        authentication-failure-handler-ref="failure"
+    />
+
+    <security:csrf disabled="true"/>
+
+    <security:intercept-url pattern="/loginpage" access="permitAll()"/>
+    <security:intercept-url pattern="/login.do" access="permitAll()"/>
+    <security:intercept-url pattern="/" access="permitAll()"/>
+    <security:intercept-url pattern="/resources/**" access="permitAll()"/>
+    <security:intercept-url pattern="/**" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
+    <security:intercept-url pattern="/sessionmax.do" access="permitAll()"/>
+
+    <security:logout logout-url="/logout.do"/>
+
+    <security:remember-me
+        remember-me-parameter="remember"
+        token-validity-seconds="604800"
+        key="undong"
+        user-service-ref="loginService"
+    />
+
+
+</security:http>
+
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="loginService">
+            <security:password-encoder ref="passwordEncoder"/>
+        </security:authentication-provider>
+
+    </security:authentication-manager>
+    <bean id="loginService" class="com.up.spring.security.LoginService">
+        <constructor-arg index="0" ref="memberDao2"/>
+        <constructor-arg index="1" ref="sqlSessionTemplate"/>
+    </bean>
+    <bean id="memberDao2" class="com.up.spring.member.model.dao.MemberDaoImpl"/>
+    <import resource="root-context.xml"/>
+    <bean id="failure" class="com.up.spring.security.AuthFailureHandler"/>
 </beans>
