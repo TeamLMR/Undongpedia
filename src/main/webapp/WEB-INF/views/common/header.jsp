@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 
@@ -83,20 +84,18 @@
 </header>
 
 <!-- 카테고리 바 -->
-<div id="categoryBar" class="bg-light border-top py-3" style="display: none;">
-  <div class="container d-flex flex-wrap justify-content-start gap-4 text-center">
-    <div class="text-center" onclick="location.assign('${path}/course/list')" style="width: 72px;">
-      <img src="" alt="" width="36" height="36" class="mb-1">
-      <div class="small">Dummy</div>
-    </div>
-    <div class="text-center" onclick="location.assign('${path}/course/list')" style="width: 72px;">
-      <img src="" alt="" width="36" height="36" class="mb-1">
-      <div class="small">Dummy</div>
-    </div>
-    <div class="text-center" onclick="location.assign('${path}/course/list')" style="width: 72px;">
-      <img src="" alt="" width="36" height="36" class="mb-1">
-      <div class="small">Dummy</div>
-    </div>
+<div id="categoryBar" class="bg-light py-3" style="display: none;">
+  <div class="container d-flex flex-wrap justify-content-center gap-4 text-center">
+    <c:forEach var="category" items="${categories}">
+      <div class="text-center mx-auto opacity-75" onclick="location.assign('${path}/course/list')" style="width: 50px;" >
+        <img src="${path}/resources/images/icons/${category.cateIcon}" alt="${category.cateValue}" width="30" height="30" class="mb-2">
+        <div class="text-secondary small text-center" style="min-height: 2.5em;">
+          <c:forEach var="part" items="${fn:split(category.cateValue, '/')}">
+            <div class="lh-1">${part}</div>
+          </c:forEach>
+        </div>
+      </div>
+    </c:forEach>
   </div>
 </div>
 
@@ -114,20 +113,6 @@
     });
   });
 </script>
-
-<%--TODO: DB 연결 후 --%>
-<%--    <c:if test="${not empty category}">--%>
-<%--      <div id="categoryBar" class="bg-white border-bottom py-3" style="display: none;">--%>
-<%--        <div class="container d-flex flex-wrap justify-content-start gap-4 text-center">--%>
-<%--          <c:forEach var="detail" items="${category}">--%>
-<%--            <div class="text-center" style="width: 72px;">--%>
-<%--              <img src="${path}/resources/icons/${detail.cateKey}" alt="${detail.cateValue}" width="36" height="36" class="mb-1">--%>
-<%--              <div class="small">${detail.cateValue}</div>--%>
-<%--            </div>--%>
-<%--          </c:forEach>--%>
-<%--        </div>--%>
-<%--      </div>--%>
-<%--    </c:if>--%>
 
 <%--TODO: 이건 따로 광고할 거 있을때 광고 테이블 데이터 좍 돌려주면 될것같은데..--%>
 <%--  <div class="announcement-bar py-2">--%>
