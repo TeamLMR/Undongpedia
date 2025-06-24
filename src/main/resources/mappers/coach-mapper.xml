@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="coach">
+    <resultMap id="categoryMap" type="category">
+        <id column="CATE_SEQ" property="cateSeq"/>
+        <result column="CATE_KEY" property="cateKey"/>
+        <result column="CATE_VALUE" property="cateValue"/>
+        <result column="CATE_ICON" property="cateIcon"/>
+        <result column="CATE_DESC" property="cateDesc"/>
+    </resultMap>
+    <select id="getCategoryAll" resultMap="categoryMap">
+        SELECT * FROM CATEGORY
+    </select>
+</mapper>
