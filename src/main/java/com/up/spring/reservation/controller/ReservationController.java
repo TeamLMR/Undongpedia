@@ -3,6 +3,7 @@ package com.up.spring.reservation.controller;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.CourseSchedule;
 import com.up.spring.course.model.service.CourseService;
+import com.up.spring.course.model.service.CourseScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +11,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/reservation")
@@ -20,6 +23,7 @@ import java.util.*;
 public class ReservationController {
 
     private final CourseService courseService;
+    private final CourseScheduleService courseScheduleService;
 
     @GetMapping("/{courseSeq}")
     public String reservationPage(@PathVariable Long courseSeq, Model model) {
@@ -30,7 +34,9 @@ public class ReservationController {
             if (course == null) {
                 // 강의가 없는 경우 에러 페이지로 리다이렉트하거나 404 처리
                 model.addAttribute("errorMessage", "존재하지 않는 강의입니다.");
-                return "common/error"; // 에러 페이지가 있다면
+                return "redirect:/";
+                // TODO : 일단 인덱스로 리다이렉트 했어요~~~ LIST 만들면 msg 띄우고 거기로 보낼예정
+
             }
             
             model.addAttribute("course", course);
@@ -81,32 +87,54 @@ public class ReservationController {
         return "reservation/course-reservation";
     }
     
-    /**
-     * 예약 가능한 날짜 목록 조회 API
-     */
+
     @GetMapping("/available-dates")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> getAvailableDates(
             @RequestParam Long courseSeq) {
         
-        List<Map<String, Object>> availableDates = new ArrayList<>();
-        
-        // 임시 더미 데이터 (실제로는 DB에서 CourseSchedule을 조회해야 함)
-        LocalDate today = LocalDate.now();
-        for (int i = 1; i <= 30; i += 2) { // 격일로 스케줄 생성
-            LocalDate date = today.plusDays(i);
+        try {
+            // 실제 DB에서 CourseSchedule 조회
+            List<CourseSchedule> schedules = courseScheduleService.searchScheduleByCourseSeq(courseSeq);
             
-            Map<String, Object> dateInfo = new HashMap<>();
-            dateInfo.put("date", date.toString());
-            dateInfo.put("totalSlots", Math.random() > 0.3 ? (int)(Math.random() * 3) + 1 : 0); // 1-3개 또는 0개 슬롯
-            dateInfo.put("availableSlots", Math.random() > 0.2 ? (int)(Math.random() * 10) + 1 : 0); // 1-10개 또는 0개 가능
+            // 날짜별로 그룹핑하여 예약 가능한 날짜 정보 생성
+            Map<LocalDate, List<CourseSchedule>> schedulesByDate = schedules.stream()
+                .filter(schedule -> schedule.getCourseDate().toLocalDate().isAfter(LocalDate.now().minusDays(1))) // 오늘 이후 날짜만
+                .collect(Collectors.groupingBy(schedule -> schedule.getCourseDate().toLocalDate()));
             
-            if ((Integer) dateInfo.get("totalSlots") > 0) {
-                availableDates.add(dateInfo);
+            List<Map<String, Object>> availableDates = new ArrayList<>();
+            
+            for (Map.Entry<LocalDate, List<CourseSchedule>> entry : schedulesByDate.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<CourseSchedule> daySchedules = entry.getValue();
+                
+                int totalSlots = daySchedules.size();
+                int availableSlots = (int) daySchedules.stream()
+                    .filter(s -> s.getBookedSeats() < s.getCourseCapacity())
+                    .count();
+                
+                if (totalSlots > 0) {
+                    Map<String, Object> dateInfo = new HashMap<>();
+                    dateInfo.put("date", date.toString());
+                    dateInfo.put("totalSlots", totalSlots);
+                    dateInfo.put("availableSlots", availableSlots);
+                    availableDates.add(dateInfo);
+                }
             }
+            
+            // 날짜순으로 정렬
+            availableDates.sort((a, b) -> ((String) a.get("date")).compareTo((String) b.get("date")));
+            
+            log.info("예약 가능한 날짜 조회 성공 - courseSeq: {}, 총 {}일", courseSeq, availableDates.size());
+            
+            return ResponseEntity.ok(availableDates);
+            
+        } catch (Exception e) {
+            log.error("예약 가능한 날짜 조회 중 오류 발생 - courseSeq: {}", courseSeq, e);
+            
+            // 에러 발생 시 빈 리스트 반환
+            return ResponseEntity.ok(new ArrayList<>());
         }
-        
-        return ResponseEntity.ok(availableDates);
     }
     
     /**
@@ -118,29 +146,136 @@ public class ReservationController {
             @RequestParam Long courseSeq,
             @RequestParam String date) {
         
-        List<Map<String, Object>> timeSlots = new ArrayList<>();
+        log.info("=== timeslots API 호출됨 ===");
+        log.info("받은 courseSeq: '{}', 타입: {}", courseSeq, courseSeq != null ? courseSeq.getClass().getSimpleName() : "null");
+        log.info("받은 date: '{}', 타입: {}", date, date != null ? date.getClass().getSimpleName() : "null");
         
-        // 임시 더미 데이터 (실제로는 DB에서 CourseSchedule을 조회해야 함)
-        String[] times = {"09:00-10:00", "10:00-11:00", "11:00-12:00", "14:00-15:00", "15:00-16:00", "16:00-17:00"};
-        String[] locations = {"스튜디오 A", "스튜디오 B", "온라인 클래스"};
-        
-        for (int i = 0; i < Math.random() * 4 + 1; i++) { // 1-4개 시간대
-            String timeRange = times[(int)(Math.random() * times.length)];
-            String[] timeParts = timeRange.split("-");
+        try {
+            // 파라미터 유효성 검증
+            if (date == null || date.trim().isEmpty()) {
+                log.warn("❌ 날짜 파라미터가 비어있음 - courseSeq: {}, date: '{}'", courseSeq, date);
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "날짜 파라미터가 필요합니다.");
+                return ResponseEntity.badRequest().body(Arrays.asList(errorResponse));
+            }
             
-            Map<String, Object> slot = new HashMap<>();
-            slot.put("scheduleId", System.currentTimeMillis() + i);
-            slot.put("courseStartTime", timeParts[0]);
-            slot.put("courseEndTime", timeParts[1]);
-            slot.put("courseCapacity", (int)(Math.random() * 10) + 5); // 5-15명
-            slot.put("bookedSeats", (int)(Math.random() * 5)); // 0-4명 예약됨
-            slot.put("courseLocation", locations[(int)(Math.random() * locations.length)]);
-            slot.put("status", "AVAILABLE");
+            // 날짜 형식 검증
+            LocalDate targetDate;
+            try {
+                targetDate = LocalDate.parse(date.trim());
+            } catch (Exception e) {
+                log.warn("잘못된 날짜 형식 - courseSeq: {}, date: '{}'", courseSeq, date);
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "올바른 날짜 형식이 아닙니다. (YYYY-MM-DD)");
+                return ResponseEntity.badRequest().body(Arrays.asList(errorResponse));
+            }
             
-            timeSlots.add(slot);
+            // 과거 날짜 검증
+            if (targetDate.isBefore(LocalDate.now())) {
+                log.warn("과거 날짜 요청 - courseSeq: {}, date: '{}'", courseSeq, date);
+                return ResponseEntity.ok(new ArrayList<>()); // 과거 날짜는 빈 리스트 반환
+            }
+            
+            log.info("✅ 파라미터 검증 완료 - courseSeq: {}, targetDate: {}", courseSeq, targetDate);
+            
+            // 새로운 Service 메서드를 사용하여 특정 날짜의 스케줄만 조회
+            List<CourseSchedule> daySchedules = courseScheduleService.searchScheduleByDate(courseSeq, targetDate);
+            
+            log.info("🔍 서비스에서 조회된 스케줄 수: {}", daySchedules.size());
+            
+            if (daySchedules.isEmpty()) {
+                log.warn("⚠️ 해당 날짜에 스케줄이 없습니다 - courseSeq: {}, date: {}", courseSeq, targetDate);
+                // 빈 배열 반환 대신 데이터베이스 전체 조회해서 확인
+                List<CourseSchedule> allSchedules = courseScheduleService.searchScheduleByCourseSeq(courseSeq);
+                log.info("📊 전체 스케줄 수: {}", allSchedules.size());
+                
+                if (!allSchedules.isEmpty()) {
+                    log.info("📅 전체 스케줄 날짜들:");
+                    for (CourseSchedule schedule : allSchedules) {
+                        log.info("  - {}: {} ~ {}", 
+                            schedule.getCourseDate(), 
+                            schedule.getCourseStartTime(), 
+                            schedule.getCourseEndTime());
+                    }
+                }
+            }
+            
+            List<Map<String, Object>> timeSlots = new ArrayList<>();
+            
+            for (CourseSchedule schedule : daySchedules) {
+                Map<String, Object> slot = new HashMap<>();
+                slot.put("scheduleId", schedule.getScheduleId());
+                slot.put("courseStartTime", schedule.getCourseStartTime());
+                slot.put("courseEndTime", schedule.getCourseEndTime());
+                slot.put("courseCapacity", schedule.getCourseCapacity());
+                slot.put("bookedSeats", schedule.getBookedSeats());
+                slot.put("courseLocation", schedule.getCourseLocation());
+                slot.put("status", schedule.getStatus());
+                
+                timeSlots.add(slot);
+                
+                log.info("📋 스케줄 정보 - ID: {}, 시간: {} ~ {}, 정원: {}, 예약: {}", 
+                    schedule.getScheduleId(),
+                    schedule.getCourseStartTime(),
+                    schedule.getCourseEndTime(),
+                    schedule.getCourseCapacity(),
+                    schedule.getBookedSeats());
+            }
+            
+            // 시간순으로 정렬
+            timeSlots.sort((a, b) -> ((String) a.get("courseStartTime")).compareTo((String) b.get("courseStartTime")));
+            
+            log.info("✅ 시간대 조회 성공 - courseSeq: {}, date: {}, 총 {}개 시간대", courseSeq, date, timeSlots.size());
+            
+            return ResponseEntity.ok(timeSlots);
+            
+        } catch (Exception e) {
+            log.error("시간대 조회 중 오류 발생 - courseSeq: {}, date: '{}'", courseSeq, date, e);
+            
+            // 에러 발생 시 빈 리스트 반환
+            return ResponseEntity.ok(new ArrayList<>());
         }
+    }
+    
+    /**
+     * 예약 가능한 스케줄만 조회 API (달력 최적화용)
+     */
+    @GetMapping("/available-schedules")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getAvailableSchedules(
+            @RequestParam Long courseSeq) {
         
-        return ResponseEntity.ok(timeSlots);
+        try {
+            // 예약 가능한 스케줄만 조회
+            List<CourseSchedule> availableSchedules = courseScheduleService.searchAvailableSchedules(courseSeq);
+            
+            List<Map<String, Object>> schedules = new ArrayList<>();
+            
+            for (CourseSchedule schedule : availableSchedules) {
+                Map<String, Object> scheduleInfo = new HashMap<>();
+                scheduleInfo.put("scheduleId", schedule.getScheduleId());
+                scheduleInfo.put("courseDate", schedule.getCourseDate().toString());
+                scheduleInfo.put("courseStartTime", schedule.getCourseStartTime());
+                scheduleInfo.put("courseEndTime", schedule.getCourseEndTime());
+                scheduleInfo.put("courseCapacity", schedule.getCourseCapacity());
+                scheduleInfo.put("bookedSeats", schedule.getBookedSeats());
+                scheduleInfo.put("availableSeats", schedule.getCourseCapacity() - schedule.getBookedSeats());
+                scheduleInfo.put("courseLocation", schedule.getCourseLocation());
+                scheduleInfo.put("status", schedule.getStatus());
+                
+                schedules.add(scheduleInfo);
+            }
+            
+            log.info("예약 가능한 스케줄 조회 성공 - courseSeq: {}, 총 {}개", courseSeq, schedules.size());
+            
+            return ResponseEntity.ok(schedules);
+            
+        } catch (Exception e) {
+            log.error("예약 가능한 스케줄 조회 중 오류 발생 - courseSeq: {}", courseSeq, e);
+            
+            // 에러 발생 시 빈 리스트 반환
+            return ResponseEntity.ok(new ArrayList<>());
+        }
     }
     
     /**
@@ -175,5 +310,7 @@ public class ReservationController {
         
         return ResponseEntity.ok(response);
     }
+
+
 
 }

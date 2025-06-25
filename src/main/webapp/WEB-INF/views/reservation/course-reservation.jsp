@@ -5,7 +5,7 @@
 <!-- Flatpickr CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css">
-<section>
+
   <main class="main">
 
     <!-- Page Title -->
@@ -261,7 +261,7 @@
         <!-- Course Details Accordion -->
         <div class="row mt-5" data-aos="fade-up">
           <div class="col-12">
-            <div class="course-details-accordion">
+            <div class="product-details-accordion">
               <!-- Description Accordion -->
               <div class="accordion-item">
                 <h2 class="accordion-header">
@@ -271,7 +271,7 @@
                 </h2>
                 <div id="description" class="accordion-collapse collapse show">
                   <div class="accordion-body">
-                    <div class="course-description">
+                    <div class="product-description">
                       <h4>강의 개요</h4>
                       <p><c:out value="${course.courseContent}" /></p>
 
@@ -299,7 +299,7 @@
                           </p>
                         </div>
                       </div>
-                      
+
                       <!-- 추가 정보 -->
                       <div class="row mt-4">
                         <div class="col-md-6">
@@ -351,7 +351,7 @@
                 <div id="schedule" class="accordion-collapse collapse">
                   <div class="accordion-body">
                     <div id="scheduleCalendar" class="schedule-calendar">
-                      <p>달력 형태의 스케줄이 여기에 표시됩니다.</p>
+                      <p>달력</p>
                     </div>
                   </div>
                 </div>
@@ -363,7 +363,9 @@
     </section><!-- /Course Reservation Section -->
 
   </main>
-</section>
+
+
+
 
 <style>
 .course-reservation {
@@ -715,6 +717,34 @@
 .legend-many { background: #a7f0ba; }
 .legend-few { background: #fab1a0; }
 .legend-full { background: #ffeaa7; }
+
+/* 에러 메시지 및 빈 시간대 메시지 스타일 */
+.no-slots-message {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.no-slots-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 0.375rem;
+    margin: 1rem 0;
+}
+
+.error-message i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
 </style>
 
 <!-- Flatpickr JS -->
@@ -723,11 +753,22 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded 이벤트 발생');
+  document.body.className = 'product-details-page';
+    
     const dateInput = document.getElementById('reservationDate');
     const timeSlotContainer = document.getElementById('timeSlotContainer');
     const selectedInfo = document.getElementById('selectedInfo');
     const reservationBtn = document.querySelector('.reservation-btn');
     const courseSeq = document.getElementById('courseSeq').value;
+    
+    console.log('DOM 요소들 확인:', {
+        dateInput: dateInput,
+        timeSlotContainer: timeSlotContainer,
+        selectedInfo: selectedInfo,
+        reservationBtn: reservationBtn,
+        courseSeq: courseSeq
+    });
     
     let selectedTimeSlot = null;
     let flatpickrInstance = null;
@@ -735,11 +776,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // 예약 가능한 날짜 로드 및 flatpickr 초기화
     initializeDatePicker();
     
+    // 추가 디버깅: input 변경 이벤트 리스너
+    dateInput.addEventListener('change', function() {
+        console.log('dateInput change 이벤트:', this.value);
+        if (this.value && this.value.trim() !== '') {
+            console.log('input change에서 시간대 로드:', this.value);
+            loadTimeSlots(this.value);
+        }
+    });
+    
+    dateInput.addEventListener('input', function() {
+        console.log('dateInput input 이벤트:', this.value);
+    });
+    
     function initializeDatePicker() {
+        console.log('initializeDatePicker 시작, courseSeq:', courseSeq);
+        
         // 예약 가능한 날짜 목록 가져오기
-        fetch(`/undongpedia/reservation/available-dates?courseSeq=${courseSeq}`)
-            .then(response => response.json())
+        fetch(`/undongpedia/reservation/available-dates?courseSeq=\${courseSeq}`)
+            .then(response => {
+                console.log('available-dates 응답 상태:', response.status);
+                return response.json();
+            })
             .then(availableDates => {
+                console.log('예약 가능한 날짜 수신:', availableDates);
+                
                 // flatpickr 초기화
                 flatpickrInstance = flatpickr(dateInput, {
                     locale: 'ko',
@@ -751,9 +812,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     allowInput: false,
                     clickOpens: true,
                     theme: 'material_blue',
+                    onReady: function(selectedDates, dateStr, instance) {
+                        console.log('flatpickr onReady 호출됨');
+                    },
+                    onOpen: function(selectedDates, dateStr, instance) {
+                        console.log('flatpickr onOpen 호출됨');
+                    },
                     onChange: function(selectedDates, dateStr, instance) {
-                        if (dateStr) {
+                        console.log('flatpickr onChange 호출됨:', {
+                            selectedDates: selectedDates,
+                            dateStr: dateStr,
+                            inputValue: dateInput.value
+                        });
+
+                        if (dateStr && dateStr.trim() !== '') {
+                            console.log('시간대 로드 호출:', dateStr);
                             loadTimeSlots(dateStr);
+                        } else {
+                            console.warn('onChange에서 빈 날짜 값:', dateStr);
+                            // 시간대 컨테이너 초기화
+                            timeSlotContainer.innerHTML = '';
+                            selectedInfo.style.display = 'none';
+                            reservationBtn.disabled = true;
                         }
                     },
                     onDayCreate: function(dObj, dStr, fp, dayElem) {
@@ -762,7 +842,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         if (availableDate) {
                             // 예약 가능한 날짜에 표시
-                            dayElem.innerHTML += `<span class="available-slots">${availableDate.totalSlots}</span>`;
+                            dayElem.innerHTML += `<span class="available-slots">\${availableDate.totalSlots}</span>`;
                             
                             // 예약 가능한 좌석 수에 따라 스타일 다르게 적용
                             if (availableDate.availableSlots === 0) {
@@ -775,6 +855,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 });
+                
+                console.log('flatpickr 초기화 완료 (성공):', flatpickrInstance);
             })
             .catch(error => {
                 console.error('예약 가능한 날짜 로드 오류:', error);
@@ -786,30 +868,84 @@ document.addEventListener('DOMContentLoaded', function() {
                     maxDate: new Date().fp_incr(90),
                     theme: 'material_blue',
                     onChange: function(selectedDates, dateStr, instance) {
-                        if (dateStr) {
+                        console.log('flatpickr onChange 호출됨 (에러 시):', {
+                            selectedDates: selectedDates,
+                            dateStr: dateStr,
+                            inputValue: dateInput.value
+                        });
+                        
+                        if (dateStr && dateStr.trim() !== '') {
+                            console.log('시간대 로드 호출 (에러 시):', dateStr);
                             loadTimeSlots(dateStr);
+                        } else {
+                            console.warn('onChange에서 빈 날짜 값 (에러 시):', dateStr);
+                            timeSlotContainer.innerHTML = '';
+                            selectedInfo.style.display = 'none';
+                            reservationBtn.disabled = true;
                         }
                     }
                 });
+                
+                console.log('flatpickr 초기화 완료 (에러 시):', flatpickrInstance);
             });
     }
     
     // 시간대 로드 함수
     function loadTimeSlots(date) {
-        // AJAX로 해당 날짜의 시간대 정보 가져오기
-        fetch(`/undongpedia/reservation/timeslots?courseSeq=${courseSeq}&date=${date}`)
-            .then(response => response.json())
-            .then(data => {
-                renderTimeSlots(data);
-            })
-            .catch(error => {
-                console.error('시간대 로드 오류:', error);
-                showNoSlotsMessage();
-            });
+      console.log("받은 날짜 :"+date);
+        // 날짜 유효성 검증
+        if (!date || date.trim() === '') {
+            console.warn('날짜가 비어있습니다:', date);
+            showNoSlotsMessage();
+            return;
+        }
+        
+        // 날짜 형식 검증 (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            console.warn('잘못된 날짜 형식:', date);
+            showNoSlotsMessage();
+            return;
+        }
+        
+      console.log(`시간대 로드 시작: courseSeq=\${courseSeq}, date=\${date}`);
+           
+           // URL 생성 및 로깅
+          const apiUrl = `/undongpedia/reservation/timeslots?courseSeq=\${courseSeq}&date=\${date}`;
+         console.log('생성된 API URL:', apiUrl);
+         console.log('courseSeq 값:', courseSeq, '타입:', typeof courseSeq);
+         console.log('date 값:', date, '타입:', typeof date);
+         
+         // AJAX로 해당 날짜의 시간대 정보 가져오기
+         fetch(apiUrl)
+             .then(response => {
+                 console.log('HTTP 응답 상태:', response.status);
+                 console.log('HTTP 응답 URL:', response.url);
+                 return response.json();
+             })
+             .then(data => {
+                 console.log('시간대 데이터 수신:', data);
+                 renderTimeSlots(data);
+             })
+             .catch(error => {
+                 console.error('시간대 로드 오류:', error);
+                 showNoSlotsMessage();
+             });
     }
     
     // 시간대 렌더링
     function renderTimeSlots(timeSlots) {
+        // 에러 응답 처리
+        if (timeSlots && timeSlots.length === 1 && timeSlots[0].error) {
+            timeSlotContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <p>\${timeSlots[0].error}</p>
+                </div>
+            `;
+            return;
+        }
+        
         if (!timeSlots || timeSlots.length === 0) {
             showNoSlotsMessage();
             return;
@@ -821,12 +957,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const isAvailable = remainingSeats > 0;
             
             html += `
-                <div class="time-slot ${isAvailable ? '' : 'unavailable'}" 
-                     data-slot='${JSON.stringify(slot)}' 
-                     ${isAvailable ? '' : 'disabled'}>
-                    <div class="time-text">${slot.courseStartTime} - ${slot.courseEndTime}</div>
-                    <div class="capacity-text">${remainingSeats}/${slot.courseCapacity}</div>
-                    <div class="location-text">${slot.courseLocation}</div>
+                <div class="time-slot \${isAvailable ? '' : 'unavailable'}"
+                     data-slot='\${JSON.stringify(slot)}'
+                     \${isAvailable ? '' : 'disabled'}
+                     >
+                    <div class="time-text">\${slot.courseStartTime} - \${slot.courseEndTime}</div>
+                    <div class="capacity-text">\${remainingSeats}/\${slot.courseCapacity}</div>
+                    <div class="location-text">\${slot.courseLocation}</div>
                 </div>
             `;
         });
@@ -879,15 +1016,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('selectedDateText').textContent = selectedDate;
         document.getElementById('selectedTimeText').textContent = 
-            `${selectedTimeSlot.courseStartTime} - ${selectedTimeSlot.courseEndTime}`;
+            `\${selectedTimeSlot.courseStartTime} - \${selectedTimeSlot.courseEndTime}`;
         document.getElementById('selectedLocationText').textContent = selectedTimeSlot.courseLocation;
-        document.getElementById('remainingSeats').textContent = `${remainingSeats}석`;
+        document.getElementById('remainingSeats').textContent = `\${remainingSeats}석`;
         
         // 사이드 정보도 업데이트
-        document.getElementById('selected-capacity').textContent = `${selectedTimeSlot.courseCapacity}명`;
+        document.getElementById('selected-capacity').textContent = `\${selectedTimeSlot.courseCapacity}명`;
         document.getElementById('selected-location').textContent = selectedTimeSlot.courseLocation;
         document.getElementById('selected-duration').textContent = 
-            `${selectedTimeSlot.courseStartTime} - ${selectedTimeSlot.courseEndTime}`;
+            `\${selectedTimeSlot.courseStartTime} - \${selectedTimeSlot.courseEndTime}`;
         
         selectedInfo.style.display = 'block';
     }

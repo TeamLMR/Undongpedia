@@ -16,7 +16,7 @@ public class CourseSchedule {
     private Date courseDate;
     private String courseStartTime;
     private String courseEndTime;
-    private String courseCapacity;
+    private int courseCapacity;
     private String courseLocation;
     private int bookedSeats;
     private String status;

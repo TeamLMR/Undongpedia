@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="courseSchedule">
+
+    <resultMap id="courseScheduleResultMap" type="courseSchedule">
+        <id column="SCHEDULE_ID" property="scheduleId"/>
+        <result column="COURSE_SEQ" property="courseSeq"/>
+        <result column="COURSE_DATE" property="courseDate"/>
+        <result column="COURSE_START_TIME" property="courseStartTime"/>
+        <result column="COURSE_END_TIME" property="courseEndTime"/>
+        <result column="COURSE_CAPACITY" property="courseCapacity"/>
+        <result column="COURSE_LOCATION" property="courseLocation"/>
+        <result column="BOOKED_SEATS" property="bookedSeats"/>
+        <result column="STATUS" property="status"/>
+    </resultMap>
+
+    <!-- 특정 강의의 모든 스케줄 조회 (미래 날짜만) -->
+    <select id="searchScheduleByCourseSeq" resultMap="courseScheduleResultMap" parameterType="_long">
+        SELECT * FROM COURSE_SCHEDULE 
+        WHERE COURSE_SEQ = #{courseSeq} 
+          AND COURSE_DATE >= TRUNC(SYSDATE)
+        ORDER BY COURSE_DATE, COURSE_START_TIME
+    </select>
+
+    <!-- 특정 강의의 특정 날짜 스케줄 조회 -->
+    <select id="searchScheduleByDate" resultMap="courseScheduleResultMap">
+        SELECT * FROM COURSE_SCHEDULE 
+        WHERE COURSE_SEQ = #{courseSeq} 
+          AND TRUNC(COURSE_DATE) = #{courseDate}
+        ORDER BY COURSE_START_TIME
+    </select>
+
+    <!-- 예약 가능한 스케줄만 조회 -->
+    <select id="searchAvailableSchedules" resultMap="courseScheduleResultMap" parameterType="_long">
+        SELECT * FROM COURSE_SCHEDULE 
+        WHERE COURSE_SEQ = #{courseSeq} 
+          AND COURSE_DATE >= TRUNC(SYSDATE)
+          AND BOOKED_SEATS &lt; COURSE_CAPACITY
+          AND STATUS = 'AVAILABLE'
+        ORDER BY COURSE_DATE, COURSE_START_TIME
+    </select>
+
+</mapper>
