@@ -3,7 +3,8 @@
 <mapper namespace="member">
 
     <resultMap id="memberResultMap" type="member">
-        <id column="MEMBER_ID" property="memberId"/>
+        <id column="MEMBER_NO" property="memberNo"/>
+        <result column="MEMBER_ID" property="memberId"/>
         <result column="MEMBER_PASSWORD" property="memberPassword"/>
         <result column="MEMBER_NAME" property="memberName"/>
         <result column="MEMBER_NICKNAME" property="memberNickname"/>

@@ -19,6 +19,7 @@ import java.util.List;
 @Builder
 public class Member implements UserDetails {
 
+    private Long memberNo;
     private String memberId;
     private String memberPassword;
     private String memberName;
