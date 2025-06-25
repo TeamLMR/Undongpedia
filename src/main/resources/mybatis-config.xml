@@ -7,5 +7,6 @@
     <typeAliases>
         <typeAlias type="com.up.spring.member.model.dto.Member" alias="member"/>
         <typeAlias type="com.up.spring.common.model.dto.Category" alias="category"/>
+        <typeAlias type="com.up.spring.course.model.dto.Course" alias="course"/>
     </typeAliases>
 </configuration>
