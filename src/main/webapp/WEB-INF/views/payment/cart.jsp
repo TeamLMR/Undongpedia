@@ -122,8 +122,13 @@
                                 </span>
                             </div>
 
-                            <div class="checkout-button" onclick="location.assign('${pageContext.request.contextPath}/payment/start')">
-                                <img src= "${pageContext.request.contextPath}/resources/images/btn_npaygr_pay.svg" class="w-100" alt="">
+                            <div class="checkout-button">
+                                <c:if test="${not empty cartList}">
+                                    <img src= "${pageContext.request.contextPath}/resources/images/btn_npaygr_pay.svg" class="w-100" alt="" onclick="checkout()">
+                                </c:if>
+                                <c:if test="${empty cartList}">
+                                    <img src= "${pageContext.request.contextPath}/resources/images/btn_deactivated_pay.svg" class="w-100" alt="">
+                                </c:if>
                             </div>
 
                             <div class="continue-shopping">
@@ -148,6 +153,11 @@
 <%--    * 4-2  결제 결과 실패 -> 장바구니로 redirect--%>
 <%--    * 5. ??--%>
 <%--    * */--%>
+<script>
+    const checkout = () => {
+        location.assign('${pageContext.request.contextPath}/payment/start')
 
+    }
+</script>
 
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>
