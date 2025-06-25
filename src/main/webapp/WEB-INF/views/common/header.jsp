@@ -6,6 +6,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <c:set var="path" value="${pageContext.request.contextPath}"/>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
 
@@ -49,7 +50,7 @@
 
 <!-- Header -->
 <header class="border-bottom bg-white">
-  <div class="container py-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+  <div class="container py-3 d-flex align-items-center justify-content-around flex-wrap gap-3">
     <!-- 로고 -->
     <a href="${path}" class="d-flex align-items-center gap-2 text-decoration-none">
       <img src="${path}/resources/assets/img/icon-192x192.png" alt="운동백과" width="32" height="32">
