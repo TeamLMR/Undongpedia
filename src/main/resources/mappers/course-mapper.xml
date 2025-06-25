@@ -12,6 +12,7 @@
         <result column="COURSE_THUMBNAIL" property="courseThumbnail"/>
         <result column="COURSE_TARGET" property="courseTarget"/>
         <result column="COURSE_PREPARATION" property="coursePreparation"/>
+        <result column="COURSE_EXPOSE" property="courseExpose"/>
         <result column="COURSE_CONFIRM_TIME" property="courseConfirmDate"/>
         <result column="COURSE_CREATE_TIME" property="courseCreateDate"/>
         <result column="MEMBER_NO" property="memberNo"/>
