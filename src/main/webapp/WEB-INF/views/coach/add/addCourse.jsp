@@ -17,7 +17,8 @@
                 </div>
                 <div class="row">
                     <div class="col-xl-12 col-lg-12">
-                        <form action="${pageContext.request.contextPath}/coach/addCourseSection" method="post" enctype="multipart/form-data" onsubmit="return courseFormCheck()">
+                        <form action="${pageContext.request.contextPath}/coach/addCourseSection" method="post" onsubmit="return courseFormCheck()">
+                            <input type="hidden" name="memberNo" id="memberNo" value="0">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                 <h6 class="m-0 font-weight-bold text-primary">코스 정보 입력</h6>
@@ -138,12 +139,12 @@
                                         <div class="row no-gutters align-items-center">
                                             <div class="col">
                                                 <div class="form-group">
-                                                    <label id="thumLabel" for="inputImage" class="thumbnail-upload-label form-control form-control-user">
+                                                    <label id="thumbLabel" for="inputImage" class="col-3 thumbnail-upload-label form-control form-control-user"
+                                                           style="height: 10vw; display: flex; justify-content: center;align-items: center;">
                                                         썸네일을 등록하세요
                                                     </label>
                                                     <input class="form-control form-control-user" type="file" id="inputImage" accept="image/*" style="display: none"/>
-
-                                                    <input type="hidden" name="croppedImageBase64" id="croppedImageBase64" />
+                                                    <input type="hidden" name="courseThumbnail" id="courseThumbnail"/>
                                                 </div>
                                                 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
                                                      aria-hidden="true">
@@ -159,8 +160,8 @@
                                                                 <img id="imagePreview" style="width: 100%; max-height: 500px;" />
                                                             </div>
                                                             <div class="modal-footer">
-                                                                <button class="btn btn-secondary" data-dismiss="modal">닫기</button>
-                                                                <button class="btn btn-primary" id="cropButton">크롭 완료</button>
+                                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                                                                <button type="button" class="btn btn-primary" id="cropButton">크롭 완료</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -265,9 +266,8 @@
             const base64Image = canvas.toDataURL('image/jpeg');
 
             // hidden input에 base64 문자열 저장
-            document.getElementById('croppedImageBase64').value = base64Image;
-            document.getElementById('thumLabel').innerText = "썸네일 등록 완료!";
-
+            document.getElementById('courseThumbnail').value = base64Image;
+            document.getElementById('thumbLabel').innerHTML =`<img class='h-100' src='\${base64Image}'>`;
             $('#exampleModal').modal('hide');
         });
 
@@ -334,10 +334,10 @@
             }
 
             if (!croppedImage) {
-                alert("썸네일을 등록하고 크롭을 완료해주세요.");
+                alert("썸네일을 등록해주세요.");
                 return false;
             }
-            return false;
+            return true;
         };
 
         </script>
