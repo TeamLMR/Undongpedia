@@ -13,8 +13,8 @@
     </select>
 
     <insert id="insertTempCourse" parameterType="course">
-        INSERT INTO COURSE (COURSE_SEQ, COURSE_TITLE, COURSE_CONTENT, COURSE_CATEGORY, COURSE_DIFFICULT, COURSE_PRICE, COURSE_DISCOUNT, COURSE_THUMBNAIL, COURSE_TARGET, COURSE_PREPARATION, COURSE_EXPOSE, COURSE_CREATE_TIME, COURSE_CONFIRM_TIME, MEMBER_NO)
-        VALUES (SEQ_COURSE.nextval, #{courseTitle},#{courseContent},#{courseCategory},#{courseDifficult},#{coursePrice},#{courseDiscount},#{courseThumbnail},#{courseTarget},#{coursePreparation},'N',NULL,SYSTIMESTAMP,#{memberNo})
+        INSERT INTO COURSE (COURSE_SEQ, COURSE_TITLE, COURSE_CONTENT, COURSE_CATEGORY, COURSE_DIFFICULT, COURSE_PRICE, COURSE_DISCOUNT, COURSE_THUMBNAIL, COURSE_TARGET, COURSE_PREPARATION, COURSE_EXPOSE, COURSE_CREATE_TIME, COURSE_CONFIRM_TIME, MEMBER_NO, COURSE_TYPE)
+        VALUES (SEQ_COURSE.nextval, #{courseTitle},#{courseContent},#{courseCategory},#{courseDifficult},#{coursePrice},#{courseDiscount},#{courseThumbnail},#{courseTarget},#{coursePreparation},'N',NULL,SYSTIMESTAMP,#{memberNo}, 'ON')
         <selectKey keyProperty="courseSeq" order="AFTER" resultType="_long">
             SELECT SEQ_COURSE.currval FROM DUAl
         </selectKey>

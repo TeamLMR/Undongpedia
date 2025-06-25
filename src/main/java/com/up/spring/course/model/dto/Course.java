@@ -25,4 +25,5 @@ public class Course {
     private Timestamp courseCreateTime; // 생성일
     private Timestamp courseConfirmTime; // 승인일
     private int memberNo;
+    private String courseType; // Check (COURSE_TYPE IN ('ON','OFF')) 코스 온라인 오프라인
 }
