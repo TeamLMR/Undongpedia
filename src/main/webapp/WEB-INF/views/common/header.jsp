@@ -2,17 +2,20 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
-
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <c:set var="path" value="${pageContext.request.contextPath}"/>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
 
 <c:if test="${empty loginMember}">
   <c:set var="linkedPath" value="${path}/login"/>
-  <c:set var="nickName" value="Guest"/>
+  <c:set var="nickname" value="Guest"/>
 </c:if>
 <c:if test="${not empty loginMember}">
   <c:set var="linkedPath" value="${path}/mypage"/>
-  <c:set var="nickName" value="${loginMember.memberNickName}"/>
+  <c:set var="nickname" value="${loginMember.memberNickname}"/>
 </c:if>
 <head>
   <meta charset="utf-8">
@@ -72,7 +75,7 @@
     </form>
     <!-- 유저/장바구니 -->
     <div class="d-flex align-items-center gap-3">
-      ${nickName} 님
+      ${nickname} 님
       <button class="btn btn-light" onclick="location.href='${linkedPath}'">
         <i class="bi bi-person"></i>
       </button>
