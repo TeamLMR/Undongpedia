@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cart">
+    <resultMap id="cartMap" type="cart">
+        <id column="CART_SEQ" property="cartSeq"/>
+        <result column="CART_TIMESTAMP" property="cartTimestamp"/>
+        <result column="MEMBER_NO" property="memberNo"/>
+        <result column="COURSE_SEQ" property="courseSeq"/>
+        <collection property="cartCourse" ofType="course">
+            <id column="COURSE_SEQ" property="courseSeq"/>
+            <result column="COURSE_TITLE" property="courseTitle"/>
+            <result column="COURSE_CONTENT" property="courseContent"/>
+            <result column="COURSE_PRICE" property="coursePrice"/>
+            <result column="COURSE_DISCOUNT" property="courseDiscount"/>
+            <result column="COURSE_THUMBNAIL" property="courseThumbnail"/>
+        </collection>
+    </resultMap>
+
+    <!--TODO: Map에 course 타입 같이 넣어야하는데 List로는 안넣고싶ㅇ므 -->
+    <select id="searchCartsByMemberNo" parameterType="_long" resultMap="cartMap">
+        SELECT CA.CART_SEQ, CA.MEMBER_NO, CA.CART_TIMESTAMP, CA.COURSE_SEQ,
+               CO.COURSE_SEQ, CO.COURSE_TITLE, CO.COURSE_CONTENT, CO.COURSE_PRICE, CO.COURSE_DISCOUNT, CO.COURSE_THUMBNAIL
+        FROM CART CA
+                 JOIN COURSE CO ON CA.COURSE_SEQ = CO.COURSE_SEQ WHERE CA.MEMBER_NO = #{memberNo}
+    </select>
+
+    <insert id="insertCart" parameterType="course">
+        INSERT INTO CART VALUES (#{cartSeq}, DEFAULT, #{memberNo}, #{courseSeq})
+    </insert>
+</mapper>

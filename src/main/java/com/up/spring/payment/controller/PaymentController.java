@@ -1,30 +1,75 @@
 package com.up.spring.payment.controller;
 
-import com.up.spring.payment.dto.NaverProperty;
+import com.up.spring.course.model.dto.Course;
+import com.up.spring.member.model.dto.Member;
+import com.up.spring.payment.model.dto.Cart;
+import com.up.spring.payment.model.dto.NaverProperty;
+import com.up.spring.payment.model.service.CartService;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
+import javax.servlet.http.HttpSession;
+import java.util.*;
 
-@NoArgsConstructor
+import static io.lettuce.core.GeoArgs.Unit.m;
+
+@RequiredArgsConstructor
 @Controller
 @Slf4j
 public class PaymentController {
+    private final CartService cartService;
+    private final NaverProperty naverProperty;
 
-    @Autowired
-    private NaverProperty naverProperty;
+    public long returnMemberNo(){
+        String loc = "/";
+        Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        long memberNo = 0;
+        if (m != null){
+            memberNo = m.getMemberNo();
+        }
+        return memberNo;
+    }
+
+    @RequestMapping("/cart/remove")
+    public String removeCart(@RequestParam("removeCartSeq") int removeSeq, Model model) {
+        String loc = "/";
+        log.debug("removeCart" + removeSeq);
+        long memberNo = returnMemberNo();
+        if (memberNo != 0) {
+            List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
+            log.info("cartList: {}", cartList);
+            model.addAttribute("cartList", cartList);
+            loc = "payment/cart";
+        } else {
+            model.addAttribute("msg", "잘못된 접근입니다");
+            loc = "common/msg";
+        }
+        return loc;
+    }
 
     @RequestMapping("/cart")
-    public String cart() {
-        return "payment/cart";
+    public String cart(Model model, HttpSession session) {
+        String loc = "/";
+        long memberNo = returnMemberNo();
+        if (memberNo != 0) {
+            List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
+            log.info("cartList: {}", cartList);
+            model.addAttribute("cartList", cartList);
+            loc = "payment/cart";
+        } else {
+            model.addAttribute("msg", "잘못된 접근입니다");
+            loc = "common/msg";
+        }
+        return loc;
     }
 
     @RequestMapping("/payment/start")

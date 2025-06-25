@@ -1,5 +1,16 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
+
+<c:forEach var="cart" items="${cartList}">
+    <c:set var="origin" value="${cart.cartCourse.coursePrice}" />
+    <c:set var="discount" value="${origin * (cart.cartCourse.courseDiscount) / 100}" />
+
+    <c:set var="resultOriginPrice" value="${resultOriginPrice + origin}" />
+    <c:set var="resultDiscountPrice" value="${resultDiscountPrice - discount}" />
+</c:forEach>
+
 <main class="main">
     <!-- Page Title -->
     <div class="page-title light-background">
@@ -30,40 +41,59 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="cart-item">
-                                <div class="row align-items-center">
-                                    <div class="col-lg-8 col-12 mt-3 mt-lg-0 mb-lg-0 mb-3">
-                                        <div class="product-info d-flex align-items-center">
-                                            <div class="product-image">
-                                                <img src="${pageContext.request.contextPath}/resources/images/dummy.webp" alt="Product" class="w-100 h-100 object-fit-cover" loading="lazy">
+
+                            <c:if test="${not empty cartList}">
+                                <c:forEach var="cart" items="${cartList}">
+                                    <div class="cart-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-lg-8 col-12 mt-3 mt-lg-0 mb-lg-0 mb-3">
+                                                <div class="product-info d-flex align-items-center">
+                                                    <div class="product-image">
+                                                        <img src="${pageContext.request.contextPath}${cart.cartCourse.courseThumbnail}" alt="Product" class="w-100 h-100 object-fit-cover" loading="lazy">
+                                                    </div>
+                                                    <div class="product-details">
+                                                        <h6 class="product-title">${cart.cartCourse.courseTitle}</h6>
+                                                        <button class="remove-item" type="button" onclick="location.href='${pageContext.request.contextPath}/cart/remove'">
+                                                            <input type="hidden" name="removeCartSeq" value=${cart.cartSeq}>
+                                                            <i class="bi bi-trash"></i> Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="product-details">
-                                                <h6 class="product-title">dummy</h6>
-                                                <button class="remove-item" type="button">
-                                                    <i class="bi bi-trash"></i> Remove
-                                                </button>
+                                            <div class="col-lg-4 col-12 mt-3 mt-lg-0 text-center">
+                                                <div class="price-tag">
+                                                    <div class="text-danger fs-5 text-end">
+                                                        <span id="discount">
+                                                            <fmt:formatNumber type="number" maxFractionDigits="3" value="${cart.cartCourse.courseDiscount}"/>
+                                                        </span>
+                                                        <span>%</span>
+                                                    </div>
+                                                    <div class="original-price text-secondary text-end">
+                                                        <span>₩</span>
+                                                        <span id="origin-price">
+                                                        <fmt:formatNumber type="number" maxFractionDigits="3" value="${cart.cartCourse.coursePrice}"/>
+                                                        </span>
+                                                        <span>-></span>
+                                                    </div>
+                                                    <div class="current-price fs-4 text-end">
+                                                        <span>₩</span>
+                                                        <span id="price">
+                                                                <fmt:formatNumber type="number" maxFractionDigits="3" value="${cart.cartCourse.coursePrice * (100-cart.cartCourse.courseDiscount)/100}"/>
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-lg-4 col-12 mt-3 mt-lg-0 text-center">
-                                        <div class="price-tag">
-                                            <div class="text-danger fs-5 text-end">
-                                                <span id="discount">0</span>
-                                                <span>%</span>
-                                            </div>
-                                            <div class="original-price text-secondary text-start">
-                                                <span>₩</span>
-                                                <span id="origin-price">0,000</span>
-                                                <span>-></span>
-                                            </div>
-                                            <div class="current-price fs-4 text-end">
-                                                <span>₩</span>
-                                                <span id="price">0,000</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                </c:forEach>
+                            </c:if>
+                            <c:if test="${empty cartList}">
+                                <%--칼럼 빈값--%>
+                                <div class="col-lg-12 text-secondary text-center">
+                                    장바구니에 상품이 없습니다.
                                 </div>
-                            </div><!-- End Cart Item -->
+                            </c:if>
+
                         </div>
                     </div>
 
@@ -73,20 +103,23 @@
 
                             <div class="summary-item">
                                 <span class="summary-label">금액</span>
-                                <span class="summary-value">₩</span>
-                                <span class="summary-value">0</span>
+                                <span class="summary-value">
+                                    <fmt:formatNumber type="number" maxFractionDigits="3" value="${resultOriginPrice}"/>
+                                 </span>
                             </div>
 
                             <div class="summary-item discount">
                                 <span class="summary-label">할인</span>
-                                <span class="summary-value">-₩</span>
-                                <span class="summary-value">0</span>
+                                <span class="summary-value">
+                                    <fmt:formatNumber type="number" maxFractionDigits="3" value="${resultDiscountPrice}"/>
+                                </span>
                             </div>
-
                             <div class="summary-total">
                                 <span class="summary-label">총 금액</span>
                                 <span class="summary-value">₩</span>
-                                <span class="summary-value">0</span>
+                                <span class="summary-value">
+                                        <fmt:formatNumber type="number" maxFractionDigits="3" value="${resultOriginPrice+resultDiscountPrice}"/>
+                                </span>
                             </div>
 
                             <div class="checkout-button" onclick="location.assign('${pageContext.request.contextPath}/payment/start')">
@@ -115,5 +148,6 @@
 <%--    * 4-2  결제 결과 실패 -> 장바구니로 redirect--%>
 <%--    * 5. ??--%>
 <%--    * */--%>
+
 
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>

@@ -8,6 +8,7 @@
         <typeAlias type="com.up.spring.member.model.dto.Member" alias="member"/>
         <typeAlias type="com.up.spring.common.model.dto.Category" alias="category"/>
         <typeAlias type="com.up.spring.course.model.dto.Course" alias="course"/>
+        <typeAlias type="com.up.spring.payment.model.dto.Cart" alias="cart"/>
         <typeAlias type="com.up.spring.course.model.dto.CourseSchedule" alias="courseSchedule"/>
     </typeAliases>
 </configuration>

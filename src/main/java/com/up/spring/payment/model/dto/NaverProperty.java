@@ -1,4 +1,4 @@
-package com.up.spring.payment.dto;
+package com.up.spring.payment.model.dto;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
