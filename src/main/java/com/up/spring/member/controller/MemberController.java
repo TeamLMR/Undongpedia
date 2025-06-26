@@ -20,6 +20,11 @@ public class MemberController {
         return "myPage/home";
     }
 
+    @RequestMapping("/mypage/personal")
+    public String personalPage(){
+        return "myPage/setting/personal";
+    }
+
     /*auth 관련*/
     @RequestMapping("/signup")
     public String signup() {
@@ -33,5 +38,6 @@ public class MemberController {
 
     @RequestMapping("/savemember")
     public String savemember(@ModelAttribute("member") Member member) {return "auth/savemember";}
+
 
 }
