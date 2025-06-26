@@ -30,6 +30,44 @@ public class PaymentController {
     private final CartService cartService;
     private final NaverProperty naverProperty;
 
+    private Map<String, Object> setNaverPayMap(List<String> productNames,
+                                               int productCount,
+                                               int totalPayAmount, HttpServletRequest request){
+        Map<String, Object> oPayMap = new HashMap<>();
+
+        //네이버는 이름에 건수를 자동 처리를 해주네.. 참고
+        String joinNames = "";
+        joinNames = productNames.get(1);
+        log.debug(joinNames);
+
+        //부가세 (10%)
+        int taxScopeAmount = 0;
+
+        //총 금액 - 부가세(10%) 한 금액
+        int applyPayAmount = 0;
+        taxScopeAmount = (int) (totalPayAmount * 0.1);
+        applyPayAmount = totalPayAmount - taxScopeAmount;
+
+        log.debug("joinNames: " + joinNames + " taxScopeAmount: " +  taxScopeAmount + " applyPayAmount: " + applyPayAmount +" totalPayAmount: " +  totalPayAmount);
+
+        //mode, clientId, chainId
+        oPayMap.put("mode", naverProperty.getMode());
+        oPayMap.put("clientId", naverProperty.getXNaverClientId());
+        oPayMap.put("chainId", naverProperty.getXNaverPayChainId());
+        oPayMap.put("merchantPayKey", naverProperty.getMerchantKey());
+
+        oPayMap.put("productName", joinNames);
+        oPayMap.put("productCount", productCount);
+        oPayMap.put("totalPayAmount", totalPayAmount);
+        oPayMap.put("taxScopeAmount", taxScopeAmount);
+        oPayMap.put("taxExScopeAmount", applyPayAmount);
+
+        String url = request.getScheme() + "://"+ request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+        log.debug(url);
+        oPayMap.put("returnUrl",  url + "/payment/end");
+        return oPayMap;
+    }
+
     public long returnMemberNo(){
         String loc = "/";
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -89,47 +127,64 @@ public class PaymentController {
         String loc = "/";
         long memberNo = returnMemberNo();
         if (memberNo != 0) {
+            //결제창 오픈시 들어갈 정보들
+            //카트 내 장바구니들 전체 결제
+
+            /*
+             * 1. 카트 내 장바구니 리스트 가져오기
+             * 2. 이름, 갯수, 총 가격 합쳐서
+             * 3. 결제
+             * */
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Naver-Client-Id", naverProperty.getXNaverClientId());
             headers.set("X-Naver-Client-Secret", naverProperty.getXNaverClientSecret());
             headers.set("Content-Type", "application/json");
 
+            List<Cart> cartList =  cartService.searchCartsByMemberNo(memberNo);
+            List<String> cartNames = new ArrayList<>();
+            int productCount = cartList.size();
+            int totalPayAmount = 0;
+            for (Cart cart : cartList) {
+                cartNames.add(cart.getCartCourse().getCourseTitle());
+                int coursePrice = cart.getCartCourse().getCoursePrice();
+                double discountPrice = (double) (coursePrice * (100 - cart.getCartCourse().getCourseDiscount())) /100;
+                log.debug("discountPrice: " + discountPrice + " coursePrice: " + coursePrice);
+                totalPayAmount += (int) (discountPrice);
+            }
+
+            Map<String, Object> oPayMap = setNaverPayMap(cartNames, productCount, totalPayAmount, request);
+            model.addAttribute("oPayMap", oPayMap);
+
         } else {
 
         }
-
-        Map<String, Object> oPayMap = new HashMap<>();
-        //mode, clientId, chainId
-        oPayMap.put("mode", naverProperty.getMode());
-        oPayMap.put("clientId", naverProperty.getXNaverClientId());
-        oPayMap.put("chainId", naverProperty.getXNaverPayChainId());
-        oPayMap.put("merchantPayKey", naverProperty.getMerchantKey());
-
-        //결제창 오픈시 들어갈 정보들
-        //TODO: 여기 아래부터는 프로덕트 정보들 (임시정보)
-        //TODO: 추후에 디비 정보 들어가게해야함 url제외하고..
-
-        oPayMap.put("productName", "필라테스");
-        oPayMap.put("productCount", "1");
-        oPayMap.put("totalPayAmount", "10000");
-        oPayMap.put("taxScopeAmount", "10000");
-        oPayMap.put("taxExScopeAmount", "0");
-        String url = request.getScheme() + "://"+ request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-        log.debug(url);
-        oPayMap.put("returnUrl",  url + "/payment/end");
-        model.addAttribute("oPayMap", oPayMap);
-
         return "payment/start";
     }
 
     @RequestMapping("/payment/end")
     public String paymentEnd(@RequestParam("resultCode") String resultCode, @RequestParam("paymentId") String paymentId,
-    @RequestParam(value = "resultMessage", required = false) String resultMessage,  @RequestParam(value = "reserveId", required = false) String reserveId) {
-
+    @RequestParam(value = "resultMessage", required = false) String resultMessage,  @RequestParam(value = "reserveId", required = false) String reserveId, Model model) {
+        String loc = "common/msg";
+        String msg = "";
         log.debug("resultCode:{}", resultCode);
         log.debug("paymentId:{}", paymentId);
         log.debug("reserveId:{}", reserveId);
         log.debug("resultMessage:{}", resultMessage);
-        return "payment/end";
+
+        /*만약 결제 성공*/
+        if (resultCode.equals("Success")) {
+            loc = "mypage";
+
+        } else {
+            /*만약 결제 실패*/
+            if (resultMessage.isEmpty()){
+                msg = resultMessage;
+            } else {
+                msg  = "알 수 없는 오류입니다.";
+            }
+            model.addAttribute("msg", resultMessage);
+            model.addAttribute("loc", loc);
+        }
+        return "redirect:/" + loc;
     }
 }
