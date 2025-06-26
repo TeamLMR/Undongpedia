@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
 <style>
     .section-header {
         text-align: center;
@@ -329,20 +330,20 @@
         <div class="info-section">
             <h5>
                 <i class="bi bi-lock-fill"></i>
-                기본 정보 (수정 불가)
+                기본 정보
             </h5>
 
             <div class="form-group">
                 <label>이름</label>
-                <div class="readonly-field">김철수</div>
+                <div class="readonly-field">${loginMember.memberName}</div>
             </div>
 
             <div class="form-group">
                 <label>이메일</label>
                 <div class="readonly-field">
-                    momjjang@undong.com
+                    ${loginMember.memberId}
                     <span class="verified-badge">
-                        <i class="bi bi-check-circle-fill"></i>인증됨
+                        <i class="bi bi-check-circle-fill"></i>인증완료
                     </span>
                 </div>
             </div>
@@ -354,7 +355,7 @@
                 <div class="form-group">
                     <label for="lastName">닉네임</label>
                     <input type="text" class="form-control" name="lastName" id="lastName"
-                           value="몸선생" required minlength="2" placeholder="닉네임을 입력하세요">
+                           value="${loginMember.memberNickname}" required minlength="2" placeholder="닉네임을 입력하세요">
                     <div class="invalid-feedback" id="lastNameError"></div>
                     <div class="valid-feedback" id="lastNameSuccess"></div>
                 </div>
@@ -375,7 +376,7 @@
                 <i class="bi bi-check-circle-fill me-2"></i>
                 <div>
                     <strong>이메일이 전송되었습니다!</strong>
-                    <p>momjjang@undong.com으로 비밀번호 변경 링크를 보냈습니다.<br>
+                    <p>${loginMember.memberId}으로 비밀번호 변경 링크를 보냈습니다.<br>
                         이메일을 확인하여 비밀번호를 변경해주세요. (링크 유효시간: 30분)</p>
                 </div>
             </div>
