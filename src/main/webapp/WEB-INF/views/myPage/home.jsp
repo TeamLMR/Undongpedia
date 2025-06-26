@@ -126,7 +126,7 @@
         $('.logout').on('click', function(e) {
             e.preventDefault();
             if (confirm('로그아웃 하시겠습니까?')) {
-                window.location.href = '/logout';
+                window.location.href = '${pageContext.request.contextPath}/logout.do';
             }
         });
     });
