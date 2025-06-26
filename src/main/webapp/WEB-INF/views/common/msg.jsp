@@ -1,5 +1,15 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
+
+<c:if test="${not empty loc}">
+    <script>
+        setTimeout(()=>{
+            location.replace("${pageContext.request.contextPath}${loc}");
+        }, 2000);
+    </script>
+</c:if>
+
 <!-- Page Title -->
 <div class="page-title light-background">
     <div class="container">

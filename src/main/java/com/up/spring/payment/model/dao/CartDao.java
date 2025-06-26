@@ -8,4 +8,5 @@ import java.util.List;
 public interface CartDao {
     List<Cart> searchCartsByMemberNo(SqlSession session, long memberNo);
     int insertCart(SqlSession session, Cart cart);
+    int deleteCartByNo(SqlSession session, int cartSeq);
 }

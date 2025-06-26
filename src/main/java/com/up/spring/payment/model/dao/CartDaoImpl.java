@@ -20,4 +20,9 @@ public class CartDaoImpl implements CartDao {
     public int insertCart(SqlSession session, Cart cart) {
         return session.insert("insertCart", cart);
     }
+
+    @Override
+    public int deleteCartByNo(SqlSession session, int cartSeq) {
+        return session.delete("deleteCartByNo", cartSeq);
+    }
 }

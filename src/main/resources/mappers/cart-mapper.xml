@@ -27,4 +27,8 @@
     <insert id="insertCart" parameterType="course">
         INSERT INTO CART VALUES (#{cartSeq}, DEFAULT, #{memberNo}, #{courseSeq})
     </insert>
+
+    <delete id="deleteCartByNo" parameterType="_int">
+        DELETE FROM CART WHERE CART_SEQ = #{cartSeq}
+    </delete>
 </mapper>

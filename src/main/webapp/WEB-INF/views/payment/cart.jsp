@@ -53,10 +53,12 @@
                                                     </div>
                                                     <div class="product-details">
                                                         <h6 class="product-title">${cart.cartCourse.courseTitle}</h6>
-                                                        <button class="remove-item" type="button" onclick="location.href='${pageContext.request.contextPath}/cart/remove'">
-                                                            <input type="hidden" name="removeCartSeq" value=${cart.cartSeq}>
-                                                            <i class="bi bi-trash"></i> Remove
-                                                        </button>
+                                                        <form action="${pageContext.request.contextPath}/cart/remove" method="post" style="display:inline;">
+                                                            <button type="submit">
+                                                                <input type="hidden" name="removeCartSeq" value="${cart.cartSeq}" />
+                                                                <i class="bi bi-trash"></i> Remove
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                 </div>
                                             </div>
