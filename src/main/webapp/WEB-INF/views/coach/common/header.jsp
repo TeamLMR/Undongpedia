@@ -16,7 +16,6 @@
   <title>코치 관리 페이지</title>
 
   <!-- Custom fonts for this template-->
-  <link href="${path}/resources/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
   <link
           href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
           rel="stylesheet">
@@ -27,6 +26,7 @@
   <!-- Bootstrap core JavaScript-->
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/jquery/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/admin/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <link href="${path}/resources/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
 
   <!-- Core plugin JavaScript-->
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/jquery-easing/jquery.easing.min.js"></script>

@@ -8,6 +8,24 @@
         <result column="CATE_ICON" property="cateIcon"/>
         <result column="CATE_DESC" property="cateDesc"/>
     </resultMap>
+
+    <resultMap id="sectionMap" type="section">
+        <id column="SECTION_SEQ" property="sectionSeq" />
+        <result column="SECTION_TITLE" property="sectionTitle" />
+        <result column="SECTION_CONTENT" property="sectionContent" />
+        <result column="SECTION_ORDER" property="sectionOrder" />
+        <result column="COURSE_SEQ" property="courseSeq" />
+        <collection property="curriculums" ofType="curriculum">
+            <result column="CURR_SEQ" property="currSeq" />
+            <result column="CURR_TITLE" property="currTitle" />
+            <result column="CURR_VIDEO_URL" property="currVideoUrl" />
+            <result column="CURR_VIDEO_TYPE" property="currVideoType" />
+            <result column="CURR_PREVIEW" property="currPreview" />
+            <result column="CURR_ORDER" property="currOrder" />
+            <result column="SECTION_SEQ" property="sectionSeq" />
+        </collection>
+    </resultMap>
+
     <select id="getCategoryAll" resultMap="categoryMap">
         SELECT * FROM CATEGORY
     </select>
@@ -18,5 +36,19 @@
         <selectKey keyProperty="courseSeq" order="AFTER" resultType="_long">
             SELECT SEQ_COURSE.currval FROM DUAl
         </selectKey>
+    </insert>
+
+    <select id="getSectionList" parameterType="_long" resultMap="sectionMap">
+        SELECT *
+        FROM SECTION S
+        LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
+        WHERE S.COURSE_SEQ = #{courseSeq}
+    </select>
+
+    <insert id="insertSection" parameterType="section">
+        INSERT INTO SECTION VALUES (SEQ_SECTION.nextval, #{sectionTitle}, #{sectionContent}, #{sectionOrder}, #{courseSeq})
+    </insert>
+    <insert id="insertCurriculum" parameterType="curriculum">
+        INSERT INTO CURRICULUM (CURR_SEQ, CURR_TITLE, CURR_VIDEO_URL, CURR_VIDEO_TYPE, CURR_PREVIEW, CURR_ORDER, SECTION_SEQ) VALUES (SEQ_CURRICULUM.nextval,#{currTitle},#{currVideoUrl},#{currVideoType},#{currPreview},#{currOrder},#{sectionSeq})
     </insert>
 </mapper>

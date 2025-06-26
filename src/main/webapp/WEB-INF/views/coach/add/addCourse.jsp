@@ -2,6 +2,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <jsp:include page="/WEB-INF/views/coach/common/header.jsp"/>
 <!-- Content Wrapper -->
+<c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
 
 <div id="content-wrapper" class="d-flex flex-column">
@@ -18,7 +20,7 @@
                 <div class="row">
                     <div class="col-xl-12 col-lg-12">
                         <form action="${pageContext.request.contextPath}/coach/addCourseSection" method="post" onsubmit="return courseFormCheck()">
-                            <input type="hidden" name="memberNo" id="memberNo" value="0">
+                            <input type="hidden" name="memberNo" id="memberNo" value="${loginMember.memberNo}">
                         <div class="card shadow mb-4">
                             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                                 <h6 class="m-0 font-weight-bold text-primary">코스 정보 입력</h6>
