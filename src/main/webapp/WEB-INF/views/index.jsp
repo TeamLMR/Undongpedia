@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
@@ -180,49 +181,150 @@
     <!-- Best Sellers Section -->
     <section id="best-sellers" class="best-sellers section py-5">
         <div class="container-fluid px-3 px-lg-5">
-            <div class="row py-4 g-4">
+            <div class="row py-4 g-4" id="courseList">
                 <!-- 강의 카드 -->
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm">
-
-                        <!-- 썸네일 -->
-                        <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">
-                            <img src="${dummyImg}" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
-                        </div>
-
-                        <!-- 내용 -->
-                        <div class="card-body d-flex flex-column justify-content-between" style="min-height: 240px;">
-                            <div>
-                                <p class="text-muted small mb-1">피지컬 갤러리</p>
-                                <h5 class="card-title fw-semibold text-truncate">자세 교정, 지금 시작하세요</h5>
-                                <p class="card-text text-secondary small text-truncate">통증 없이 생활하는 법, 재활 전문가와 함께하는 클래스</p>
-                            </div>
-                            <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
-                                <span class="btn btn-light btn-sm">재활</span>
-                                <span class="btn btn-light btn-sm">자세 교정</span>
-                                <span class="btn btn-light btn-sm">초급</span>
-
-                            </div>
-                            <div class="btn btn-sm btn-primary d-flex align-items-center justify-content-between mt-3">
-                                <div class="text-light">
-                                    <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>
+                <c:if test="${not empty courseList}">
+                    <c:forEach var="c" items="${courseList}">
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">
+                                    <img src="${pageContext.request.contextPath}${c.courseThumbnail}" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
                                 </div>
-                                <a href="#" class="text-light">수강평 100+</a>
-                            </div>
-                            <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">
-                                <span class="text-danger text-decoration-line-through fs-6">₩129,000</span>
-                                <span> ➡️ </span>
-                                <span class="fw-bold fs-6 text-primary">₩64,500</span>
+                                <div class="card-body d-flex flex-column justify-content-between" style="min-height: 240px;">
+                                    <div>
+                                        <p class="text-muted small mb-1">${c.memberNickname}</p>
+                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTitle}</h5>
+                                        <p class="card-text text-secondary small text-truncate">${c.courseContent}</p>
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                                        <span class="btn btn-light btn-sm">${c.cateValue}</span>
+                                        <span class="btn btn-light btn-sm">${c.courseType=='ON'?'온라인':'오프라인'}</span>
+                                        <span class="btn btn-light btn-sm">
+                                            <c:forEach begin="1" end="5" var="i">
+                                                <c:choose>
+                                                    <c:when test="${i <= c.courseDifficult}">
+                                                        <span style="color: gold;">★</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span style="color: lightgray;">★</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:forEach>
+                                        </span>
+
+                                    </div>
+                                    <div class="btn btn-sm btn-primary d-flex align-items-center justify-content-between mt-3">
+                                        <div class="text-light">
+                                            <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>
+                                        </div>
+                                        <a href="#" class="text-light">수강평 100+</a>
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">
+                                        <span class="text-danger text-decoration-line-through fs-6">
+                                            ₩ <fmt:formatNumber type="number" maxFractionDigits="3" value="${c.coursePrice}"/>
+                                        </span>
+                                        <span> ➡️ </span>
+                                        <span class="fw-bold fs-6 text-primary">
+                                            ₩ <fmt:formatNumber type="number" maxFractionDigits="3" value="${c.coursePrice * ((100-c.courseDiscount)/100)}"/>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                    </div>
-                </div>
+                    </c:forEach>
+                </c:if>
 
             </div>
         </div>
     </section>
     <!-- /Best Sellers Section -->
+    <script>
+    let page = 1;
+    let isLoading = false;
+    let hasMore = true;
+    $(window).on("scroll", function () {
+        if (!hasMore || isLoading) return;
+
+        const scrollTop = $(window).scrollTop();
+        const windowHeight = $(window).height();
+        const documentHeight = $(document).height();
+
+        if (scrollTop + windowHeight >= documentHeight - 50) {
+            isLoading = true;
+            page++;
+
+            $.ajax({
+                url: "${pageContext.request.contextPath}/main/ajaxLoadMoreData",
+                type: "GET",
+                data: { page: page },
+                success: function (data) {
+                    if (data.length === 0) {
+                        hasMore = false;
+                        $("#courseList").append("<p class='text-center mt-3' style='color: lightgray'>마지막 페이지 입니다.</p>");
+                        return;
+                    }
+
+                    // 예시 템플릿 렌더링
+                    data.forEach(function (course) {
+                        let stars="";
+                        for(let i=1; i<6; i++){
+                            if(i<= course['courseDifficult']) {
+                                stars += '<span style="color: gold;">★</span>'
+                            } else {
+                                stars += '<span style="color: lightgray;">★</span>'
+                            }
+                        }
+                        $("#courseList").append(
+                            '<div class="col-12 col-sm-6 col-md-4 col-lg-3">'
+                            + '<div class="card h-100 border-0 shadow-sm">'
+                            + '    <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">'
+                            + '        <img src="${pageContext.request.contextPath}' + course['courseThumbnail'] + '" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">'
+                            + '    </div>'
+                            + '    <div class="card-body d-flex flex-column justify-content-between" style="min-height: 240px;">'
+                            + '        <div>'
+                            + '            <p class="text-muted small mb-1">' + course['memberNickname'] + '</p>'
+                            + '            <h5 class="card-title fw-semibold text-truncate">' + course['courseTitle'] + '</h5>'
+                            + '            <p class="card-text text-secondary small text-truncate">' + course['courseContent'] + '</p>'
+                            + '        </div>'
+                            + '        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">'
+                            + '            <span class="btn btn-light btn-sm">' + course['cateValue'] + '</span>'
+                            + '            <span class="btn btn-light btn-sm">' + (course['courseType'] === 'ON' ? '온라인' : '오프라인') + '</span>'
+                            + '            <span class="btn btn-light btn-sm">'
+                            + '               '+stars+''
+                            + '            </span>'
+                            + '        </div>'
+                            + '        <div class="btn btn-sm btn-primary d-flex align-items-center justify-content-between mt-3">'
+                            + '            <div class="text-light">'
+                            + '                <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>'
+                            + '            </div>'
+                            + '            <a href="#" class="text-light">수강평 100+</a>'
+                            + '        </div>'
+                            + '        <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">'
+                            + '            <span class="text-danger text-decoration-line-through fs-6">'
+                            + '                ₩ ' + course['coursePrice'] + ''
+                            + '            </span>'
+                            + '            <span> ➡️ </span>'
+                            + '            <span class="fw-bold fs-6 text-primary">'
+                            + '                ₩ ' + (course['coursePrice'] * ((100 - course['courseDiscount']) / 100)) + ''
+                            + '</span>'
+                            + '</div>'
+                            + '</div>'
+                            + '</div>'
+                            + '</div>'
+                        );
+                    });
+                },
+                error: function () {
+                    console.error("데이터 불러오기 실패");
+                },
+                complete: function () {
+                    isLoading = false;
+                }
+            });
+        }
+    });
+    </script>
 
 </main>
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>

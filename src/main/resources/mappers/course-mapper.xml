@@ -13,8 +13,8 @@
         <result column="COURSE_TARGET" property="courseTarget"/>
         <result column="COURSE_PREPARATION" property="coursePreparation"/>
         <result column="COURSE_EXPOSE" property="courseExpose"/>
-        <result column="COURSE_CONFIRM_TIME" property="courseConfirmDate"/>
-        <result column="COURSE_CREATE_TIME" property="courseCreateDate"/>
+        <result column="COURSE_CONFIRM_TIME" property="courseConfirmTime"/>
+        <result column="COURSE_CREATE_TIME" property="courseCreateTime"/>
         <result column="MEMBER_NO" property="memberNo"/>
         <result column="COURSE_TYPE" property="courseType"/>
     </resultMap>

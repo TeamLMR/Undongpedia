@@ -8,8 +8,33 @@
         <result column="cate_icon" property="cateIcon"/>
         <result column="cate_desc" property="cateDesc"/>
     </resultMap>
+    <resultMap type="course" id="courseListMap">
+        <id column="COURSE_SEQ" property="courseSeq"/>
+        <result column="COURSE_TITLE" property="courseTitle"/>
+        <result column="COURSE_CONTENT" property="courseContent"/>
+        <result column="COURSE_CATEGORY" property="courseCategory"/>
+        <result column="COURSE_DIFFICULT" property="courseDifficult"/>
+        <result column="COURSE_PRICE" property="coursePrice"/>
+        <result column="COURSE_DISCOUNT" property="courseDiscount"/>
+        <result column="COURSE_THUMBNAIL" property="courseThumbnail"/>
+        <result column="COURSE_TARGET" property="courseTarget"/>
+        <result column="COURSE_PREPARATION" property="coursePreparation"/>
+        <result column="COURSE_EXPOSE" property="courseExpose"/>
+        <result column="COURSE_CONFIRM_TIME" property="courseConfirmTime"/>
+        <result column="COURSE_CREATE_TIME" property="courseCreateTime"/>
+        <result column="MEMBER_NO" property="memberNo"/>
+        <result column="COURSE_TYPE" property="courseType"/>
+        <result column="MEMBER_NICKNAME" property="memberNickname"/>
+        <result column="CATE_VALUE" property="cateValue"/>
+    </resultMap>
 
     <select id="getCategorys" resultMap="catemap">
         SELECT * FROM CATEGORY
+    </select>
+
+    <select id="getCourseList" resultMap="courseListMap">
+        SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
     </select>
 </mapper>

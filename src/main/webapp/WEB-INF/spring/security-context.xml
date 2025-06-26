@@ -22,6 +22,7 @@
     <security:intercept-url pattern="/loginpage" access="permitAll()"/>
     <security:intercept-url pattern="/login.do" access="permitAll()"/>
     <security:intercept-url pattern="/" access="permitAll()"/>
+    <security:intercept-url pattern="/main/**" access="permitAll()"/>
     <security:intercept-url pattern="/resources/**" access="permitAll()"/>
     <security:intercept-url pattern="/reservation" access="permitAll()"/>
     <security:intercept-url pattern="/reservation/**" access="permitAll()"/>
@@ -33,8 +34,7 @@
     <security:logout logout-url="/logout.do"/>
 
     <security:remember-me
-        remember-me-parameter="remember"
-        token-validity-seconds="604800"
+        remember-me-parameter="remember"        token-validity-seconds="604800"
         key="undong"
         user-service-ref="loginService"
     />

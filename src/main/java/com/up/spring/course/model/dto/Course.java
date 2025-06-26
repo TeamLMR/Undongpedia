@@ -27,4 +27,6 @@ public class Course {
     private int memberNo;
     private String courseExpose;
     private String courseType; // Check (COURSE_TYPE IN ('ON','OFF')) 코스 온라인 오프라인
+    private String memberNickname;
+    private String cateValue;
 }
