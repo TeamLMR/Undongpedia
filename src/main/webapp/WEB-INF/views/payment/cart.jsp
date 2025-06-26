@@ -54,7 +54,7 @@
                                                     <div class="product-details">
                                                         <h6 class="product-title">${cart.cartCourse.courseTitle}</h6>
                                                         <form action="${pageContext.request.contextPath}/cart/remove" method="post" style="display:inline;">
-                                                            <button type="submit">
+                                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
                                                                 <input type="hidden" name="removeCartSeq" value="${cart.cartSeq}" />
                                                                 <i class="bi bi-trash"></i> Remove
                                                             </button>
@@ -158,7 +158,6 @@
 <script>
     const checkout = () => {
         location.assign('${pageContext.request.contextPath}/payment/start')
-
     }
 </script>
 
