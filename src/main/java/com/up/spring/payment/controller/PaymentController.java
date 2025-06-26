@@ -37,7 +37,7 @@ public class PaymentController {
 
         //네이버는 이름에 건수를 자동 처리를 해주네.. 참고
         String joinNames = "";
-        joinNames = productNames.get(1);
+        joinNames = productNames.get(0);
         log.debug(joinNames);
 
         //부가세 (10%)
