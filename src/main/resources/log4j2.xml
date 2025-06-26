@@ -4,14 +4,14 @@
     <Appenders>
         <!--        콘솔창에 출력하는 appender-->
         <Console name="console">
-            <PatternLayout pattern="[%-5p] ⏰%d{yyyy-mm-dd HH:mm:ss}  📂%l 🗣️%m %n"/>
+            <PatternLayout pattern="[%-5p] ⏰%d{yyyy-MM-dd HH:mm:ss}  📂%l 🗣️%m %n"/>
             <!--            <JsonTemplateLayout eventTemplateUri="classpath:mylayout.json"/>-->
         </Console>
         <!--        로그 내용 파일로 출력하기-->
         <RollingFile name="rollingFile"
                      fileName="logs/spring-log.log"
                      filePattern="logs/spring-log-%d{yyyy-MM-dd}.log">
-            <PatternLayout pattern="%n[%-5p] ⏰%d{yyyy-mm-dd HH:mm:ss}  📂%l 🗣️%-100m %n"/>
+            <PatternLayout pattern="%n[%-5p] ⏰%d{yyyy-MM-dd HH:mm:ss}  📂%l 🗣️%-100m %n"/>
             <!--            <JsonTemplateLayout eventTemplateUri="classpath:mylayout.json"/>-->
             <Policies>
                 <!--                하루에 한 개 파일 생성-->

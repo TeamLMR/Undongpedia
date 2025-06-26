@@ -206,6 +206,15 @@ public class KafkaTestService {
                 case "RESERVATION_CONFIRMED":
                     handleReservationConfirmed(event);
                     break;
+                case "QUEUE_ENTERED":
+                    handleQueueEntered(event);
+                    break;
+                case "TEMP_RESERVATION_CREATED":
+                    handleTempReservationCreated(event);
+                    break;
+                case "RESERVATION_TURN":
+                    handleReservationTurn(event);
+                    break;
                 default:
                     log.warn("알 수 없는 이벤트 타입: {}", eventType);
             }
@@ -258,6 +267,24 @@ public class KafkaTestService {
     private void handleReservationConfirmed(Map<String, Object> event) {
         log.info("예약 확정 이벤트 처리: {}", event.get("confirmationNumber"));
         // 예약 확정 로직
+    }
+
+    private void handleQueueEntered(Map<String, Object> event) {
+        log.info("🎯 대기열 입장 이벤트 처리: 사용자 {}, 순서 {}/{}", 
+                event.get("memberNo"), event.get("position"), event.get("totalInQueue"));
+        // 대기열 입장 알림, 사용자 상태 업데이트 등
+    }
+
+    private void handleTempReservationCreated(Map<String, Object> event) {
+        log.info("⏰ 임시 예약 생성 이벤트 처리: 사용자 {}, 임시예약ID {}", 
+                event.get("memberNo"), event.get("tempReservationId"));
+        // 임시 예약 알림, 결제 페이지 안내 등
+    }
+
+    private void handleReservationTurn(Map<String, Object> event) {
+        log.info("🔔 예약 순서 도착 이벤트 처리: 사용자 {}, 강의 {}", 
+                event.get("memberNo"), event.get("courseSeq"));
+        // 사용자에게 예약 진행 알림, WebSocket 푸시 등
     }
 
     /**

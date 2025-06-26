@@ -24,4 +24,24 @@ public class CourseScheduleDaoImpl implements CourseScheduleDao {
     public List<CourseSchedule> searchAvailableSchedules(SqlSession sqlSession, long courseSeq) {
         return sqlSession.selectList("courseSchedule.searchAvailableSchedules", courseSeq);
     }
+
+    @Override
+    public int searchTotalAvailableSchedules(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.selectOne("courseSchedule.searchTotalAvailableSchedules", courseSeq);
+    }
+
+    @Override
+    public Integer getAvailableSeats(SqlSession sqlSession, long scheduleId) {
+        return sqlSession.selectOne("courseSchedule.getAvailableSeats", scheduleId);
+    }
+
+    @Override
+    public int incrementBookedSeats(SqlSession sqlSession, long scheduleId) {
+        return sqlSession.update("courseSchedule.incrementBookedSeats", scheduleId);
+    }
+
+    @Override
+    public int decrementBookedSeats(SqlSession sqlSession, long scheduleId) {
+        return sqlSession.update("courseSchedule.decrementBookedSeats", scheduleId);
+    }
 }

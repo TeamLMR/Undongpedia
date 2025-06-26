@@ -23,4 +23,13 @@ public interface CourseScheduleDao {
      * 예약 가능한 스케줄만 조회
      */
     List<CourseSchedule> searchAvailableSchedules(SqlSession sqlSession, long courseSeq);
+
+    int searchTotalAvailableSchedules(SqlSession sqlSession, long courseSeq);
+
+    Integer getAvailableSeats(SqlSession sqlSession, long scheduleId);
+
+    int incrementBookedSeats(SqlSession sqlSession, long scheduleId);
+
+    int decrementBookedSeats(SqlSession sqlSession, long scheduleId);
+
 }

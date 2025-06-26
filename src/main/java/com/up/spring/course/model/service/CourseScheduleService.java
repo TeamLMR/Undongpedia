@@ -2,7 +2,6 @@ package com.up.spring.course.model.service;
 
 import com.up.spring.course.model.dto.CourseSchedule;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,4 +21,11 @@ public interface CourseScheduleService {
      * 예약 가능한 스케줄만 조회
      */
     List<CourseSchedule> searchAvailableSchedules(long courseSeq);
+
+    int searchTotalAvailableSchedules(long courseSeq);
+
+    boolean isAvailable(long scheduleId);
+    int getAvailableSeats(long scheduleId);
+    boolean reserveSeat(long scheduleId);
+    boolean cancelSeat(long scheduleId);
 }

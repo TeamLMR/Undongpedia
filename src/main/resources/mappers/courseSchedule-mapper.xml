@@ -40,4 +40,63 @@
         ORDER BY COURSE_DATE, COURSE_START_TIME
     </select>
 
+    <select id="searchTotalAvailableSchedules" resultType="_int" parameterType="_long">
+        SELECT SUM(COURSE_CAPACITY-BOOKED_SEATS) FROM COURSE_SCHEDULE
+        WHERE COURSE_SEQ = #{courseSeq}
+        AND COURSE_DATE>=TRUNC(SYSDATE)
+    </select>
+    <select id="getAvailableSeats" resultType="_int" parameterType="_long">
+        SELECT COURSE_CAPACITY - BOOKED_SEATS AS AVAILABLE_SEATS
+        FROM COURSE_SCHEDULE
+        WHERE SCHEDULE_ID = #{scheduleId}
+          AND COURSE_DATE >= TRUNC(SYSDATE)  -- 오늘 이후 날짜만
+          AND STATUS = 'AVAILABLE'           -- 활성 상태만
+          AND COURSE_CAPACITY > BOOKED_SEATS -- 남은 좌석이 있는 경우만
+    </select>
+
+    <!-- 좌석 예약 (bookedSeats 증가) - 동시성 고려 -->
+    <update id="incrementBookedSeats" parameterType="_long">
+        UPDATE COURSE_SCHEDULE
+        SET BOOKED_SEATS = BOOKED_SEATS + 1
+        WHERE SCHEDULE_ID = #{scheduleId}
+        AND COURSE_DATE >= TRUNC(SYSDATE)  -- 오늘 이후만
+        AND STATUS = 'AVAILABLE'           -- 활성 상태만
+        AND COURSE_CAPACITY  > BOOKED_SEATS  -- 아직 여유가 있는 경우만
+    </update>
+
+    <!-- 좌석 취소 (bookedSeats 감소) -->
+    <update id="decrementBookedSeats" parameterType="_long">
+        UPDATE COURSE_SCHEDULE
+        SET BOOKED_SEATS = BOOKED_SEATS - 1
+        WHERE SCHEDULE_ID = #{scheduleId}
+          AND BOOKED_SEATS > 0  -- 예약된 좌석이 있는 경우만
+    </update>
+
+    <!-- 스케줄 상세 정보 조회 -->
+    <select id="getScheduleDetail" resultMap="courseScheduleResultMap" parameterType="_long">
+        SELECT SCHEDULE_ID,
+               COURSE_SEQ,
+               COURSE_DATE,
+               COURSE_START_TIME,
+               COURSE_END_TIME,
+               COURSE_CAPACITY,
+               BOOKED_SEATS,
+               (COURSE_CAPACITY - BOOKED_SEATS) AS AVAILABLE_SEATS,
+               COURSE_LOCATION,
+               STATUS
+        FROM COURSE_SCHEDULE
+        WHERE SCHEDULE_ID = #{scheduleId}
+    </select>
+
+    <!-- 특정 강의의 총 남은 좌석 수 -->
+    <select id="getTotalAvailableSeats" resultType="_int" parameterType="_long">
+        SELECT SUM(COURSE_CAPACITY - BOOKED_SEATS)
+        FROM COURSE_SCHEDULE
+        WHERE COURSE_SEQ = #{courseSeq}
+          AND COURSE_DATE >= TRUNC(SYSDATE)
+          AND STATUS = 'AVAILABLE'
+          AND COURSE_CAPACITY > BOOKED_SEATS
+    </select>
+
+
 </mapper>
