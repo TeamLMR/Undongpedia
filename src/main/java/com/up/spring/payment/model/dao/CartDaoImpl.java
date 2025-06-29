@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-@RequiredArgsConstructor
 public class CartDaoImpl implements CartDao {
     @Override
     public List<Cart> searchCartsByMemberNo(SqlSession session, long memberNo) {
