@@ -26,6 +26,7 @@
     <security:intercept-url pattern="/signup" access="permitAll()"/>
     <security:intercept-url pattern="/email" access="permitAll()"/>
     <security:intercept-url pattern="/email/**" access="permitAll()"/>
+    <security:intercept-url pattern="/main/**" access="permitAll()"/>
     <security:intercept-url pattern="/resources/**" access="permitAll()"/>
     <security:intercept-url pattern="/reservation" access="permitAll()"/>
     <security:intercept-url pattern="/reservation/**" access="permitAll()"/>

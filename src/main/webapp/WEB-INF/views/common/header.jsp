@@ -24,6 +24,7 @@
   <title>운동백과 - 세상의 모든 운동을 찾아서</title>
   <meta name="description" content="">
   <meta name="keywords" content="">
+  <script src="${path}/resources/assets/vendor/jquery/jquery.min.js"></script>
 
   <!-- Favicons -->
   <link href="${path}/resources/assets/img/favicon.png" rel="icon">
