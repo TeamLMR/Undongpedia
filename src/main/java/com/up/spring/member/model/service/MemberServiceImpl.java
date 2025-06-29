@@ -20,4 +20,14 @@ public class MemberServiceImpl implements MemberService {
     public Member searchById(String memberId) {
         return memberDaoImpl.searchById(session, memberId);
     }
+
+    @Override
+    public int saveMember(Member member) {
+        return memberDaoImpl.saveMember(session, member);
+    }
+
+    @Override
+    public int updateMember(Member member) {
+        return 0;
+    }
 }

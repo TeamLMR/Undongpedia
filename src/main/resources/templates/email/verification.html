@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운동백과 이메일 인증</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', 'Ubuntu', 'Malgun Gothic', sans-serif;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .logo-icon {
+            margin-right: 0.5rem;
+            font-size: 32px;
+        }
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        .content {
+            padding: 2rem;
+            text-align: center;
+        }
+        .title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .description {
+            font-size: 16px;
+            color: #6c757d;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+        .verification-section {
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .code-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .verification-code {
+            font-size: 42px;
+            font-weight: 700;
+            color: #007bff;
+            letter-spacing: 12px;
+            font-family: 'Ubuntu', monospace;
+            margin-bottom: 1rem;
+        }
+        .timer-info {
+            font-size: 14px;
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .warning-icon {
+            color: #856404;
+            font-size: 18px;
+            margin-right: 0.5rem;
+        }
+        .warning-text {
+            font-size: 14px;
+            color: #856404;
+            margin: 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+        }
+        .footer-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            <span class="logo-icon">🏋️</span>
+            <span>운동백과</span>
+        </div>
+        <div class="subtitle">세상의 모든 운동을 찾아서</div>
+    </div>
+
+    <div class="content">
+        <h1 class="title">이메일 인증번호</h1>
+        <p class="description">
+            안녕하세요!<br>
+            운동백과 회원가입을 위한 이메일 인증번호를 발송해드립니다.<br>
+            아래 인증번호를 입력하여 회원가입을 완료해주세요.
+        </p>
+
+        <div class="verification-section">
+            <div class="code-label">인증번호</div>
+            <div class="verification-code">{VERIFICATION_CODE}</div>
+            <div class="timer-info">⏰ 유효시간: 5분</div>
+        </div>
+
+        <div class="warning">
+            <span class="warning-icon">⚠️</span>
+            <span class="warning-text">
+                    본인이 요청하지 않았다면 이 이메일을 무시해주세요.
+                </span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-title">운동백과</div>
+        <div>대한민국 서울특별시 금천구 벚꽃로266</div>
+        <div class="contact-info">
+            <div class="contact-title">고객센터 문의</div>
+            <div><strong>📞 02-1234-5678</strong></div>
+            <div><strong>📧 jummech@undong.co.kr</strong></div>
+            <div>운영시간: 월-금 09:00~18:00 / 토 10:00~16:00 / 일 휴무</div>
+        </div>
+        <<div>이 이메일은 발신전용입니다. 문의사항은 고객센터를 이용해주세요.</div>
+        <div style="color: #999; margin-top: 1rem; font-size: 12px;">
+            © 2025 운동백과. All rights reserved.
+        </div>
+    </div>
+</div>
+</body>
+</html>

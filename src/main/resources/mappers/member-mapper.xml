@@ -16,4 +16,27 @@
     SELECT * FROM MEMBER WHERE MEMBER_ID=#{memberId}
 </select>
 
+    <insert id="saveMember" parameterType="member">
+        INSERT INTO MEMBER (
+            MEMBER_NO,
+            MEMBER_ID,
+            MEMBER_PASSWORD,
+            MEMBER_NAME,
+            MEMBER_NICKNAME,
+            MEMBER_ROLE,
+            MEMBER_SIGNTYPE,
+            MEMBER_ENROLLDATE
+        )
+        VALUES (
+                SEQ_MEMBER.NEXTVAL,
+                #{memberId},
+                #{memberPassword},
+                #{memberName},
+                #{memberNickname},
+                DEFAULT,
+                DEFAULT,
+                SYSDATE
+               )
+    </insert>
+
 </mapper>

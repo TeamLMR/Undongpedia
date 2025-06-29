@@ -1,7 +1,11 @@
 package com.up.spring.member.controller;
 
 import com.up.spring.member.model.dto.Member;
+import com.up.spring.member.model.service.MemberService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -12,7 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @Slf4j
+@RequiredArgsConstructor
 public class MemberController {
+
+    private final MemberService memberService;
+    private final BCryptPasswordEncoder passwordEncoder;
+
     /*myPage 관련*/
     @RequestMapping("/mypage")
     public String myPage(){
@@ -37,7 +46,11 @@ public class MemberController {
     }
 
     @RequestMapping("/savemember")
-    public String savemember(@ModelAttribute("member") Member member) {return "auth/savemember";}
+    public String savemember(@ModelAttribute("member") Member member) {
+        String password = member.getMemberPassword();
+        member.setMemberPassword(passwordEncoder.encode(password));
+        memberService.saveMember(member);
+        return "redirect:/";}
 
 
 }

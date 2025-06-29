@@ -22,12 +22,15 @@
     <security:intercept-url pattern="/loginpage" access="permitAll()"/>
     <security:intercept-url pattern="/login.do" access="permitAll()"/>
     <security:intercept-url pattern="/" access="permitAll()"/>
+    <security:intercept-url pattern="/sessionmax.do" access="permitAll()"/>
+    <security:intercept-url pattern="/signup" access="permitAll()"/>
+    <security:intercept-url pattern="/email" access="permitAll()"/>
+    <security:intercept-url pattern="/email/**" access="permitAll()"/>
     <security:intercept-url pattern="/resources/**" access="permitAll()"/>
     <security:intercept-url pattern="/reservation" access="permitAll()"/>
     <security:intercept-url pattern="/reservation/**" access="permitAll()"/>
     <security:intercept-url pattern="/**" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
-    <security:intercept-url pattern="/sessionmax.do" access="permitAll()"/>
-    <security:intercept-url pattern="/auth/signup" access="permitAll()"/>
+
 
 
     <security:logout logout-url="/logout.do"/>

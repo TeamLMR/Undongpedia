@@ -1,6 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
+
+<%-- 현재 로그인한 사용자 정보를 JavaScript 전역변수로 설정 --%>
+<script>
+    window.currentUserEmail = '${loginMember.memberId}';
+    window.currentUserName = '${loginMember.memberName}';
+</script>
+
 <style>
     .section-header {
         text-align: center;
@@ -18,13 +25,13 @@
     }
 
     .form-group {
-        margin-bottom: 1.5rem; /* 기존 1rem에서 1.5rem으로 증가 */
+        margin-bottom: 1.5rem;
     }
 
     .form-group label {
         font-weight: 500;
         color: #333;
-        margin-bottom: 0.75rem; /* 기존 0.5rem에서 0.75rem으로 증가 */
+        margin-bottom: 0.75rem;
         display: block;
     }
 
@@ -51,7 +58,7 @@
     .invalid-feedback {
         display: block;
         width: 100%;
-        margin-top: 0.5rem; /* 기존 0.25rem에서 0.5rem으로 증가 */
+        margin-top: 0.5rem;
         font-size: 0.875rem;
         color: #dc3545;
     }
@@ -59,7 +66,7 @@
     .valid-feedback {
         display: block;
         width: 100%;
-        margin-top: 0.5rem; /* 기존 0.25rem에서 0.5rem으로 증가 */
+        margin-top: 0.5rem;
         font-size: 0.875rem;
         color: #198754;
     }
@@ -92,7 +99,7 @@
         color: #155724;
         border-radius: 8px;
         padding: 1rem;
-        margin-bottom: 1.5rem; /* 기존 1rem에서 1.5rem으로 증가 */
+        margin-bottom: 1.5rem;
     }
 
     .form-check-input {
@@ -107,19 +114,19 @@
     .info-section {
         background: #f8f9fa;
         border-radius: 8px;
-        padding: 2rem; /* 기존 1.5rem에서 2rem으로 증가 */
-        margin-bottom: 2.5rem; /* 기존 2rem에서 2.5rem으로 증가 */
+        padding: 2rem;
+        margin-bottom: 2.5rem;
     }
 
     .info-section h5 {
         color: #333;
-        margin-bottom: 1.5rem; /* 기존 1rem에서 1.5rem으로 증가 */
+        margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
     }
 
     .info-section h5 i {
-        margin-right: 0.75rem; /* 기존 0.5rem에서 0.75rem으로 증가 */
+        margin-right: 0.75rem;
         color: #007bff;
     }
 
@@ -129,7 +136,7 @@
         color: #495057;
         padding: 0.75rem;
         border-radius: 8px;
-        margin-bottom: 0.75rem; /* 기존 0.5rem에서 0.75rem으로 증가 */
+        margin-bottom: 0.75rem;
     }
 
     .verified-badge {
@@ -141,14 +148,13 @@
         font-weight: 500;
         display: inline-flex;
         align-items: center;
-        margin-left: 0.5rem; /* ms-2 대신 명시적으로 추가 */
+        margin-left: 0.5rem;
     }
 
     .verified-badge i {
         margin-right: 0.25rem;
     }
 
-    /* 비밀번호 변경 섹션 스타일 */
     .password-change-section {
         background: #f8f9fa;
         border: 1px solid #dee2e6;
@@ -193,6 +199,11 @@
         box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
     }
 
+    .btn-success {
+        background-color: #198754;
+        border-color: #198754;
+    }
+
     .email-sent-message {
         background: #d1ecf1;
         border: 1px solid #bee5eb;
@@ -235,21 +246,18 @@
         }
     }
 
-    /* 전체 폼을 감싸는 컨테이너 추가 */
     .member-update-container {
         padding: 2rem;
         max-width: 600px;
         margin: 0 auto;
     }
 
-    /* 행 간격 개선 */
     .row {
         margin-bottom: 1rem;
     }
 
-    /* 뉴스레터 체크박스 섹션 - 간단한 스타일 */
     .newsletter-section {
-        margin: 2.5rem 0; /* 위아래 간격 */
+        margin: 2.5rem 0;
     }
 
     .custom-checkbox {
@@ -308,16 +316,14 @@
         margin: 0;
     }
 
-    /* 제출 버튼 영역 간격 개선 */
     .submit-section {
-        margin-top: 3rem; /* 버튼 위 간격 추가 */
+        margin-top: 3rem;
         padding-top: 2rem;
-        border-top: 1px solid #dee2e6; /* 구분선 추가 */
+        border-top: 1px solid #dee2e6;
         text-align: center;
     }
 </style>
 
-<!-- 전체를 감싸는 컨테이너 추가 -->
 <div class="member-update-container">
     <div class="section-header">
         <h2>회원정보 수정</h2>
@@ -363,9 +369,14 @@
         </div>
 
         <!-- 비밀번호 변경 섹션 -->
-        <div class="password-change-info">
-            <p><strong>비밀번호 변경</strong></p>
-            <p>보안을 위해 비밀번호 변경은 이메일 인증을 통해 진행됩니다.</p>
+        <div class="password-change-section">
+            <h5>
+                <i class="bi bi-shield-lock"></i>
+                비밀번호 변경
+            </h5>
+            <div class="section-description">
+                보안을 위해 비밀번호 변경은 이메일 인증을 통해 진행됩니다.
+            </div>
 
             <button type="button" class="btn btn-outline-primary" onclick="sendPasswordReset()">
                 <i class="bi bi-envelope me-2"></i>
@@ -382,7 +393,7 @@
             </div>
         </div>
 
-        <!-- 뉴스레터 구독 섹션 - 개선된 디자인 -->
+        <!-- 뉴스레터 구독 섹션 -->
         <div class="newsletter-section">
             <label class="custom-checkbox">
                 <input type="checkbox" name="newsletter" id="newsletter" checked>
@@ -403,42 +414,87 @@
 </div>
 
 <script>
-    // 비밀번호 변경 이메일 전송 함수
+    // ===== 비밀번호 재설정 이메일 발송 함수 =====
     function sendPasswordReset() {
         const btn = event.target;
-        const emailMessage = document.getElementById('emailSentMessage');
+        const originalHTML = btn.innerHTML;
 
-        console.log('이메일 전송 버튼 클릭됨');
+        // 사용자 정보 확인
+        if (!window.currentUserEmail || !window.currentUserName) {
+            alert('사용자 정보를 확인할 수 없습니다. 다시 로그인해주세요.');
+            return;
+        }
 
-        // 버튼 비활성화 및 로딩 상태
+        // 버튼 비활성화
         btn.disabled = true;
         btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>전송 중...';
 
-        // 2초 후 전송 완료 시뮬레이션
-        setTimeout(() => {
-            console.log('이메일 전송 완료');
+        // 실제 API 호출
+        fetch('/undongpedia/email/send-password-reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `email=${encodeURIComponent(window.currentUserEmail)}&memberName=${encodeURIComponent(window.currentUserName)}`
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 성공 메시지 표시
+                    const emailMessage = document.getElementById('emailSentMessage');
+                    if (emailMessage) {
+                        emailMessage.style.display = 'flex';
+                    }
 
-            // 성공 메시지 표시
-            if (emailMessage) {
-                emailMessage.style.display = 'flex';
-            }
+                    // 버튼 상태 변경
+                    btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>전송 완료';
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-success');
 
-            // 버튼 상태 변경
-            btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>전송 완료';
-            btn.classList.remove('btn-outline-primary');
-            btn.classList.add('btn-success');
+                    // 3초 후 원래 상태로 복원
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-envelope me-2"></i>비밀번호 변경 링크 재전송';
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-primary');
+                    }, 3000);
 
-            // 3초 후 원래 상태로
-            setTimeout(() => {
+                } else {
+                    // 실패 시 버튼 복원
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    alert(data.message || '이메일 발송에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-envelope me-2"></i>비밀번호 변경 링크 재전송';
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-outline-primary');
-            }, 3000);
-
-        }, 2000);
+                btn.innerHTML = originalHTML;
+                alert('서버 오류가 발생했습니다.');
+            });
     }
 
+    // ===== 랜덤 닉네임 생성 함수 =====
+    function generateRandomNickname() {
+        const adjectives = ['강력한', '빠른', '건강한', '활기찬', '파워풀한', '슈퍼', '멋진', '쿨한', '열정적인', '끈기있는'];
+        const exercises = ['헬스', '요가', '필라테스', '크로스핏', '러닝', '사이클', '복싱', '수영', '클라이밍', '웨이트'];
+        const animals = ['사자', '치타', '독수리', '상어', '표범', '늑대', '호랑이', '팬더', '코끼리', '캥거루'];
+        const titles = ['마스터', '킹', '퀸', '챔피언', '프로', '전문가', '달인', '고수', '선수', '코치'];
+
+        const patterns = [
+            () => `${adjectives[Math.floor(Math.random() * adjectives.length)]}${exercises[Math.floor(Math.random() * exercises.length)]}`,
+            () => `${exercises[Math.floor(Math.random() * exercises.length)]}${titles[Math.floor(Math.random() * titles.length)]}`,
+            () => `${adjectives[Math.floor(Math.random() * adjectives.length)]}${animals[Math.floor(Math.random() * animals.length)]}`,
+            () => `${animals[Math.floor(Math.random() * animals.length)]}${titles[Math.floor(Math.random() * titles.length)]}`,
+            () => `운동${animals[Math.floor(Math.random() * animals.length)]}`,
+            () => `헬시${animals[Math.floor(Math.random() * animals.length)]}`
+        ];
+
+        const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+        return randomPattern();
+    }
+
+    // ===== 페이지 로드 시 실행 =====
     document.addEventListener('DOMContentLoaded', function() {
         const nameRegex = /^[가-힣a-zA-Z]{2,}$/;
 

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="emailVerification">
+
+    <!-- ==================== 프로시저 방식 ==================== -->
+    <!-- 인증번호 저장 프로시저 호출 -->
+    <parameterMap id="saveVerificationCodeParams" type="java.util.HashMap">
+        <parameter property="memberId" jdbcType="VARCHAR" mode="IN"/>
+        <parameter property="code" jdbcType="VARCHAR" mode="OUT"/>
+        <parameter property="result" jdbcType="NUMERIC" mode="OUT"/>
+    </parameterMap>
+
+    <!-- 인증번호 확인 프로시저 호출 -->
+    <parameterMap id="verifyCodeParams" type="java.util.HashMap">
+        <parameter property="memberId" jdbcType="VARCHAR" mode="IN"/>
+        <parameter property="code" jdbcType="VARCHAR" mode="IN"/>
+        <parameter property="result" jdbcType="NUMERIC" mode="OUT"/>
+        <parameter property="message" jdbcType="VARCHAR" mode="OUT"/>
+    </parameterMap>
+
+    <!-- 1. 인증번호 생성 및 저장 (프로시저 호출) -->
+    <select id="saveVerificationCode"
+            parameterMap="saveVerificationCodeParams"
+            statementType="CALLABLE">
+        {call SP_SAVE_VERIFICATION_CODE(?, ?, ?)}
+    </select>
+
+    <!-- 2. 인증번호 확인 (프로시저 호출) -->
+    <select id="verifyCode"
+            parameterMap="verifyCodeParams"
+            statementType="CALLABLE">
+        {call SP_VERIFY_CODE(?, ?, ?, ?)}
+    </select>
+
+    <!-- ==================== 일반 쿼리 방식 ==================== -->
+    <!-- 기존 인증번호 삭제 -->
+    <delete id="deleteExistingCode" parameterType="map">
+        DELETE FROM EMAIL_VERIFICATION
+        WHERE MEMBER_ID = #{memberId}
+    </delete>
+
+    <!-- 새 인증번호 저장 -->
+    <insert id="insertVerificationCode" parameterType="map">
+        INSERT INTO EMAIL_VERIFICATION (
+        VERIFICATION_ID,
+        MEMBER_ID,
+        VERIFICATION_CODE,
+        CREATED_DATE,
+        EXPIRE_DATE
+        ) VALUES (
+        SEQ_EMAIL_VERIFICATION.nextval,
+        #{memberId},
+        #{code},
+        SYSDATE,
+        SYSDATE + (5/24/60)  <!-- Oracle에서 5분을 더하는 다른 방법 -->
+        )
+    </insert>
+
+    <!-- 만료된 인증번호 삭제 -->
+    <delete id="deleteExpiredCodes">
+        DELETE FROM EMAIL_VERIFICATION
+        WHERE SYSDATE > EXPIRE_DATE
+    </delete>
+
+    <!-- 유효한 인증번호 개수 확인 -->
+    <select id="countValidCode" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM EMAIL_VERIFICATION
+        WHERE MEMBER_ID = #{memberId}
+          AND VERIFICATION_CODE = #{verificationCode}
+          AND EXPIRE_DATE > SYSDATE
+    </select>
+
+    <!-- 인증 완료된 코드 삭제 -->
+    <delete id="deleteVerifiedCode" parameterType="map">
+        DELETE FROM EMAIL_VERIFICATION
+        WHERE MEMBER_ID = #{memberId}
+          AND VERIFICATION_CODE = #{verificationCode}
+    </delete>
+
+</mapper>

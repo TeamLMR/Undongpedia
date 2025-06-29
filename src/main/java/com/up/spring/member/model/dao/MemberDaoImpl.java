@@ -10,4 +10,14 @@ public class MemberDaoImpl implements MemberDao {
     public Member searchById(SqlSession session, String memberId) {
         return session.selectOne("member.searchById", memberId);
     }
+
+    @Override
+    public int saveMember(SqlSession session, Member member) {
+        return session.insert("member.saveMember", member);
+    }
+
+    @Override
+    public int updateMember(SqlSession session, Member member) {
+        return 0;
+    }
 }

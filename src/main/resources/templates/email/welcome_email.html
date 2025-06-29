@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>운동백과 가입을 축하드립니다!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', 'Ubuntu', 'Malgun Gothic', sans-serif;
+      background-color: #f8f9fa;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .logo-icon {
+      margin-right: 0.75rem;
+      font-size: 36px;
+    }
+    .welcome-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+    .subtitle {
+      font-size: 16px;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+    .content {
+      padding: 2rem;
+    }
+    .greeting {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    .username {
+      color: #007bff;
+      font-weight: 700;
+    }
+    .description {
+      font-size: 16px;
+      color: #6c757d;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .features-section {
+      background-color: #f8f9fa;
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    .features-title {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+    .features-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+    .feature-text {
+      font-size: 15px;
+      color: #495057;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .cta-section {
+      text-align: center;
+      margin: 2.5rem 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      color: white;
+    }
+    .cta-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .cta-button {
+      display: inline-block;
+      background: white;
+      color: #007bff;
+      padding: 0.75rem 2rem;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      color: #007bff;
+      text-decoration: none;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 2rem;
+      text-align: center;
+      font-size: 14px;
+      color: #6c757d;
+      border-top: 1px solid #dee2e6;
+    }
+    .footer-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.5rem;
+      font-size: 16px;
+    }
+    .social-links {
+      margin: 1rem 0;
+    }
+    .social-links a {
+      display: inline-block;
+      margin: 0 0.5rem;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .social-links a:hover {
+      color: #0056b3;
+    }
+    .unsubscribe {
+      font-size: 12px;
+      color: #999;
+      margin-top: 1rem;
+    }
+    .unsubscribe a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="welcome-badge">🎉 회원가입 완료!</div>
+    <div class="logo">
+      <span class="logo-icon">🏋️</span>
+      <span>운동백과</span>
+    </div>
+    <div class="subtitle">세상의 모든 운동을 찾아서, 운동 지식을 누구나 쉽게 배우고 실천할 수 있도록 돕습니다.</div>
+  </div>
+
+  <div class="content">
+    <h1 class="greeting">환영합니다, <span class="username">{USER_NAME}</span>님!</h1>
+
+    <p class="description">
+      운동백과의 새로운 멤버가 되신 것을 진심으로 축하드립니다.<br>
+      이제 다양한 운동 클래스와 전문 강사들과 함께<br>
+      건강하고 활기찬 라이프스타일을 시작하실 수 있습니다.
+    </p>
+
+    <div class="features-section">
+      <h2 class="features-title">🎯 운동백과에서 할 수 있는 것들</h2>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">📚</div>
+          <div class="feature-text">전문 강사진의 다양한 운동 클래스 수강</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💪</div>
+          <div class="feature-text">개인 맞춤형 운동 프로그램 제공</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div class="feature-text">운동 기록 및 진행상황 관리</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">👥</div>
+          <div class="feature-text">운동 커뮤니티 참여 및 정보 공유</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🎯</div>
+          <div class="feature-text">전문가 상담 및 운동 팁 제공</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <div class="cta-title">지금 바로 시작해보세요!</div>
+      <a href="{WEBSITE_URL}" class="cta-button">운동백과 둘러보기 🚀</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-title">운동백과</div>
+    <div>대한민국 서울특별시 금천구 벚꽃로266</div>
+    <div class="contact-info">
+      <div class="contact-title">고객센터 문의</div>
+      <div><strong>📞 02-1234-5678</strong></div>
+      <div><strong>📧 jummech@undong.co.kr</strong></div>
+      <div>운영시간: 월-금 09:00~18:00 / 토 10:00~16:00 / 일 휴무</div>
+    </div>
+    <<div>이 이메일은 발신전용입니다. 문의사항은 고객센터를 이용해주세요.</div>
+    <div style="color: #999; margin-top: 1rem; font-size: 12px;">
+      © 2025 운동백과. All rights reserved.
+    </div>
+  </div>
+</div>
+</body>
+</html>
