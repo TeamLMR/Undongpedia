@@ -1,5 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+<!-- 로그인 사용자 정보 가져오기 -->
+<c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
+
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 
 <!-- Flatpickr CSS -->
@@ -842,7 +846,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         if (availableDate) {
                             // 예약 가능한 날짜에 표시
-                            dayElem.innerHTML += `<span class="available-slots">\${availableDate.totalSlots}</span>`;
+                            // dayElem.innerHTML += `<span class="available-slots">\${availableDate.totalSlots}</span>`;
                             
                             // 예약 가능한 좌석 수에 따라 스타일 다르게 적용
                             if (availableDate.availableSlots === 0) {
@@ -1063,25 +1067,382 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify(data)
         })
         .then(response => response.json())
-                 .then(result => {
-             if (result.success) {
-                 alert('강의 예약이 완료되었습니다!');
-                 // 예약 완료 페이지로 이동 또는 상태 업데이트
-                 window.location.href = '/undongpedia/reservation/complete/' + result.reservationId;
-             } else {
-                 alert('강의 예약에 실패했습니다: ' + result.message);
-                 reservationBtn.disabled = false;
-                 reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
-             }
-         })
-                 .catch(error => {
-             console.error('강의 예약 오류:', error);
-             alert('강의 예약 처리 중 오류가 발생했습니다.');
-             reservationBtn.disabled = false;
-             reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
-         });
+        .then(result => {
+            if (result.success) {
+                if (result.queueRequired || result.message.includes('대기열')) {
+                    // 🔥 대기열 필요 → 모달 표시
+                    showQueueModal(data);
+                } else {
+                    // 🔥 바로 예약 성공 → 결제페이지로
+                    alert('강의 예약이 완료되었습니다!');
+                    window.location.href = '/undongpedia/payment/start';
+                }
+            } else {
+                alert('강의 예약에 실패했습니다: ' + result.message);
+                reservationBtn.disabled = false;
+                reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+            }
+        })
+        .catch(error => {
+            console.error('강의 예약 오류:', error);
+            alert('강의 예약 처리 중 오류가 발생했습니다.');
+            reservationBtn.disabled = false;
+            reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+        });
+    }
+
+    // 대기열 관련 변수
+    let queueWebSocket = null;
+    let queueHeartbeatInterval = null;
+    let currentCourseSeq = null;
+    let currentScheduleId = null;
+    let currentMemberNo = null;
+
+    // 대기열 모달 표시
+    function showQueueModal(reservationData) {
+        currentCourseSeq = reservationData.courseSeq;
+        currentScheduleId = reservationData.scheduleId;
+        // 🔥 실제 로그인 사용자 정보 사용
+        const loginMemberNo = '${loginMember.memberNo}';
+        if (loginMemberNo && loginMemberNo !== '' && loginMemberNo !== 'null') {
+            currentMemberNo = parseInt(loginMemberNo);
+            console.log('✅ 로그인 사용자 - memberNo:', currentMemberNo);
+        } else {
+            // 비로그인 사용자 - 세션 스토리지에서 임시 ID 사용
+            let tempMemberNo = sessionStorage.getItem('temp_member_no');
+            if (!tempMemberNo) {
+                tempMemberNo = parseInt(Date.now().toString().slice(-6) + Math.floor(Math.random() * 999).toString().padStart(3, '0'));
+                sessionStorage.setItem('temp_member_no', tempMemberNo);
+            }
+            currentMemberNo = parseInt(tempMemberNo);
+            console.log('🆔 비로그인 사용자 - 임시 memberNo:', currentMemberNo);
+        }
+        
+        // 모달 표시
+        const modal = new bootstrap.Modal(document.getElementById('queueModal'));
+        modal.show();
+        
+        // 웹소켓 연결
+        connectQueueWebSocket();
+        
+        // 하트비트 시작
+        startQueueHeartbeat();
+        
+        // 첫 상태 조회
+        checkModalQueueStatus();
+    }
+
+    // 대기열 웹소켓 연결
+    function connectQueueWebSocket() {
+        if (queueWebSocket && queueWebSocket.readyState === WebSocket.OPEN) {
+            return; // 이미 연결됨
+        }
+        
+        updateModalConnectionStatus('connecting');
+        
+        try {
+            // courseSeq 값 검증
+            if (!currentCourseSeq || currentCourseSeq === 'undefined' || currentCourseSeq === 'null') {
+                console.error('❌ currentCourseSeq 값이 유효하지 않습니다:', currentCourseSeq);
+                updateModalConnectionStatus('disconnected');
+                return;
+            }
+            
+            // 🔥 JSP EL을 별도 변수로 처리하여 URL 파싱 오류 방지
+            const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+            const wsUrl = 'ws://' + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(currentCourseSeq);
+            console.log('🔌 대기열 WebSocket 연결 시도:', wsUrl);
+            console.log('📋 변수값 확인 - host:', window.location.host, 'contextPath:', contextPath, 'currentCourseSeq:', currentCourseSeq);
+            
+            queueWebSocket = new WebSocket(wsUrl);
+            
+            queueWebSocket.onopen = function() {
+                console.log('✅ 대기열 웹소켓 연결 성공');
+                updateModalConnectionStatus('connected');
+            };
+            
+            queueWebSocket.onmessage = function(event) {
+                const queueData = JSON.parse(event.data);
+                console.log('📨 대기열 웹소켓 메시지:', queueData);
+                updateModalQueueUI(queueData);
+            };
+            
+            queueWebSocket.onclose = function(event) {
+                console.log('❌ 대기열 웹소켓 연결 종료 - 코드:', event.code, '이유:', event.reason);
+                updateModalConnectionStatus('disconnected');
+                // 재연결 시도
+                setTimeout(connectQueueWebSocket, 3000);
+            };
+            
+            queueWebSocket.onerror = function(error) {
+                console.error('🚨 대기열 웹소켓 오류:', error);
+                updateModalConnectionStatus('disconnected');
+            };
+            
+        } catch (error) {
+            console.error('🚨 대기열 웹소켓 연결 실패:', error);
+            updateModalConnectionStatus('disconnected');
+        }
+    }
+
+    // 모달 연결 상태 업데이트
+    function updateModalConnectionStatus(status) {
+        const dot = document.getElementById('modalConnectionDot');
+        const text = document.getElementById('modalConnectionText');
+        
+        if (dot && text) {
+            dot.className = 'connection-dot ' + status;
+            
+            switch(status) {
+                case 'connected':
+                    text.textContent = '연결됨';
+                    break;
+                case 'connecting':
+                    text.textContent = '연결 중...';
+                    break;
+                case 'disconnected':
+                    text.textContent = '연결끊김';
+                    break;
+            }
+        }
+    }
+
+    // 모달 대기열 UI 업데이트
+    function updateModalQueueUI(queueData) {
+        // 현재 순서
+        const positionEl = document.getElementById('modalPosition');
+        if (positionEl) positionEl.textContent = queueData.position || '-';
+        
+        // 총 대기인원
+        const totalEl = document.getElementById('modalTotalWaiting');
+        if (totalEl) totalEl.textContent = queueData.totalInQueue + '명' || '-';
+        
+        // 예상 대기시간
+        const estimatedMinutes = Math.ceil((queueData.estimatedTime || 0) / 60);
+        const timeEl = document.getElementById('modalEstimatedTime');
+        if (timeEl) timeEl.textContent = estimatedMinutes + '분';
+        
+        // 진행률 업데이트
+        const progress = queueData.totalInQueue > 0 ? 
+            ((queueData.totalInQueue - queueData.position + 1) / queueData.totalInQueue) * 100 : 0;
+        const progressEl = document.getElementById('modalProgress');
+        if (progressEl) progressEl.style.width = progress + '%';
+        
+        // 상태 메시지 및 자동 처리
+        const statusMsg = document.getElementById('modalStatusMessage');
+        if (statusMsg) {
+            if (queueData.position === 1) {
+                statusMsg.className = 'alert alert-success';
+                statusMsg.innerHTML = '순서가 되었습니다! 예약을 진행합니다...';
+                
+                // 🔥 2초 후 실제 예약 진행
+                setTimeout(function() {
+                    proceedToActualReservation();
+                }, 2000);
+                
+            } else {
+                statusMsg.className = 'alert alert-info';
+                statusMsg.innerHTML = queueData.position + '번째 순서입니다. 잠시만 기다려주세요.';
+            }
+        }
+    }
+
+    // 대기열 하트비트
+    function startQueueHeartbeat() {
+        queueHeartbeatInterval = setInterval(function() {
+            const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+            fetch(contextPath + '/reservation/heartbeat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseSeq: currentCourseSeq,
+                    memberNo: currentMemberNo
+                })
+            }).catch(error => console.error('대기열 하트비트 실패:', error));
+        }, 5000);
+    }
+
+    // 🔥 모달 스케줄 대기열 상태 확인
+    function checkModalQueueStatus() {
+        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+        fetch(contextPath + '/reservation/schedule-queue-status/' + currentCourseSeq + '/' + currentScheduleId + '?memberNo=' + currentMemberNo)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.userPosition && data.userPosition.success) {
+                    updateModalQueueUI(data.userPosition.data);
+                }
+            })
+            .catch(error => console.error('모달 대기열 상태 조회 실패:', error));
+    }
+
+    // 실제 예약 진행
+    function proceedToActualReservation() {
+        // 모달 닫기
+        const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+        if (modal) modal.hide();
+        
+        // 웹소켓 연결 해제
+        if (queueWebSocket) {
+            queueWebSocket.close();
+        }
+        
+        // 하트비트 정지
+        if (queueHeartbeatInterval) {
+            clearInterval(queueHeartbeatInterval);
+        }
+        
+        // 🔥 실제 예약 처리 (대기열 없이)
+        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+        fetch(contextPath + '/reservation/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                courseSeq: currentCourseSeq,
+                scheduleId: currentScheduleId,
+                memberNo: currentMemberNo,
+                skipQueue: true  // 대기열 스킵 플래그
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 결제 페이지로 이동
+                window.location.href = contextPath + '/payment/start';
+            } else {
+                alert('예약 처리 실패: ' + data.message);
+            }
+        });
+    }
+
+    // 대기열 나가기
+    function leaveQueue() {
+        if (confirm('대기열에서 나가시겠습니까?')) {
+            // 웹소켓 연결 해제
+            if (queueWebSocket) {
+                queueWebSocket.close();
+            }
+            
+            // 하트비트 정지
+            if (queueHeartbeatInterval) {
+                clearInterval(queueHeartbeatInterval);
+            }
+            
+            // 🔥 스케줄 대기열 이탈 알림
+            const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+            fetch(contextPath + '/reservation/leave-schedule-queue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseSeq: currentCourseSeq,
+                    scheduleId: currentScheduleId,
+                    memberNo: currentMemberNo
+                })
+            });
+            
+            // 모달 닫기
+            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+            if (modal) modal.hide();
+        }
     }
 });
 </script>
+
+<!-- 🔥 대기열 모달 -->
+<div class="modal fade" id="queueModal" tabindex="-1" aria-labelledby="queueModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="queueModalLabel">
+                    <i class="bi bi-people"></i> 대기열
+                </h5>
+                <!-- 연결 상태 표시 -->
+                <div class="ms-auto me-3">
+                    <span id="modalConnectionDot" class="connection-dot connecting"></span>
+                    <small id="modalConnectionText">연결 중...</small>
+                </div>
+            </div>
+            <div class="modal-body text-center py-4">
+                <!-- 현재 순서 -->
+                <div class="mb-4">
+                    <div class="queue-position display-4 fw-bold text-primary" id="modalPosition">-</div>
+                    <p class="text-muted mb-0">현재 순서</p>
+                </div>
+
+                <!-- 진행률 바 -->
+                <div class="progress mb-4" style="height: 8px;">
+                    <div id="modalProgress" class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                         style="width: 0%"></div>
+                </div>
+
+                <!-- 대기 정보 -->
+                <div class="row text-center mb-4">
+                    <div class="col-6">
+                        <h5 id="modalTotalWaiting" class="text-primary">-</h5>
+                        <small class="text-muted">총 대기</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 id="modalEstimatedTime" class="text-primary">-</h5>
+                        <small class="text-muted">예상시간</small>
+                    </div>
+                </div>
+
+                <!-- 상태 메시지 -->
+                <div id="modalStatusMessage" class="alert alert-info">
+                    대기열 상태를 확인하고 있습니다...
+                </div>
+
+                <!-- 안내 문구 -->
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    창을 닫으면 대기열에서 제외됩니다
+                </small>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" onclick="leaveQueue()">
+                    <i class="bi bi-x-circle"></i> 대기열 나가기
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.connection-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.connection-dot.connected { 
+    background-color: #28a745; 
+    animation: pulse 2s infinite;
+}
+
+.connection-dot.disconnected { 
+    background-color: #dc3545; 
+}
+
+.connection-dot.connecting { 
+    background-color: #ffc107; 
+    animation: blink 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+.queue-position {
+    font-size: 3rem !important;
+}
+</style>
 
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>

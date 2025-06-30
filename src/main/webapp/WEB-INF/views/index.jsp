@@ -44,12 +44,15 @@
                                                 <span class="btn btn-primary btn-sm">최대 ${event.maxConcurrentUsers}명</span>
                                             </div>
 
-                                            <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${event.courseSeq}" 
-                                               class="btn btn-light btn-lg px-5 py-3 fw-bold text-primary">
+                                            <button type="button" 
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold text-primary event-btn"
+                                               data-course-seq="${event.courseSeq}"
+                                               data-open-time="${event.openDateTime.time}"
+                                               onclick="handleEventButtonClick(this)">
                                                 <span class="countdown-timer" data-open-time="${event.openDateTime.time}">
                                                     오픈까지 계산중...
                                                 </span>
-                                            </a>
+                                            </button>
                                         </div>
 
                                         <!-- 이미지 -->
@@ -138,9 +141,10 @@
             const distance = openTime - now;
             
             if (distance < 0) {
-                element.innerHTML = "🎉 오픈됨!";
+                element.innerHTML = "예약하러 가기";
                 element.parentElement.classList.remove('btn-light');
-                element.parentElement.classList.add('btn-success');
+                element.parentElement.classList.add('btn-light');
+                element.parentElement.setAttribute('data-is-open', 'true');
                 return;
             }
             
@@ -150,7 +154,44 @@
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
             
             element.innerHTML = `⏰ \${days}일 \${hours.toString().padStart(2, '0')}:\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}`;
+            element.parentElement.setAttribute('data-is-open', 'false');
         }
+        
+        // 이벤트 버튼 클릭 핸들러
+        function handleEventButtonClick(button) {
+            const openTime = parseInt(button.getAttribute('data-open-time'));
+            const courseSeq = button.getAttribute('data-course-seq');
+            const now = new Date().getTime();
+            const isOpen = button.getAttribute('data-is-open') === 'true';
+            
+            if (isOpen || (openTime && openTime <= now)) {
+                // 오픈된 경우 -> 예약 페이지로 이동
+                window.location.href = contextPath + '/reservation/queue/' + courseSeq;
+            } else {
+                // 오픈 전인 경우 -> 모달 띄우기
+                showPreOpenModal(openTime);
+            }
+        }
+        
+        // 오픈 전 모달 표시
+        function showPreOpenModal(openTime) {
+            const now = new Date().getTime();
+            const distance = openTime - now;
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            const timeText = days + '일 ' + hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+            
+            document.getElementById('preOpenTimeText').textContent = timeText;
+            const modal = new bootstrap.Modal(document.getElementById('preOpenModal'));
+            modal.show();
+        }
+        
+        // contextPath 설정
+        const contextPath = '${pageContext.request.contextPath}';
     </script>
     <!-- /Hero Section -->
     <!-- 필터 바 -->
@@ -361,5 +402,42 @@
     </script>
 
 </main>
+
+<!-- 이벤트 오픈 전 모달 -->
+<div class="modal fade" id="preOpenModal" tabindex="-1" aria-labelledby="preOpenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="preOpenModalLabel">
+                    <i class="bi bi-clock-fill me-2"></i>이벤트 오픈 전입니다
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="bi bi-hourglass-split display-1 text-primary"></i>
+                </div>
+                <h4 class="fw-bold mb-3">아직이지롱~</h4>
+                <p class="text-muted mb-4">선착순 이벤트가 아직 시작되지 않았습니다.<br>조금만 더 기다려주세요!</p>
+                
+                <div class="alert alert-info d-flex align-items-center justify-content-center">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>오픈까지 남은 시간: <span id="preOpenTimeText" class="text-primary"></span></strong>
+                </div>
+                
+                <p class="small text-muted">
+                    ⏰ 정확한 시간에 자동으로 오픈됩니다<br>
+                    📱 페이지를 새로고침하지 마시고 기다려주세요
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-check-circle me-1"></i>확인
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>
 

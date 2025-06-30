@@ -44,15 +44,10 @@ public class MainController {
         model.addAttribute("courseList", courseList);
         
         // 활성화된 이벤트 강의 조회
+
         List<EventCourse> eventCourses = mainService.getActiveEventCourses();
-        log.debug("조회된 이벤트 강의 수: {}", eventCourses != null ? eventCourses.size() : 0);
-        if (eventCourses != null && !eventCourses.isEmpty()) {
-            log.debug("첫 번째 이벤트 강의: {}", eventCourses.get(0));
-        } else {
-            log.debug("이벤트 강의가 없습니다.");
-        }
         model.addAttribute("eventCourses", eventCourses);
-        
+        log.info("{},{}", eventCourses,eventCourses.size());
         return "/index";
     }
 

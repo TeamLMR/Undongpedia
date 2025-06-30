@@ -24,7 +24,7 @@ public class QueueSchedulerService {
 
     // 자동 대기열 (5초)
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 1000*60*60)
     public void processAllQueues() {
 //        log.debug("==대기열 처리 시작==");
         Set<String> activeCourses = getActiveCoursesWithHeartbeat();

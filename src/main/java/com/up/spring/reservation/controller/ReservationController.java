@@ -4,6 +4,7 @@ import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.CourseSchedule;
 import com.up.spring.course.model.service.CourseService;
 import com.up.spring.course.model.service.CourseScheduleService;
+import com.up.spring.reservation.service.CourseReservationConfigService;
 import com.up.spring.reservation.service.ReservationRedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class ReservationController {
     private final CourseScheduleService courseScheduleService;
     private final ReservationRedisService reservationRedisService;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CourseReservationConfigService courseReservationConfigService;
 
     @GetMapping("/{courseSeq}")
     public String reservationPage(@PathVariable Long courseSeq, Model model) {
@@ -253,8 +255,8 @@ public class ReservationController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> heartbeat(@RequestBody Map<String, Object> data) {
         try {
-            Long courseSeq = (Long) data.get("courseSeq");
-            int memberNo = (Integer) data.get("memberNo");
+            Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
+            int memberNo = Integer.valueOf(data.get("memberNo").toString());
 
             reservationRedisService.updateHeartBeat(courseSeq, memberNo);
 
@@ -277,23 +279,56 @@ public class ReservationController {
         }
     }
 
-    @PostMapping("/leave")
+    /**
+     * 🔥 코스 대기열 이탈
+     */
+    @PostMapping("/leave-course-queue")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> leavePage(@RequestBody Map<String, Object> data) {
+    public ResponseEntity<Map<String, Object>> leaveCourseQueue(@RequestBody Map<String, Object> data) {
         try{
-            Long courseSeq = (Long) data.get("courseSeq");
-            int memberNo = (Integer) data.get("memberNo");
+            Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
+            int memberNo = Integer.valueOf(data.get("memberNo").toString());
 
-            reservationRedisService.removeFromQueue(courseSeq, memberNo);
+            reservationRedisService.removeFromCourseQueue(courseSeq, memberNo);
 
-            log.info("사용자 이탈 강의{}, 사용자{}", courseSeq, memberNo);
+            log.info("코스 대기열 이탈 - 강의{}, 사용자{}", courseSeq, memberNo);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             return ResponseEntity.ok(response);
         }catch (Exception e){
-            log.error("페이지 이탈 실패", e);
+            log.error("코스 대기열 이탈 실패", e);
             return ResponseEntity.ok(Map.of("success", false));
         }
+    }
+
+    /**
+     * 🔥 스케줄 대기열 이탈
+     */
+    @PostMapping("/leave-schedule-queue")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> leaveScheduleQueue(@RequestBody Map<String, Object> data) {
+        try{
+            Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
+            Long scheduleId = Long.valueOf(data.get("scheduleId").toString());
+            int memberNo = Integer.valueOf(data.get("memberNo").toString());
+
+            reservationRedisService.removeFromScheduleQueue(courseSeq, scheduleId, memberNo);
+
+            log.info("스케줄 대기열 이탈 - 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        }catch (Exception e){
+            log.error("스케줄 대기열 이탈 실패", e);
+            return ResponseEntity.ok(Map.of("success", false));
+        }
+    }
+
+    @PostMapping("/leave")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> leavePage(@RequestBody Map<String, Object> data) {
+        // 하위 호환성을 위해 유지 - 코스 대기열로 리다이렉트
+        return leaveCourseQueue(data);
     }
 
 
@@ -347,8 +382,20 @@ public class ReservationController {
             @RequestBody Map<String, Object> reservationData) {
 
         try {
-            // memberNo 추가 (세션에서 가져와야 함 - 임시로 테스트용)
+            // 🔥 memberNo 처리 - 로그인 사용자 또는 임시 ID
             if (!reservationData.containsKey("memberNo")) {
+                // TODO: Spring Security에서 실제 로그인 사용자 정보 가져오기
+                // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                // if (auth != null && auth.getPrincipal() instanceof MemberDetails) {
+                //     MemberDetails memberDetails = (MemberDetails) auth.getPrincipal();
+                //     reservationData.put("memberNo", memberDetails.getMemberNo());
+                // } else {
+                //     // 비로그인 사용자 - 에러 처리
+                //     return ResponseEntity.ok(Map.of("success", false, "message", "로그인이 필요합니다."));
+                // }
+                
+                // 테스트용 임시 처리
+                log.warn("⚠️ memberNo가 없어 임시로 생성합니다. 실제 서비스에서는 로그인 체크 필요!");
                 reservationData.put("memberNo", (int)(System.currentTimeMillis() % 1000));
             }
 
@@ -373,15 +420,15 @@ public class ReservationController {
     }
 
     /**
-     * 대기열 상태 조회
+     * 🔥 코스 대기열 상태 조회 (이벤트 강의 진입용)
      */
     @GetMapping("/queue-status/{courseSeq}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getQueueStatus(@PathVariable Long courseSeq, @RequestParam int memberNo) {
         try {
             
-            // 현재 사용자의 대기열 위치
-            Map<String, Object> queuePosition = reservationRedisService.getQueuePosition(courseSeq, memberNo);
+            // 현재 사용자의 대기열 위치 (코스 레벨)
+            Map<String, Object> queuePosition = reservationRedisService.getCourseQueuePosition(courseSeq, memberNo);
             
             // 활성 사용자 수
             Long activeMembers = reservationRedisService.getActiveMemberCount(courseSeq);
@@ -391,6 +438,7 @@ public class ReservationController {
             response.put("userPosition", queuePosition);
             response.put("activeMembers", activeMembers);
             response.put("queueActive", reservationRedisService.shouldActivateQueue(courseSeq));
+            response.put("queueType", "COURSE");
             
             return ResponseEntity.ok(response);
             
@@ -400,6 +448,108 @@ public class ReservationController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "대기열 상태 조회 실패");
+            
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * 🔥 스케줄 대기열 상태 조회 (예약 모달용)
+     */
+    @GetMapping("/schedule-queue-status/{courseSeq}/{scheduleId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getScheduleQueueStatus(
+            @PathVariable Long courseSeq, 
+            @PathVariable Long scheduleId, 
+            @RequestParam int memberNo) {
+        try {
+            
+            // 현재 사용자의 대기열 위치 (스케줄 레벨)
+            Map<String, Object> queuePosition = reservationRedisService.getScheduleQueuePosition(courseSeq, scheduleId, memberNo);
+            
+            // 활성 사용자 수
+            Long activeMembers = reservationRedisService.getActiveMemberCount(courseSeq);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("userPosition", queuePosition);
+            response.put("activeMembers", activeMembers);
+            response.put("queueActive", reservationRedisService.shouldActivateQueue(courseSeq));
+            response.put("queueType", "SCHEDULE");
+            response.put("scheduleId", scheduleId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("스케줄 대기열 상태 조회 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "스케줄 대기열 상태 조회 실패");
+            
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * 🔥 코스 대기열 추가 (이벤트 강의 진입용)
+     */
+    @PostMapping("/join-course-queue")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> joinCourseQueue(@RequestBody Map<String, Object> data) {
+        try {
+            Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
+            int memberNo = Integer.valueOf(data.get("memberNo").toString());
+            
+            // 하트비트 업데이트
+            reservationRedisService.updateHeartBeat(courseSeq, memberNo);
+            
+            // 코스 대기열에 추가
+            Map<String, Object> result = reservationRedisService.addToCourseQueue(courseSeq, memberNo);
+            
+            log.info("🎯 코스 대기열 추가 요청 - courseSeq: {}, memberNo: {}", courseSeq, memberNo);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("코스 대기열 추가 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "코스 대기열 추가 실패: " + e.getMessage());
+            
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    /**
+     * 🔥 스케줄 대기열 추가 (예약 모달용)
+     */
+    @PostMapping("/join-schedule-queue")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> joinScheduleQueue(@RequestBody Map<String, Object> data) {
+        try {
+            Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
+            Long scheduleId = Long.valueOf(data.get("scheduleId").toString());
+            int memberNo = Integer.valueOf(data.get("memberNo").toString());
+            
+            // 하트비트 업데이트
+            reservationRedisService.updateHeartBeat(courseSeq, memberNo);
+            
+            // 스케줄 대기열에 추가
+            Map<String, Object> result = reservationRedisService.addToScheduleQueue(courseSeq, scheduleId, memberNo);
+            
+            log.info("📅 스케줄 대기열 추가 요청 - courseSeq: {}, scheduleId: {}, memberNo: {}", 
+                courseSeq, scheduleId, memberNo);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("스케줄 대기열 추가 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "스케줄 대기열 추가 실패: " + e.getMessage());
             
             return ResponseEntity.ok(response);
         }
@@ -482,5 +632,21 @@ public class ReservationController {
         }
     }
 
+    @GetMapping("/queue/{courseSeq}")
+    public String queuePage(@PathVariable Long courseSeq, Model model) {
+            log.info("예약페이지 이동{}", courseSeq);
+        if(!courseReservationConfigService.isEventCourse(courseSeq)) {
+            return "redirect:/reservation/"+courseSeq;
+        }
+        if (!courseReservationConfigService.isOpenTime(courseSeq)) {
+            log.info("강의 {} - 아직 오픈 시간이 아님, 메인페이지로 리다이렉트", courseSeq);
+            return "redirect:/";
+        }
+        model.addAttribute("courseSeq", courseSeq);
+        Course course= courseService.searchById(courseSeq);
+        model.addAttribute("course", course);
+
+        return "reservation/queue-waiting";
+    }
 
 }

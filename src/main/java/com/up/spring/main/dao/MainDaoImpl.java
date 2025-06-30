@@ -28,8 +28,6 @@ public class MainDaoImpl implements MainDao {
 
     @Override
     public List<EventCourse> getActiveEventCourses(SqlSession session) {
-        List<EventCourse> result = session.selectList("getActiveEventCourses");
-        System.out.println("DAO에서 조회된 이벤트 강의 수: " + (result != null ? result.size() : 0));
-        return result;
+        return session.selectList("getActiveEventCourses");
     }
 }
