@@ -2,6 +2,7 @@ package com.up.spring.main.controller;
 
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
+import com.up.spring.main.dto.EventCourse;
 import com.up.spring.main.service.MainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,17 @@ public class MainController {
         params.put("numPerPage", numPerPage);
         List<Course> courseList = mainService.getCourseList(params);
         model.addAttribute("courseList", courseList);
+        
+        // 활성화된 이벤트 강의 조회
+        List<EventCourse> eventCourses = mainService.getActiveEventCourses();
+        log.debug("조회된 이벤트 강의 수: {}", eventCourses != null ? eventCourses.size() : 0);
+        if (eventCourses != null && !eventCourses.isEmpty()) {
+            log.debug("첫 번째 이벤트 강의: {}", eventCourses.get(0));
+        } else {
+            log.debug("이벤트 강의가 없습니다.");
+        }
+        model.addAttribute("eventCourses", eventCourses);
+        
         return "/index";
     }
 

@@ -2,6 +2,7 @@ package com.up.spring.main.dao;
 
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
+import com.up.spring.main.dto.EventCourse;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
@@ -23,5 +24,12 @@ public class MainDaoImpl implements MainDao {
         RowBounds rowBounds = new RowBounds(((cPage-1)*numPerPage), numPerPage);
 
         return session.selectList("getCourseList", params, rowBounds);
+    }
+
+    @Override
+    public List<EventCourse> getActiveEventCourses(SqlSession session) {
+        List<EventCourse> result = session.selectList("getActiveEventCourses");
+        System.out.println("DAO에서 조회된 이벤트 강의 수: " + (result != null ? result.size() : 0));
+        return result;
     }
 }

@@ -10,85 +10,83 @@
     <section id="hero" class="hero bg-dark bg-gradient text-white border-top" style="padding-top: 3rem; padding-bottom: 3rem;">
         <div class="swiper init-swiper">
             <div class="swiper-wrapper">
+                <c:choose>
+                    <c:when test="${not empty eventCourses}">
+                        <!-- 실제 이벤트 강의 데이터 -->
+                        <c:forEach var="event" items="${eventCourses}">
+                            <div class="swiper-slide">
+                                <div class="container py-2">
+                                    <div class="row align-items-center text-center text-lg-start g-3">
+                                        <!-- 텍스트 -->
+                                        <div class="col-lg-6">
+                                            <p class="text-uppercase text-light small mb-2">🔥 [선착순 EVENT]</p>
+                                            <h2 class="fw-bold display-6 mb-3 text-light">${event.courseTitle}</h2>
+                                            <p class="text-secondary mb-4">${event.courseContent}</p>
 
-                <!-- 슬라이드 1 -->
-                <div class="swiper-slide">
-                    <div class="container py-2">
-                        <div class="row align-items-center text-center text-lg-start g-3 ">
+                                            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                                                <span class="fw-bold fs-4 text-white">₩<fmt:formatNumber type="number" maxFractionDigits="3" value="${event.discountedPrice}"/></span>
+                                                <c:if test="${event.courseDiscount > 0}">
+                                                    <span class="text-primary text-decoration-line-through fs-6">₩<fmt:formatNumber type="number" maxFractionDigits="3" value="${event.coursePrice}"/></span>
+                                                    <span class="badge bg-primary text-white">${event.courseDiscount}% 할인</span>
+                                                </c:if>
+                                            </div>
 
-                            <!-- 텍스트 -->
-                            <div class="col-lg-6">
-                                <p class="text-uppercase text-light small mb-2">🔥 [선착순]</p>
-                                <h2 class="fw-bold display-6 mb-3 text-light">자세 교정, 지금 시작하세요</h2>
-                                <p class="text-secondary mb-4">10만 수강생이 선택한 피지컬 갤러리의 어깨 통증 개선 클래스</p>
+                                            <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+                                                <span class="btn btn-primary btn-sm">${event.cateValue}</span>
+                                                <span class="btn btn-primary btn-sm">
+                                                    <c:choose>
+                                                        <c:when test="${event.courseDifficult == 1}">초급</c:when>
+                                                        <c:when test="${event.courseDifficult == 2}">중급</c:when>
+                                                        <c:when test="${event.courseDifficult == 3}">고급</c:when>
+                                                        <c:otherwise>난이도 ${event.courseDifficult}</c:otherwise>
+                                                    </c:choose>
+                                                </span>
+                                                <span class="btn btn-primary btn-sm">최대 ${event.maxConcurrentUsers}명</span>
+                                            </div>
 
-                                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-                                    <span class="fw-bold fs-4 text-white">₩64,500</span>
-                                    <span class="text-primary text-decoration-line-through fs-6">₩129,000</span>
-                                    <span class="badge bg-primary text-white">50% 할인</span>
+                                            <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${event.courseSeq}" 
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold text-primary">
+                                                <span class="countdown-timer" data-open-time="${event.openDateTime.time}">
+                                                    오픈까지 계산중...
+                                                </span>
+                                            </a>
+                                        </div>
+
+                                        <!-- 이미지 -->
+                                        <div class="col-lg-6 d-flex align-items-center justify-content-center">
+                                            <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
+                                                <img src="${pageContext.request.contextPath}${event.courseThumbnail != null ? event.courseThumbnail : '/resources/images/dummy.webp'}" 
+                                                     class="w-100 h-100 object-fit-cover" alt="${event.courseTitle}">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
-                                    <span class="btn btn-primary btn-sm">재활</span>
-                                    <span class="btn btn-primary btn-sm">자세 교정</span>
-                                    <span class="btn btn-primary btn-sm">초급</span>
-                                    <span class="btn btn-primary btn-sm">⭐ 4.8 (100+ 수강평)</span>
-                                </div>
-
-                                <a href="#" class="btn btn-light btn-lg px-5 py-3 fw-bold text-primary">
-                                    <span>00일:01시:49분:50초</span>
-                                </a>
                             </div>
-
-                            <!-- 이미지 -->
-                            <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                                <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
-                                    <img src="${dummyImg}" class="w-100 h-100 object-fit-cover" alt="강의 이미지">
+                        </c:forEach>
+                    </c:when>
+                    <c:otherwise>
+                        <!-- 기본 더미 슬라이드 (이벤트가 없을 때) -->
+                        <div class="swiper-slide">
+                            <div class="container py-2">
+                                <div class="row align-items-center text-center text-lg-start g-3">
+                                    <div class="col-lg-6">
+                                        <p class="text-uppercase text-light small mb-2">🎯 곧 만나요!</p>
+                                        <h2 class="fw-bold display-6 mb-3 text-light">특별한 이벤트를 준비 중입니다</h2>
+                                        <p class="text-secondary mb-4">더 나은 강의와 혜택으로 찾아뵙겠습니다</p>
+                                        <a href="${pageContext.request.contextPath}/course/list" class="btn btn-light btn-lg px-5 py-3 fw-bold text-primary">
+                                            전체 강의 보기
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-6 d-flex align-items-center justify-content-center">
+                                        <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
+                                            <img src="${dummyImg}" class="w-100 h-100 object-fit-cover" alt="준비중">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- 슬라이드 2: 복사 가능 -->
-                <div class="swiper-slide">
-                    <div class="container py-2">
-                        <div class="row align-items-center text-center text-lg-start g-3 ">
-
-                            <!-- 텍스트 -->
-                            <div class="col-lg-6">
-
-                                <p class="text-uppercase text-light small mb-2">🔥 [선착순]</p>
-                                <h2 class="fw-bold display-6 mb-3 text-light">이벤트 제목</h2>
-                                <p class="text-secondary mb-4">이벤트 설명</p>
-
-                                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-                                    <span class="fw-bold fs-4 text-white">₩0,000</span>
-                                    <span class="text-primary text-decoration-line-through fs-6">₩0,000</span>
-                                    <span class="badge bg-primary text-white">00% 할인</span>
-                                </div>
-
-                                <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
-                                    <span class="btn btn-primary btn-sm">카테고리</span>
-                                    <span class="btn btn-primary btn-sm">난이도</span>
-                                    <span class="btn btn-primary btn-sm">⭐ 0.0 (0+ 수강평)</span>
-                                </div>
-
-                                <a href="#" class="btn btn-light btn-lg px-5 py-3 fw-bold  text-primary">
-                                    <span>00일:00시:00분:00초</span>
-                                </a>
-                            </div>
-
-                            <!-- 이미지 -->
-                            <div class="col-lg-6 d-flex align-items-center justify-content-center">
-                                <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
-                                    <img src="${pageContext.request.contextPath}/resources/images/naver.png" class="img-fluid w-100 h-100 object-fit-cover" alt="강의 이미지">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                    </c:otherwise>
+                </c:choose>
             </div>
 
             <!-- Swiper 버튼 -->
@@ -104,6 +102,7 @@
     </section>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Swiper 초기화
             new Swiper(".init-swiper", {
                 loop: true,
                 speed: 600,
@@ -116,7 +115,42 @@
                     prevEl: ".swiper-button-prev"
                 }
             });
+            
+            // 카운트다운 타이머 초기화
+            initCountdownTimers();
         });
+        
+        function initCountdownTimers() {
+            const timers = document.querySelectorAll('.countdown-timer');
+            
+            timers.forEach(timer => {
+                const openTime = parseInt(timer.getAttribute('data-open-time'));
+                if (openTime) {
+                    updateCountdown(timer, openTime);
+                    // 1초마다 업데이트
+                    setInterval(() => updateCountdown(timer, openTime), 1000);
+                }
+            });
+        }
+        
+        function updateCountdown(element, openTime) {
+            const now = new Date().getTime();
+            const distance = openTime - now;
+            
+            if (distance < 0) {
+                element.innerHTML = "🎉 오픈됨!";
+                element.parentElement.classList.remove('btn-light');
+                element.parentElement.classList.add('btn-success');
+                return;
+            }
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            element.innerHTML = `⏰ \${days}일 \${hours.toString().padStart(2, '0')}:\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}`;
+        }
     </script>
     <!-- /Hero Section -->
     <!-- 필터 바 -->

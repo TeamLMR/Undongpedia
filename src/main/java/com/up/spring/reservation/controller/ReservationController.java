@@ -298,7 +298,7 @@ public class ReservationController {
 
 
     /**
-     * 예약 가능한 스케줄만 조회 API (달력 최적화용)
+     * 예약 가능한 스케줄만 조회 (달력 최적화용)
      */
     @GetMapping("/available-schedules")
     @ResponseBody
@@ -339,7 +339,7 @@ public class ReservationController {
     }
 
     /**
-     * 예약 처리 API
+     * 예약 처리
      */
     @PostMapping("/book")
     @ResponseBody

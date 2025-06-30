@@ -11,6 +11,34 @@
                 </div>
                 <div class="card-body">
                     
+                    <!-- 테스트 설정 추가 -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5><i class="fas fa-cog"></i> 테스트 설정</h5>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label>Course ID:</label>
+                                            <input type="number" id="testCourseSeq" class="form-control" value="20" min="1">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label>Schedule ID:</label>
+                                            <input type="number" id="testScheduleId" class="form-control" value="2" min="1">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label>&nbsp;</label>
+                                            <button class="btn btn-primary form-control" onclick="applyTestSettings()">
+                                                <i class="fas fa-check"></i> 설정 적용
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">현재 테스트 대상: Course <span id="currentCourse">20</span>, Schedule <span id="currentSchedule">2</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- 대기열 상태 요약 -->
                     <div class="row mb-4">
                         <div class="col-md-3">
@@ -113,6 +141,22 @@
 let monitoringInterval;
 let currentInterval = 2000;
 let logCounter = 0;
+let testCourseSeq = 20;  // 기본값을 20으로 설정
+let testScheduleId = 2;   // 기본값을 2로 설정
+
+// 테스트 설정 적용
+function applyTestSettings() {
+    testCourseSeq = parseInt(document.getElementById('testCourseSeq').value);
+    testScheduleId = parseInt(document.getElementById('testScheduleId').value);
+    
+    document.getElementById('currentCourse').textContent = testCourseSeq;
+    document.getElementById('currentSchedule').textContent = testScheduleId;
+    
+    addLog('⚙️ 테스트 설정 변경 - Course: ' + testCourseSeq + ', Schedule: ' + testScheduleId, 'success');
+    
+    // 즉시 상태 업데이트
+    updateQueueStatus();
+}
 
 // 모니터링 시작
 function startMonitoring() {
@@ -125,14 +169,14 @@ function startMonitoring() {
     // 즉시 한번 실행
     updateQueueStatus();
     
-    addLog('🚀 실시간 모니터링 시작', 'info');
+    addLog('🚀 실시간 모니터링 시작 - Course: ' + testCourseSeq, 'info');
 }
 
 // 대기열 상태 업데이트
 async function updateQueueStatus() {
     try {
-        // 🎯 전체 대기열 통계 조회
-        const response = await fetch('/undongpedia/reservation/queue-stats/1');
+        // 🎯 전체 대기열 통계 조회 - 동적 courseSeq 사용
+        const response = await fetch('/undongpedia/reservation/queue-stats/' + testCourseSeq);
         const data = await response.json();
         
         // UI 업데이트
@@ -245,14 +289,17 @@ function addLog(message, type = 'info') {
 
 // 하트비트 전송
 async function sendHeartbeats(count) {
-    addLog('💓 ' + count + '명 하트비트 전송 시작...', 'info');
+    addLog('💓 ' + count + '명 하트비트 전송 시작... (Course: ' + testCourseSeq + ')', 'info');
     
     const promises = [];
     for (let i = 1; i <= count; i++) {
         const promise = fetch('/undongpedia/reservation/heartbeat', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({courseSeq: 1, memberNo: Math.floor(Math.random() * 1000) + 1})
+            body: JSON.stringify({
+                courseSeq: testCourseSeq,  // 동적 courseSeq 사용
+                memberNo: Math.floor(Math.random() * 1000) + 1
+            })
         });
         promises.push(promise);
     }
@@ -267,7 +314,7 @@ async function sendHeartbeats(count) {
 
 // 예약 요청 전송
 async function sendBookingRequests(count) {
-    addLog('🎫 ' + count + '명 예약 요청 전송 시작...', 'info');
+    addLog('🎫 ' + count + '명 예약 요청 전송 시작... (Course: ' + testCourseSeq + ', Schedule: ' + testScheduleId + ')', 'info');
     
     const promises = [];
     for (let i = 1; i <= count; i++) {
@@ -275,8 +322,8 @@ async function sendBookingRequests(count) {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                courseSeq: 1, 
-                scheduleId: 1, 
+                courseSeq: testCourseSeq,     // 동적 courseSeq 사용
+                scheduleId: testScheduleId,   // 동적 scheduleId 사용
                 memberNo: Math.floor(Math.random() * 1000) + 1
             })
         });

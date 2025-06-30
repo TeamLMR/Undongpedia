@@ -2,6 +2,7 @@ package com.up.spring.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -12,6 +13,7 @@ import java.util.Properties;
 
 @Configuration //설정클래스를 선언하는 어노테이션 == springbean-configuration.xml
 @EnableWebMvc //mvc:annotation-driven 설정과 동일
+@EnableScheduling
 public class MyWebAppConfig implements WebMvcConfigurer {
 //    화면전환용 매핑메소드 한번에 적용하기
     @Override

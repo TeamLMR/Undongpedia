@@ -27,6 +27,36 @@
         <result column="MEMBER_NICKNAME" property="memberNickname"/>
         <result column="CATE_VALUE" property="cateValue"/>
     </resultMap>
+    
+    <resultMap type="com.up.spring.main.dto.EventCourse" id="eventCourseMap">
+        <!-- Course 정보 -->
+        <id column="COURSE_SEQ" property="courseSeq"/>
+        <result column="COURSE_TITLE" property="courseTitle"/>
+        <result column="COURSE_CONTENT" property="courseContent"/>
+        <result column="COURSE_CATEGORY" property="courseCategory"/>
+        <result column="COURSE_DIFFICULT" property="courseDifficult"/>
+        <result column="COURSE_PRICE" property="coursePrice"/>
+        <result column="COURSE_DISCOUNT" property="courseDiscount"/>
+        <result column="COURSE_THUMBNAIL" property="courseThumbnail"/>
+        <result column="COURSE_TARGET" property="courseTarget"/>
+        <result column="COURSE_PREPARATION" property="coursePreparation"/>
+        <result column="COURSE_EXPOSE" property="courseExpose"/>
+        <result column="COURSE_CONFIRM_TIME" property="courseConfirmTime"/>
+        <result column="COURSE_CREATE_TIME" property="courseCreateTime"/>
+        <result column="MEMBER_NO" property="memberNo"/>
+        <result column="COURSE_TYPE" property="courseType"/>
+        <result column="MEMBER_NICKNAME" property="memberNickname"/>
+        <result column="CATE_VALUE" property="cateValue"/>
+        
+        <!-- CourseReservationConfig 정보 -->
+        <result column="CONFIG_ID" property="configId"/>
+        <result column="OPEN_DATE_TIME" property="openDateTime"/>
+        <result column="MAX_CONCURRENT_USERS" property="maxConcurrentUsers"/>
+        <result column="WAITING_ROOM_OPEN_MINUTES" property="waitingRoomOpenMinutes"/>
+        <result column="IS_ACTIVE" property="isActive"/>
+        <result column="CREATED_AT" property="createdAt"/>
+        <result column="UPDATED_AT" property="updatedAt"/>
+    </resultMap>
 
     <select id="getCategorys" resultMap="catemap">
         SELECT * FROM CATEGORY
@@ -36,5 +66,47 @@
         SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
         FROM COURSE C
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+    </select>
+    
+    <select id="getActiveEventCourses" resultMap="eventCourseMap">
+        SELECT 
+            C.COURSE_SEQ,
+            C.COURSE_TITLE,
+            C.COURSE_CONTENT,
+            C.COURSE_CATEGORY,
+            C.COURSE_DIFFICULT,
+            C.COURSE_PRICE,
+            C.COURSE_DISCOUNT,
+            C.COURSE_THUMBNAIL,
+            C.COURSE_TARGET,
+            C.COURSE_PREPARATION,
+            C.COURSE_EXPOSE,
+            C.COURSE_CONFIRM_TIME,
+            C.COURSE_CREATE_TIME,
+            C.MEMBER_NO,
+            C.COURSE_TYPE,
+            M.MEMBER_NICKNAME,
+            (SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE,
+            CRC.CONFIG_ID,
+            CRC.OPEN_DATE_TIME,
+            CRC.MAX_CONCURRENT_USERS,
+            CRC.WAITING_ROOM_OPEN_MINUTES,
+            CRC.IS_ACTIVE,
+            CRC.CREATED_AT,
+            CRC.UPDATED_AT
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        LEFT JOIN COURSE_RESERVATION_CONFIG CRC ON C.COURSE_SEQ = CRC.COURSE_SEQ
+        WHERE C.COURSE_TYPE = 'EVENT'
+          AND (CRC.IS_ACTIVE = 'Y' OR CRC.IS_ACTIVE IS NULL)
+        ORDER BY CRC.OPEN_DATE_TIME ASC
+    </select>
+    
+    <!-- 디버깅용: 모든 이벤트 강의 조회 -->
+    <select id="getAllEventCourses" resultMap="courseListMap">
+        SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        WHERE C.COURSE_TYPE = 'EVENT'
     </select>
 </mapper>
