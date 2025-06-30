@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="orders">
+    <resultMap id="orderDetailsMap" type="orderDatails">
+        <id property="ordersSeq" column="ORDERS_SEQ" />
+        <result property="ordersBank" column="ORDERS_BANK" />
+        <result property="ordersAccountNo" column="ORDERS_ACCOUNT_NO" />
+        <result property="ordersCardCorp" column="ORDERS_CARD_CORP" />
+        <result property="ordersCardNo" column="ORDERS_CARD_NO" />
+        <result property="ordersPaymentId" column="ORDERS_PAYMENT_ID" />
+        <result property="ordersPayhistId" column="ORDERS_PAYHIST_ID" />
+    </resultMap>
+
+    <resultMap id="ordersMap" type="orders">
+        <id property="ordersSeq" column="ORDERS_SEQ"/>
+        <result property="ordersPrice" column="ORDERS_PRICE"/>
+        <result property="ordersPrimaryPay" column="ORDERS_PRIMARYPAY"/>
+        <result property="ordersStatus" column="ORDERS_STATUS"/>
+        <result property="ordersTimestamp" column="ORDERS_TIMESTAMP"/>
+        <result property="memberNo" column="MEMBER_NO"/>
+        <result property="courseSeq" column="COURSE_SEQ"/>
+        <result property="cancelYn" column="CANCEL_YN"/>
+        <result property="cancelTimestamp" column="CANCEL_TIMESTAMP"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="updatedAt" column="UPDATED_AT"/>
+        <result property="courseTitle" column="COURSE_TITLE"/>
+
+        <association property="detail" javaType="orderDatails">
+            <id property="ordersSeq" column="ORDERS_SEQ" />
+            <result property="ordersBank" column="ORDERS_BANK" />
+            <result property="ordersAccountNo" column="ORDERS_ACCOUNT_NO" />
+            <result property="ordersCardCorp" column="ORDERS_CARD_CORP" />
+            <result property="ordersCardNo" column="ORDERS_CARD_NO" />
+            <result property="ordersPaymentId" column="ORDERS_PAYMENT_ID" />
+            <result property="ordersPayhistId" column="ORDERS_PAYHIST_ID" />
+        </association>
+    </resultMap>
+
+    <!-- INSERT -->
+    <insert id="insertOrder" parameterType="orders">
+        INSERT INTO ORDERS (
+            ORDERS_SEQ, ORDERS_PRICE, ORDERS_PRIMARYPAY, ORDERS_STATUS,
+            ORDERS_TIMESTAMP, MEMBER_NO, COURSE_SEQ,
+            CANCEL_YN, CANCEL_TIMESTAMP, CREATED_AT, UPDATED_AT
+        ) VALUES (
+                    SEQ_ORDERS.NEXTVAL, #{ordersPrice}, #{ordersPrimaryPay}, DEFAULT,
+                     DEFAULT, #{memberNo}, #{courseSeq},
+                     DEFAULT, DEFAULT, DEFAULT, DEFAULT
+                 )
+    </insert>
+
+    <!-- INSERT ORDER_DETAILS -->
+    <insert id="insertOrderDetails" parameterType="orderDatails">
+        INSERT INTO ORDER_DETAILS (
+            ORDERS_SEQ, ORDERS_BANK, ORDERS_ACCOUNT_NO,
+            ORDERS_CARD_CORP, ORDERS_CARD_NO,
+            ORDERS_PAYMENT_ID, ORDERS_PAYHIST_ID
+        ) VALUES (
+                     SEQ_ORDERS.CURRVAL, #{ordersBank}, #{ordersAccountNo},
+                     #{ordersCardCorp}, #{ordersCardNo},
+                     #{ordersPaymentId}, #{ordersPayhistId}
+                 )
+    </insert>
+
+    <select id="selectOrderById" parameterType="int" resultMap="ordersMap">
+        SELECT o.*, d.*, c.COURSE_TITLE
+        FROM ORDERS o
+                 LEFT JOIN ORDER_DETAILS d ON o.ORDERS_SEQ = d.ORDERS_SEQ
+                 LEFT JOIN COURSE c ON o.COURSE_SEQ = c.COURSE_SEQ
+        WHERE o.ORDERS_SEQ = #{ordersSeq}
+    </select>
+
+    <select id="selectOrdersByMember" parameterType="long" resultMap="ordersMap">
+        SELECT o.*, d.*, c.COURSE_TITLE
+        FROM ORDERS o
+                 LEFT JOIN ORDER_DETAILS d ON o.ORDERS_SEQ = d.ORDERS_SEQ
+                 LEFT JOIN COURSE c ON o.COURSE_SEQ = c.COURSE_SEQ
+        WHERE o.MEMBER_NO = #{memberNo}
+        ORDER BY o.ORDERS_TIMESTAMP DESC
+    </select>
+
+</mapper>

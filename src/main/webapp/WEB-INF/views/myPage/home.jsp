@@ -49,8 +49,9 @@
                                         <span class="badge">3</span>
                                     </button>
                                 </li>
+                                <%--작업 ing--%>
                                 <li class="nav-item">
-                                    <button class="nav-link" data-page="orders">
+                                    <button class="nav-link" data-page="purchaseHistory">
                                         <i class="bi bi-receipt"></i>
                                         <span>주문내역</span>
                                     </button>
@@ -60,7 +61,7 @@
                             <h6 class="nav-section-title">서비스</h6>
                             <ul class="nav flex-column">
                                 <li class="nav-item">
-                                    <a href="/coach" class="nav-link">
+                                    <a href="#" class="nav-link" data-page="coachApply">
                                         <i class="bi bi-person-workspace"></i>
                                         <span>코치실</span>
                                     </a>
@@ -111,7 +112,7 @@
         // 사이드바 메뉴 클릭 이벤트
         $('.profile-nav .nav-link[data-page]').on('click', function() {
             const page = $(this).data('page');
-
+            console.log("page: " + page);
             // 활성 메뉴 변경
             $('.profile-nav .nav-link').removeClass('active');
             $(this).addClass('active');
@@ -156,7 +157,7 @@
 
         // Ajax로 페이지 로드
         $.ajax({
-            url: 'mypage/' + page,
+            url: '${pageContext.request.contextPath}/mypage/' + page,
             type: 'GET',
             success: function(data) {
                 $('#content-area').html(data);

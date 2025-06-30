@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="courseReservationConfig">
+
+
+    <resultMap id="courseReservationConfigResultMap" type="com.up.spring.reservation.dto.CourseReservationConfig">
+        <id column="CONFIG_ID" property="configId"/>
+        <result column="COURSE_SEQ" property="courseSeq"/>
+        <result column="OPEN_DATE_TIME" property="openDateTime"/>
+        <result column="MAX_CONCURRENT_USERS" property="maxConcurrentUsers"/>
+        <result column="WAITING_ROOM_OPEN_MINUTES" property="waitingRoomOpenMinutes"/>
+        <result column="IS_ACTIVE" property="isActive"/>
+        <result column="CREATED_AT" property="createdAt"/>
+        <result column="UPDATED_AT" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 강의별 설정 조회 -->
+    <select id="selectByCourseSeq" resultMap="courseReservationConfigResultMap" parameterType="_long">
+        SELECT * 
+        FROM COURSE_RESERVATION_CONFIG 
+        WHERE COURSE_SEQ = #{courseSeq} 
+          AND IS_ACTIVE = 'Y'
+    </select>
+
+    <!-- 설정 ID로 조회 -->
+    <select id="selectByConfigId" resultMap="courseReservationConfigResultMap" parameterType="_long">
+        SELECT * 
+        FROM COURSE_RESERVATION_CONFIG 
+        WHERE CONFIG_ID = #{configId}
+    </select>
+
+    <!-- 전체 설정 조회 -->
+    <select id="selectAll" resultMap="courseReservationConfigResultMap">
+        SELECT * 
+        FROM COURSE_RESERVATION_CONFIG 
+        WHERE IS_ACTIVE = 'Y'
+        ORDER BY CREATED_AT DESC
+    </select>
+
+    <!-- 오픈 시간이 된 강의들 조회 -->
+    <!-- 오픈 시간이 된 강의들 조회 -->
+    <select id="selectCoursesToOpen" resultMap="courseReservationConfigResultMap" parameterType="java.sql.Timestamp">
+        SELECT *
+        FROM COURSE_RESERVATION_CONFIG
+        WHERE IS_ACTIVE = 'Y'
+        AND OPEN_DATE_TIME <![CDATA[<=]]> #{currentTime}
+        AND OPEN_DATE_TIME > (#{currentTime} - INTERVAL '1' HOUR)
+        <!-- 1시간 전부터 현재까지만 체크 (중복 방지) -->
+    </select>
+
+    <!-- 대기실 입장 가능한 강의들 조회 -->
+    <select id="selectWaitingRoomAvailable" resultMap="courseReservationConfigResultMap" parameterType="java.sql.Timestamp">
+        SELECT * 
+        FROM COURSE_RESERVATION_CONFIG 
+        WHERE IS_ACTIVE = 'Y'
+          AND (OPEN_DATE_TIME - NUMTODSINTERVAL(WAITING_ROOM_OPEN_MINUTES, 'MINUTE')) <![CDATA[<=]]> #{currentTime}
+          AND OPEN_DATE_TIME <![CDATA[>]]> #{currentTime}
+    </select>
+
+    <!-- 설정 등록 -->
+    <insert id="insert" parameterType="com.up.spring.reservation.dto.CourseReservationConfig">
+        INSERT INTO COURSE_RESERVATION_CONFIG (
+            COURSE_SEQ,
+            OPEN_DATE_TIME,
+            MAX_CONCURRENT_USERS,
+            WAITING_ROOM_OPEN_MINUTES,
+            IS_ACTIVE
+        ) VALUES (
+            #{courseSeq},
+            #{openDateTime},
+            #{maxConcurrentUsers},
+            #{waitingRoomOpenMinutes},
+            #{isActive}
+        )
+    </insert>
+
+    <!-- 설정 수정 -->
+    <update id="update" parameterType="com.up.spring.reservation.dto.CourseReservationConfig">
+        UPDATE COURSE_RESERVATION_CONFIG 
+        SET OPEN_DATE_TIME = #{openDateTime},
+            MAX_CONCURRENT_USERS = #{maxConcurrentUsers},
+            WAITING_ROOM_OPEN_MINUTES = #{waitingRoomOpenMinutes},
+            IS_ACTIVE = #{isActive},
+            UPDATED_AT = SYSDATE
+        WHERE CONFIG_ID = #{configId}
+    </update>
+
+    <!-- 설정 삭제 (논리삭제) -->
+    <update id="delete" parameterType="_long">
+        UPDATE COURSE_RESERVATION_CONFIG 
+        SET IS_ACTIVE = 'N',
+            UPDATED_AT = SYSDATE
+        WHERE CONFIG_ID = #{configId}
+    </update>
+
+    <!-- 활성화/비활성화 -->
+    <update id="updateActive" parameterType="map">
+        UPDATE COURSE_RESERVATION_CONFIG 
+        SET IS_ACTIVE = #{isActive},
+            UPDATED_AT = SYSDATE
+        WHERE CONFIG_ID = #{configId}
+    </update>
+
+</mapper> 

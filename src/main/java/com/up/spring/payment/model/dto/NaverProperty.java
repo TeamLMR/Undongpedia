@@ -26,4 +26,16 @@ public class NaverProperty {
 
     @Value("${mode}")
     private String mode;
+
+    @Value("dev-pub.apis.naver.com")
+    private String apiDomain;
+
+    @Value("v2")
+    private String apiVersion;
+
+    @Value("apply/payment")
+    private String apiName;
+
+    @Value("naverpay-partner")
+    private String parterId;
 }
