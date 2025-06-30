@@ -435,7 +435,7 @@
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `email=${encodeURIComponent(window.currentUserEmail)}&memberName=${encodeURIComponent(window.currentUserName)}`
+            body: `email=\${encodeURIComponent(window.currentUserEmail)}&memberName=\${encodeURIComponent(window.currentUserName)}`
         })
             .then(response => response.json())
             .then(data => {
@@ -472,26 +472,6 @@
                 btn.innerHTML = originalHTML;
                 alert('서버 오류가 발생했습니다.');
             });
-    }
-
-    // ===== 랜덤 닉네임 생성 함수 =====
-    function generateRandomNickname() {
-        const adjectives = ['강력한', '빠른', '건강한', '활기찬', '파워풀한', '슈퍼', '멋진', '쿨한', '열정적인', '끈기있는'];
-        const exercises = ['헬스', '요가', '필라테스', '크로스핏', '러닝', '사이클', '복싱', '수영', '클라이밍', '웨이트'];
-        const animals = ['사자', '치타', '독수리', '상어', '표범', '늑대', '호랑이', '팬더', '코끼리', '캥거루'];
-        const titles = ['마스터', '킹', '퀸', '챔피언', '프로', '전문가', '달인', '고수', '선수', '코치'];
-
-        const patterns = [
-            () => `${adjectives[Math.floor(Math.random() * adjectives.length)]}${exercises[Math.floor(Math.random() * exercises.length)]}`,
-            () => `${exercises[Math.floor(Math.random() * exercises.length)]}${titles[Math.floor(Math.random() * titles.length)]}`,
-            () => `${adjectives[Math.floor(Math.random() * adjectives.length)]}${animals[Math.floor(Math.random() * animals.length)]}`,
-            () => `${animals[Math.floor(Math.random() * animals.length)]}${titles[Math.floor(Math.random() * titles.length)]}`,
-            () => `운동${animals[Math.floor(Math.random() * animals.length)]}`,
-            () => `헬시${animals[Math.floor(Math.random() * animals.length)]}`
-        ];
-
-        const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
-        return randomPattern();
     }
 
     // ===== 페이지 로드 시 실행 =====

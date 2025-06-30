@@ -5,6 +5,7 @@ import com.up.spring.member.model.dto.Member;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -22,6 +23,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    @Transactional
     public int saveMember(Member member) {
         return memberDaoImpl.saveMember(session, member);
     }

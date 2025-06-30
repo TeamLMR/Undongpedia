@@ -151,6 +151,33 @@
             border-color: #198754;
         }
 
+        /* 비밀번호 확인 입력창에서만 valid/invalid 아이콘 제거 */
+        #confirmPassword.form-control.is-valid,
+        #confirmPassword.form-control.is-invalid {
+            background-image: none;
+            padding-right: 2.5rem;
+        }
+
+        /* 비밀번호 토글 아이콘 스타일 */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 1.2rem;
+            z-index: 10;
+        }
+
+        .toggle-password:hover {
+            color: #495057;
+        }
+
         /* 이메일 인증 스타일 */
         .input-group-text#timer {
             background-color: #f8f9fa;
@@ -206,12 +233,12 @@
             const titles = ['마스터', '킹', '퀸', '챔피언', '프로', '전문가', '달인', '고수', '선수', '코치'];
 
             const patterns = [
-                () => `\${adjectives[Math.floor(Math.random() * adjectives.length)]}\${exercises[Math.floor(Math.random() * exercises.length)]}`,
-                () => `\${exercises[Math.floor(Math.random() * exercises.length)]}\${titles[Math.floor(Math.random() * titles.length)]}`,
-                () => `\${adjectives[Math.floor(Math.random() * adjectives.length)]}\${animals[Math.floor(Math.random() * animals.length)]}`,
-                () => `\${animals[Math.floor(Math.random() * animals.length)]}\${titles[Math.floor(Math.random() * titles.length)]}`,
-                () => `운동\${animals[Math.floor(Math.random() * animals.length)]}`,
-                () => `헬시\${animals[Math.floor(Math.random() * animals.length)]}`
+                function() { return adjectives[Math.floor(Math.random() * adjectives.length)] + exercises[Math.floor(Math.random() * exercises.length)]; },
+                function() { return exercises[Math.floor(Math.random() * exercises.length)] + titles[Math.floor(Math.random() * titles.length)]; },
+                function() { return adjectives[Math.floor(Math.random() * adjectives.length)] + animals[Math.floor(Math.random() * animals.length)]; },
+                function() { return animals[Math.floor(Math.random() * animals.length)] + titles[Math.floor(Math.random() * titles.length)]; },
+                function() { return '운동' + animals[Math.floor(Math.random() * animals.length)]; },
+                function() { return '헬시' + animals[Math.floor(Math.random() * animals.length)]; }
             ];
 
             const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
@@ -291,7 +318,7 @@
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `email=\${encodeURIComponent(email)}&code=\${encodeURIComponent(code)}`
+                body: 'email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code)
             })
                 .then(response => response.json())
                 .then(data => {
@@ -324,7 +351,7 @@
         function startVerificationTimer(expireTime) {
             const timerElement = document.getElementById('timer');
 
-            verificationTimer = setInterval(() => {
+            verificationTimer = setInterval(function() {
                 const now = new Date().getTime();
                 const timeLeft = Math.max(0, expireTime - now);
 
@@ -341,7 +368,7 @@
 
                 const minutes = Math.floor(timeLeft / 60000);
                 const seconds = Math.floor((timeLeft % 60000) / 1000);
-                timerElement.textContent = `\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}`;
+                timerElement.textContent = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
             }, 1000);
         }
 
@@ -367,6 +394,23 @@
                 });
             }
 
+            // 비밀번호 표시/숨기기 토글 기능
+            document.querySelectorAll('.toggle-password').forEach(function(toggleIcon) {
+                toggleIcon.addEventListener('click', function() {
+                    const passwordInput = this.parentElement.querySelector('input');
+
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        this.classList.remove('bi-eye');
+                        this.classList.add('bi-eye-slash');
+                    } else {
+                        passwordInput.type = 'password';
+                        this.classList.remove('bi-eye-slash');
+                        this.classList.add('bi-eye');
+                    }
+                });
+            });
+
             // 이메일 인증 버튼 이벤트
             document.getElementById('sendVerificationBtn').addEventListener('click', sendVerificationEmail);
             document.getElementById('verifyCodeBtn').addEventListener('click', verifyEmailCode);
@@ -374,6 +418,7 @@
             // Enter 키 이벤트
             document.getElementById('verificationCode').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
                     verifyEmailCode();
                 }
             });
@@ -451,53 +496,69 @@
 
             document.getElementById('password').addEventListener('input', checkPasswordMatch);
             document.getElementById('confirmPassword').addEventListener('input', checkPasswordMatch);
-        });
 
-        // ===== 폼 제출 검증 =====
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
-            let isValid = true;
+            // ===== 폼 제출 검증 (수정됨) =====
+            document.getElementById('signupForm').addEventListener('submit', function(e) {
+                // 간단한 검증만 수행
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                console.log("ㅎㅇ");
 
-            // 이메일 인증 확인 (가장 먼저)
-            // if (!emailVerified) {
-            //     e.preventDefault();
-            //     alert('이메일 인증을 완료해주세요.');
-            //     document.getElementById('email').focus();
-            //     return false;
-            // }
+                // if (!emailVerified) {
+                //     e.preventDefault();
+                //     alert('이메일 인증을 완료해주세요.');
+                //     document.getElementById('email').focus();
+                //     return false;
+                // }
 
-            // 서비스 이용약관 동의 확인
-            const termsChecked = document.getElementById('terms').checked;
-            if (!termsChecked) {
-                e.preventDefault();
-                alert('서비스 이용약관 및 개인정보처리방침에 동의해주세요.');
-                return false;
-            }
+                if (!firstName || firstName.length < 2) {
+                    e.preventDefault();
+                    alert('이름을 2글자 이상 입력해주세요.');
+                    document.getElementById('firstName').focus();
+                    return false;
+                }
 
-            // 이름 확인
-            const firstName = document.getElementById('firstName');
-            if (firstName.classList.contains('is-invalid') || !firstName.classList.contains('is-valid')) {
-                e.preventDefault();
-                firstName.focus();
-                isValid = false;
-            }
+                if (!lastName || lastName.length < 2) {
+                    e.preventDefault();
+                    alert('닉네임을 2글자 이상 입력해주세요.');
+                    document.getElementById('lastName').focus();
+                    return false;
+                }
 
-            // 닉네임 확인
-            const lastName = document.getElementById('lastName');
-            if (lastName.classList.contains('is-invalid') || !lastName.classList.contains('is-valid')) {
-                e.preventDefault();
-                if (isValid) lastName.focus();
-                isValid = false;
-            }
+                if (!email) {
+                    e.preventDefault();
+                    alert('이메일을 입력해주세요.');
+                    document.getElementById('email').focus();
+                    return false;
+                }
 
-            // 비밀번호 확인
-            const confirmPassword = document.getElementById('confirmPassword');
-            if (confirmPassword.classList.contains('is-invalid') || !confirmPassword.classList.contains('is-valid')) {
-                e.preventDefault();
-                if (isValid) confirmPassword.focus();
-                isValid = false;
-            }
+                if (!password || password.length < 8) {
+                    e.preventDefault();
+                    alert('비밀번호는 8자 이상이어야 합니다.');
+                    document.getElementById('password').focus();
+                    return false;
+                }
 
-            return isValid;
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('비밀번호가 일치하지 않습니다.');
+                    document.getElementById('confirmPassword').focus();
+                    return false;
+                }
+                console.log("헤이");
+                if (!document.getElementById('terms').checked) {
+                    e.preventDefault();
+                    alert('서비스 이용약관에 동의해주세요.');
+                    return false;
+                }
+
+                // 모든 검증 통과
+                console.log('폼 제출됨');
+                return true;
+            });
         });
     </script>
 </section>

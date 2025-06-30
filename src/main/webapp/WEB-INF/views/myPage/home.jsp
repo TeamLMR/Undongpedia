@@ -37,7 +37,7 @@
                         <div class="profile-nav">
                             <ul class="nav flex-column">
                                 <li class="nav-item">
-                                    <button class="nav-link active" data-page="/mypage/personal">
+                                    <button class="nav-link active" data-page="personal">
                                         <i class="bi bi-person-circle"></i>
                                         <span>회원정보</span>
                                     </button>

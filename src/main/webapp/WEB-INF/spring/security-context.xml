@@ -24,6 +24,7 @@
     <security:intercept-url pattern="/" access="permitAll()"/>
     <security:intercept-url pattern="/sessionmax.do" access="permitAll()"/>
     <security:intercept-url pattern="/signup" access="permitAll()"/>
+    <security:intercept-url pattern="/savemember" access="permitAll()"/>
     <security:intercept-url pattern="/email" access="permitAll()"/>
     <security:intercept-url pattern="/email/**" access="permitAll()"/>
     <security:intercept-url pattern="/main/**" access="permitAll()"/>

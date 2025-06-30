@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.Mapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,26 +32,34 @@ public class MemberController {
 
     @RequestMapping("/mypage/personal")
     public String personalPage(){
+        log.info("마이페이지지롱");
         return "myPage/setting/personal";
     }
 
     /*auth 관련*/
-    @RequestMapping("/signup")
+    @RequestMapping("/mypage/signup")
     public String signup() {
+
         return "auth/signup";
     }
 
-    @RequestMapping("/login")
+    @RequestMapping("/mypage/login")
     public String login() {
         return "auth/login";
     }
 
-    @RequestMapping("/savemember")
+    @PostMapping("/mypage/savemember")
     public String savemember(@ModelAttribute("member") Member member) {
+        log.info("{}",member);
         String password = member.getMemberPassword();
+        log.info("{}",member);
         member.setMemberPassword(passwordEncoder.encode(password));
-        memberService.saveMember(member);
-        return "redirect:/";}
+        log.info("{}", member);
+        int result=memberService.saveMember(member);
+        log.info("{}, {}", member, result);
+
+        return "redirect:/";
+    }
 
 
 }
