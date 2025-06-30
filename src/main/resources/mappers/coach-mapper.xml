@@ -26,6 +26,16 @@
         </collection>
     </resultMap>
 
+    <resultMap id="coachApplyMap" type="coachApply">
+        <id column="COA_SEQ" property="coaSeq"/>
+        <result column="COA_BANK" property="coaBank"/>
+        <result column="COA_BANK_NUM" property="coaBankNum"/>
+        <result column="COA_BANK_NAME" property="coaBankName"/>
+        <result column="COA_INTRO" property="coaIntro"/>
+        <result column="COA_YN" property="coaYn"/>
+        <result column="MEMBER_NO" property="memberNo"/>
+    </resultMap>
+
     <select id="getCategoryAll" resultMap="categoryMap">
         SELECT * FROM CATEGORY
     </select>
@@ -50,5 +60,17 @@
     </insert>
     <insert id="insertCurriculum" parameterType="curriculum">
         INSERT INTO CURRICULUM (CURR_SEQ, CURR_TITLE, CURR_VIDEO_URL, CURR_VIDEO_TYPE, CURR_PREVIEW, CURR_ORDER, SECTION_SEQ) VALUES (SEQ_CURRICULUM.nextval,#{currTitle},#{currVideoUrl},#{currVideoType},#{currPreview},#{currOrder},#{sectionSeq})
+    </insert>
+
+    <select id="getCoachApply" parameterType="_long" resultMap="coachApplyMap">
+        SELECT * FROM COACH_APPLY WHERE MEMBER_NO = #{memberNO}
+    </select>
+
+    <update id="updateCoachApply" parameterType="coachApply">
+        UPDATE COACH_APPLY SET COA_BANK = #{coaBank}, COA_BANK_NUM = #{coaBankNum}, COA_BANK_NAME = #{coaBankName}, COA_INTRO = #{coaIntro}, COA_YN = #{coaYn} WHERE COA_SEQ = #{coaSeq}
+    </update>
+
+    <insert id="insertCoachApply" parameterType="coachApply">
+        INSERT INTO COACH_APPLY VALUES (SEQ_COACH_APPLY.nextval,#{coaBank}, #{coaBankNum}, #{coaBankName}, #{coaIntro}, #{coaYn}, #{memberNo})
     </insert>
 </mapper>

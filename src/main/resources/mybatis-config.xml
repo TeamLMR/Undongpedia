@@ -12,6 +12,7 @@
         <typeAlias type="com.up.spring.course.model.dto.CourseSchedule" alias="courseSchedule"/>
         <typeAlias type="com.up.spring.course.model.dto.Section" alias="section"/>
         <typeAlias type="com.up.spring.course.model.dto.Curriculum" alias="curriculum"/>
+        <typeAlias type="com.up.spring.coach.model.dto.CoachApply" alias="coachApply"/>
         <typeAlias type="com.up.spring.payment.model.dto.Orders" alias="orders"/>
         <typeAlias type="com.up.spring.payment.model.dto.OrderDetails" alias="orderDatails"/>
     </typeAliases>

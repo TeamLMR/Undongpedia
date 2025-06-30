@@ -61,7 +61,7 @@
                             <h6 class="nav-section-title">서비스</h6>
                             <ul class="nav flex-column">
                                 <li class="nav-item">
-                                    <a href="/coach" class="nav-link">
+                                    <a href="#" class="nav-link" data-page="coachApply">
                                         <i class="bi bi-person-workspace"></i>
                                         <span>코치실</span>
                                     </a>
@@ -157,7 +157,7 @@
 
         // Ajax로 페이지 로드
         $.ajax({
-            url: 'mypage/' + page,
+            url: '${pageContext.request.contextPath}/mypage/' + page,
             type: 'GET',
             success: function(data) {
                 $('#content-area').html(data);
