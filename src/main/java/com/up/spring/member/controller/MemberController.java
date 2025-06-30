@@ -34,6 +34,16 @@ public class MemberController {
         return "myPage/setting/personal";
     }
 
+    @RequestMapping("/mypage/purchaseHistory")
+    public String purchaseHistory(){
+        return "myPage/management/purchaseHistory";
+    }
+
+    @RequestMapping("/mypage/learning")
+    public String course(){
+        return "myPage/management/learning";
+    }
+
     /*auth 관련*/
     @RequestMapping("/signup")
     public String signup() {
