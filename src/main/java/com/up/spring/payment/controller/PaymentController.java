@@ -113,7 +113,6 @@ public class PaymentController {
     }
 
     public long returnMemberNo(){
-        String loc = "/";
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         long memberNo = 0;
         if (m != null){
