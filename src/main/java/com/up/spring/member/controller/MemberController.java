@@ -3,6 +3,8 @@ package com.up.spring.member.controller;
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.member.model.dto.Member;
 import com.up.spring.member.model.service.MemberService;
+import com.up.spring.payment.model.dto.Orders;
+import com.up.spring.payment.model.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,13 +19,24 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.List;
+
 @Controller
 @Slf4j
 @RequiredArgsConstructor
 public class MemberController {
-
     private final MemberService memberService;
+    private final OrderService orderService;
     private final BCryptPasswordEncoder passwordEncoder;
+
+    public long returnMemberNo(){
+        Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        long memberNo = 0;
+        if (m != null){
+            memberNo = m.getMemberNo();
+        }
+        return memberNo;
+    }
 
     /*myPage 관련*/
     @RequestMapping("/mypage")
@@ -38,7 +51,17 @@ public class MemberController {
     }
 
     @RequestMapping("/mypage/purchaseHistory")
-    public String purchaseHistory(){
+    public String purchaseHistory(Model model){
+        long memberNo = returnMemberNo();
+        if  (memberNo != 0) {
+            List<Orders> ordersList =  orderService.selectOrdersByMember(memberNo);
+            //order 내역이 없을때
+            if (ordersList != null && !ordersList.isEmpty()){
+                model.addAttribute("ordersList", ordersList);
+            } else {
+                //아무것도 안보냄..?
+            }
+        }
         return "myPage/management/purchaseHistory";
     }
 
