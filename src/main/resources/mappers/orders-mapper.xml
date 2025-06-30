@@ -62,6 +62,10 @@
                  )
     </insert>
 
+    <update id="cancelOrderById" parameterType="int">
+        UPDATE ORDERS SET ORDERS_STATUS='CANC', CANCEL_YN = 'Y', CANCEL_TIMESTAMP=SYSTIMESTAMP WHERE ORDERS_SEQ = #{ordersSeq}
+    </update>
+
     <select id="selectOrderById" parameterType="int" resultMap="ordersMap">
         SELECT o.*, d.*, c.COURSE_TITLE
         FROM ORDERS o

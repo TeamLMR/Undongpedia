@@ -11,4 +11,5 @@ public interface OrdersDao {
     int insertOrderDetails(SqlSession session, OrderDetails details);
     Orders selectOrderById(SqlSession session, int ordersSeq);
     List<Orders> selectOrdersByMember(SqlSession session, Long memberNo);
+    int cancelOrderById(SqlSession session, int ordersSeq);
 }

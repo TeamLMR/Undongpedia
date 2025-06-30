@@ -11,6 +11,12 @@ import java.util.List;
 @Repository
 
 public class OrdersDaoImpl implements OrdersDao {
+
+    @Override
+    public int cancelOrderById(SqlSession session, int ordersSeq) {
+        return session.update("cancelOrderById", ordersSeq);
+    }
+
     @Override
     public int insertOrder(SqlSession session, Orders order) {
         return session.insert("insertOrder", order);

@@ -23,6 +23,7 @@ public class OrdersServiceImpl implements OrderService{
     private final OrdersDao ordersDao;
     private final SqlSession session;
 
+
     private Timestamp formatToTimestamp(String yyyyMMddHHmmss) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
         Date date = null;
@@ -68,6 +69,12 @@ public class OrdersServiceImpl implements OrderService{
                 .build();
     }
 
+    @Override
+    public int cancelOrderById(int ordersSeq) {
+        return ordersDao.cancelOrderById(session, ordersSeq);
+    }
+
+    //TODO:강사님헬프
     @Override
     @Transactional
     public int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq) {

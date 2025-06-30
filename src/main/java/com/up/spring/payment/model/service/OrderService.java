@@ -12,4 +12,5 @@ public interface OrderService {
     int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq);
     Orders selectOrderById(int ordersSeq);
     List<Orders> selectOrdersByMember(Long memberNo);
+    int cancelOrderById(int ordersSeq);
 }

@@ -3,6 +3,7 @@ package com.up.spring.payment.controller;
 import com.up.spring.member.model.dto.Member;
 import com.up.spring.payment.model.dto.Cart;
 import com.up.spring.payment.model.dto.NaverProperty;
+import com.up.spring.payment.model.dto.Orders;
 import com.up.spring.payment.model.service.CartService;
 import com.up.spring.payment.model.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -160,8 +161,35 @@ public class PaymentController {
             loc = "payment/cart";
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
-            model.addAttribute("loc", "/");
+            model.addAttribute("loc", "/common/msg");
             loc = "common/msg";
+        }
+        return loc;
+    }
+
+    @RequestMapping("/payment/orderinvoice")
+    public String orderInvoice(@RequestParam("id") int ordersSeq, Model model){
+        String loc = "common/msg";
+        Orders orders = orderService.selectOrderById(ordersSeq);
+        if (orders != null) {
+            model.addAttribute("orders", orders);
+            loc = "payment/orderInvoice";
+        } else {
+            model.addAttribute("msg", "문제가 있습니다.");
+            model.addAttribute("loc", "/common/msg");
+        }
+        return loc;
+    }
+
+    @RequestMapping("/payment/cancel")
+    public String paymentCancel(@RequestParam("id") int ordersSeq, Model model) {
+        String loc = "common/msg";
+        int result = orderService.cancelOrderById(ordersSeq);
+        if (result == 1) {
+            loc = "redirect:/mypage/purchaseHistory";
+        } else {
+            model.addAttribute("msg", "문제가 있습니다.");
+            model.addAttribute("loc", "/common/msg");
         }
         return loc;
     }
