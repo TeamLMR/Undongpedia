@@ -131,6 +131,71 @@
                         </div>
                     </div>
 
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">🧪 대기열 테스트 도구</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- 테스트 시나리오 선택 -->
+                            <div class="mb-3">
+                                <h6>테스트 시나리오</h6>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-primary" onclick="startCourseQueueTest()">
+                                        코스 대기열 테스트
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="startScheduleQueueTest()">
+                                        스케줄 대기열 테스트
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 가상 사용자 생성 -->
+                            <div class="mb-3">
+                                <h6>가상 사용자 생성</h6>
+                                <div class="input-group">
+                                    <input type="number" id="virtualUserCount" class="form-control" 
+                                           placeholder="생성할 사용자 수" value="5" min="1" max="20">
+                                    <button class="btn btn-warning" onclick="createVirtualUsers()">
+                                        <i class="bi bi-people-fill"></i> 가상 사용자 생성
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 테스트 결과 -->
+                            <div class="mb-3">
+                                <h6>테스트 로그</h6>
+                                <div id="testLog" class="border rounded p-3" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                                    <div class="text-muted">테스트를 시작하면 여기에 로그가 표시됩니다...</div>
+                                </div>
+                            </div>
+
+                            <!-- 대기열 상태 실시간 모니터링 -->
+                            <div class="mb-3">
+                                <h6>대기열 상태</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="border rounded p-3">
+                                            <h6>코스 대기열</h6>
+                                            <div id="courseQueueStatus">
+                                                <p>대기인원: <span id="courseQueueCount">0</span>명</p>
+                                                <div id="courseQueueMembers" class="small"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="border rounded p-3">
+                                            <h6>스케줄 대기열</h6>
+                                            <div id="scheduleQueueStatus">
+                                                <p>대기인원: <span id="scheduleQueueCount">0</span>명</p>
+                                                <div id="scheduleQueueMembers" class="small"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -138,6 +203,9 @@
 </div>
 
 <script>
+// contextPath 변수 정의
+const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+
 let monitoringInterval;
 let currentInterval = 2000;
 let logCounter = 0;
@@ -332,9 +400,9 @@ async function sendBookingRequests(count) {
     
     try {
         await Promise.all(promises);
-        addLog('✅ ' + count + '명 예약 요청 완료', 'success');
+        addLog( + count + '명 예약 요청 완료', 'success');
     } catch (error) {
-        addLog('❌ 예약 요청 실패: ' + error.message, 'error');
+        addLog('예약 요청 실패: ' + error.message, 'error');
     }
 }
 
@@ -349,7 +417,7 @@ function changeUpdateInterval(interval) {
     
     // 모니터링 재시작
     startMonitoring();
-    addLog('⏱️ 업데이트 간격을 ' + (interval/1000) + '초로 변경', 'info');
+    addLog('업데이트 간격을 ' + (interval/1000) + '초로 변경', 'info');
 }
 
 // 로그 지우기
@@ -362,7 +430,7 @@ function stopMonitoring() {
     if (monitoringInterval) {
         clearInterval(monitoringInterval);
         monitoringInterval = null;
-        addLog('⏹️ 모니터링 중지', 'info');
+        addLog('모니터링 중지', 'info');
     }
 }
 
@@ -374,6 +442,170 @@ document.addEventListener('DOMContentLoaded', function() {
 // 페이지 떠날 때 정리
 window.addEventListener('beforeunload', function() {
     stopMonitoring();
+});
+
+// 테스트 로그 함수
+function addTestLog(message, type = 'info') {
+    const testLog = document.getElementById('testLog');
+    const timestamp = new Date().toLocaleTimeString();
+    const color = type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-dark';
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = color;
+    logEntry.innerHTML = `[\${timestamp}] \${message}`;
+    
+    testLog.appendChild(logEntry);
+    testLog.scrollTop = testLog.scrollHeight;
+}
+
+// 코스 대기열 테스트
+function startCourseQueueTest() {
+    const courseSeq = prompt('테스트할 강의 번호를 입력하세요:', '1');
+    if (!courseSeq) return;
+    
+    addTestLog('🚀 코스 대기열 테스트 시작 - courseSeq: ' + courseSeq, 'success');
+    
+    // 새 창들 열기
+    const testWindows = [];
+    for (let i = 1; i <= 3; i++) {
+        setTimeout(() => {
+            const win = window.open(
+                contextPath + '/reservation/queue/' + courseSeq,
+                'test_user_' + i,
+                'width=800,height=600,left=' + (i * 100) + ',top=' + (i * 50)
+            );
+            testWindows.push(win);
+            addTestLog(`사용자 \${i} - 대기열 페이지 접속`);
+        }, i * 1000); // 1초 간격으로 접속
+    }
+}
+
+// 스케줄 대기열 테스트
+function startScheduleQueueTest() {
+    const courseSeq = prompt('테스트할 강의 번호를 입력하세요:', '1');
+    if (!courseSeq) return;
+    
+    addTestLog('🚀 스케줄 대기열 테스트 시작 - courseSeq: ' + courseSeq, 'success');
+    
+    // 예약 페이지를 여러 창에서 열기
+    for (let i = 1; i <= 3; i++) {
+        setTimeout(() => {
+            window.open(
+                contextPath + '/reservation/' + courseSeq,
+                'schedule_test_' + i,
+                'width=1000,height=700,left=' + (i * 100) + ',top=' + (i * 50)
+            );
+            addTestLog(`사용자 \${i} - 예약 페이지 접속`);
+        }, i * 500);
+    }
+}
+
+// 가상 사용자 생성 (API 호출)
+async function createVirtualUsers() {
+    const count = parseInt(document.getElementById('virtualUserCount').value);
+    const courseSeq = prompt('강의 번호를 입력하세요:', '1');
+    
+    if (!courseSeq) return;
+    
+    addTestLog(`🤖 \${count}명의 가상 사용자 생성 시작...`);
+    
+    for (let i = 1; i <= count; i++) {
+        const memberNo = 9000 + i; // 가상 사용자 번호
+        
+        try {
+            // 코스 대기열에 추가
+            const response = await fetch(contextPath + '/reservation/join-course-queue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseSeq: courseSeq,
+                    memberNo: memberNo
+                })
+            });
+            
+            // 응답 상태 확인
+            if (!response.ok) {
+                addTestLog(`❌ 가상 사용자 \${memberNo} HTTP 오류: \${response.status} \${response.statusText}`, 'error');
+                continue;
+            }
+            
+            // 응답 텍스트를 먼저 가져와서 확인
+            const responseText = await response.text();
+            console.log('응답 텍스트:', responseText);
+            
+            // JSON 파싱 시도
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                addTestLog(`❌ 가상 사용자 \${memberNo} JSON 파싱 오류. 응답: \${responseText.substring(0, 100)}...`, 'error');
+                continue;
+            }
+            
+            if (data.success) {
+                addTestLog(`✅ 가상 사용자 \${memberNo} 추가 성공 - 순서: \${data.data.position}`, 'success');
+            } else {
+                addTestLog(`❌ 가상 사용자 \${memberNo} 추가 실패: \${data.message}`, 'error');
+            }
+            
+        } catch (error) {
+            addTestLog(`❌ 가상 사용자 \${memberNo} 추가 오류: \${error.message}`, 'error');
+        }
+        
+        // 0.5초 대기
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    addTestLog('✅ 가상 사용자 생성 완료!', 'success');
+    
+    // 대기열 상태 갱신
+    refreshQueueStats();
+}
+
+// 대기열 상태 갱신
+function refreshQueueStats() {
+    const courseSeq = document.getElementById('courseSeq').value || '1';
+    
+    // API 호출하여 대기열 상태 가져오기
+    fetch(contextPath + '/reservation/queue-stats/' + courseSeq)
+        .then(async response => {
+            if (!response.ok) {
+                console.error('HTTP 오류:', response.status, response.statusText);
+                return;
+            }
+            
+            const responseText = await response.text();
+            console.log('대기열 상태 응답:', responseText);
+            
+            try {
+                const data = JSON.parse(responseText);
+                if (data.success) {
+                    // 코스 대기열 업데이트
+                    document.getElementById('courseQueueCount').textContent = data.totalInQueue || 0;
+                    
+                    // 상위 멤버 표시
+                    const membersHtml = data.topMembers ? 
+                        data.topMembers.map((m, i) => `\${i+1}. 사용자 \${m}`).join('<br>') :
+                        '대기자 없음';
+                    document.getElementById('courseQueueMembers').innerHTML = membersHtml;
+                }
+            } catch (parseError) {
+                console.error('JSON 파싱 오류:', parseError);
+                console.error('응답 내용:', responseText.substring(0, 200));
+            }
+        })
+        .catch(error => {
+            console.error('대기열 상태 조회 실패:', error);
+        });
+}
+
+// 5초마다 대기열 상태 갱신
+setInterval(refreshQueueStats, 5000);
+
+// 페이지 로드시 초기 상태 조회
+document.addEventListener('DOMContentLoaded', function() {
+    refreshQueueStats();
+    addTestLog('🔍 대기열 모니터링 시작', 'success');
 });
 </script>
 

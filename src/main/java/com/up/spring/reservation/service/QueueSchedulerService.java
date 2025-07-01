@@ -1,5 +1,6 @@
 package com.up.spring.reservation.service;
 
+import com.up.spring.reservation.websocket.QueueWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.Cursor;
@@ -21,10 +22,11 @@ public class QueueSchedulerService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ReservationRedisService reservationRedisService;
+    private final QueueWebSocketHandler queueWebSocketHandler;
 
     // 자동 대기열 (5초)
 
-    @Scheduled(fixedDelay = 1000*60*60)
+    @Scheduled(fixedDelay = 500)
     public void processAllQueues() {
 //        log.debug("==대기열 처리 시작==");
         Set<String> activeCourses = getActiveCoursesWithHeartbeat();
@@ -111,6 +113,16 @@ public class QueueSchedulerService {
         if (reservationCreated) {
             Long removed = redisTemplate.opsForZSet().remove(queueKey, firstMemberObj);
             log.info("스케쥴{}, 사용자{} : 임시예약 생성, 대기열 제거 제거 여부 :{}", scheduleId, memberNo, removed);
+
+            // 🔥 해당 사용자에게 임시예약 성공 알림
+            Map<String, Object> successMessage = new HashMap<>();
+            successMessage.put("type", "reservation_success");
+            successMessage.put("message", "임시예약이 완료되었습니다! 10분 내에 결제를 완료해주세요.");
+            successMessage.put("scheduleId", scheduleId);
+            queueWebSocketHandler.sendQueueUpdate(String.valueOf(courseSeq), String.valueOf(memberNo), successMessage);
+
+            // 🔥 대기열의 다른 사용자들에게 순서 업데이트
+            broadcastQueuePositionUpdate(courseSeq, scheduleId, queueKey);
 
             Long remainingCount = redisTemplate.opsForZSet().zCard(queueKey);
             log.info("스케쥴{} : 남은 대기인원 {} 명", scheduleId, remainingCount);
@@ -355,7 +367,7 @@ public class QueueSchedulerService {
                 .build();
 
         try (Cursor<String> cursor = redisTemplate.scan(scanOptions)) {
-            while (cursor.hasNext() && count < maxCount) {
+            while (cursor.hasNext()) {
                 cursor.next();
                 count++;
             }
@@ -363,13 +375,6 @@ public class QueueSchedulerService {
         return count;
     }
 
-    /**
-     * 스케줄러 상태 조회 (모니터링용)
-     * 현재 처리 중인 대기열들의 상태를 반환합니다.
-     * SCAN을 사용하여 안전하게 통계를 수집합니다.
-     *
-     * @return 스케줄러 상태 정보
-     */
     public java.util.Map<String, Object> getSchedulerStatus() {
         java.util.Map<String, Object> status = new java.util.HashMap<>();
 
@@ -406,4 +411,35 @@ public class QueueSchedulerService {
 
         return status;
     }
+
+    // 대기열 위치 업데이트 브로드캐스트
+    private void broadcastQueuePositionUpdate(Long courseSeq, Long scheduleId, String queueKey) {
+        Set<Object> allMembers = redisTemplate.opsForZSet().range(queueKey, 0, -1);
+        Long totalInQueue = redisTemplate.opsForZSet().zCard(queueKey);
+        
+        if (allMembers != null && !allMembers.isEmpty()) {
+            int position = 1;
+            for (Object memberObj : allMembers) {
+                String memberNo = String.valueOf(memberObj);
+                
+                Map<String, Object> queueData = new HashMap<>();
+                queueData.put("type", "queue_update");
+                queueData.put("position", position);
+                queueData.put("totalInQueue", totalInQueue);
+                queueData.put("estimatedWaitTime", (position - 1) * 30); // 30초당 1명 처리 가정
+                queueData.put("scheduleId", scheduleId);
+                
+                // 개별 사용자에게 위치 정보 전송
+                queueWebSocketHandler.sendQueueUpdate(String.valueOf(courseSeq), memberNo, queueData);
+                
+                position++;
+            }
+            
+            log.debug(" 대기열 위치 업데이트 전송 - 강의: {}, 스케줄: {}, 총 {}명",
+                    courseSeq, scheduleId, totalInQueue);
+        }
+    }
+
+    @Scheduled(fixedRate=60000)
+    public void scheduledTask() {}
 }

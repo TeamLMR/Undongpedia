@@ -1,84 +1,126 @@
 #!/bin/bash
 
-echo "🚀 대기열 시뮬레이션 시작!"
-echo "==============================="
+# 대기열 테스트 스크립트
+BASE_URL="http://localhost:8080/undongpedia"
+COURSE_SEQ=20
+SCHEDULE_ID=2
 
-# 서버 확인
-echo "1️⃣ 서버 상태 확인..."
-curl -s http://localhost:9090/undongpedia/reservation/20 > /dev/null
-if [ $? -eq 0 ]; then
-    echo "✅ 서버 정상 동작 중"
-else
-    echo "❌ 서버가 실행되지 않았습니다. 서버를 먼저 시작해주세요."
-    exit 1
-fi
+echo "🚀 대기열 시스템 테스트 시작"
+echo "================================"
 
-echo ""
-echo "2️⃣ 단계 1: 활성 사용자 30명 생성 (하트비트 전송)"
-echo "----------------------------------------"
+# 테스트 함수들
+test_join_queue() {
+    local member_no=$1
+    echo "👤 사용자 $member_no - 대기열 진입 테스트"
+    
+    response=$(curl -s -w "\n%{http_code}" -X POST \
+        -H "Content-Type: application/json" \
+        -d "{\"courseSeq\": $COURSE_SEQ, \"memberNo\": $member_no}" \
+        "$BASE_URL/reservation/join-course-queue")
+    
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n -1)
+    
+    if [ "$http_code" = "200" ]; then
+        echo "✅ 대기열 진입 성공: $body"
+    else
+        echo "❌ 대기열 진입 실패 ($http_code): $body"
+    fi
+    echo ""
+}
 
-# 30명의 사용자가 하트비트 전송
-for i in {1..30}
-do
-    curl -s -X POST http://localhost:9090/undongpedia/reservation/heartbeat \
-         -H "Content-Type: application/json" \
-         -d "{\"courseSeq\":1,\"memberNo\":$i}" > /dev/null &
+test_heartbeat() {
+    local member_no=$1
+    echo "💓 사용자 $member_no - 하트비트 전송"
+    
+    response=$(curl -s -w "\n%{http_code}" -X POST \
+        -H "Content-Type: application/json" \
+        -d "{\"courseSeq\": $COURSE_SEQ, \"memberNo\": $member_no}" \
+        "$BASE_URL/reservation/heartbeat")
+    
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n -1)
+    
+    if [ "$http_code" = "200" ]; then
+        echo "✅ 하트비트 성공: $body"
+    else
+        echo "❌ 하트비트 실패 ($http_code): $body"
+    fi
+    echo ""
+}
+
+test_queue_status() {
+    echo "📊 대기열 상태 조회"
+    
+    response=$(curl -s -w "\n%{http_code}" -X GET \
+        "$BASE_URL/reservation/queue-stats/$COURSE_SEQ")
+    
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n -1)
+    
+    if [ "$http_code" = "200" ]; then
+        echo "✅ 상태 조회 성공: $body"
+    else
+        echo "❌ 상태 조회 실패 ($http_code): $body"
+    fi
+    echo ""
+}
+
+test_booking() {
+    local member_no=$1
+    echo "🎫 사용자 $member_no - 예약 요청"
+    
+    response=$(curl -s -w "\n%{http_code}" -X POST \
+        -H "Content-Type: application/json" \
+        -d "{\"courseSeq\": $COURSE_SEQ, \"scheduleId\": $SCHEDULE_ID, \"memberNo\": $member_no}" \
+        "$BASE_URL/reservation/book")
+    
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n -1)
+    
+    if [ "$http_code" = "200" ]; then
+        echo "✅ 예약 요청 성공: $body"
+    else
+        echo "❌ 예약 요청 실패 ($http_code): $body"
+    fi
+    echo ""
+}
+
+# 동시 대기열 진입 테스트
+echo "🎯 테스트 1: 동시 대기열 진입 (10명)"
+echo "-----------------------------------"
+for i in {9001..9010}; do
+    test_join_queue $i &
 done
-
-# 모든 하트비트가 완료될 때까지 대기
 wait
-echo "✅ 30명의 활성 사용자 하트비트 전송 완료"
-
+echo "대기열 진입 테스트 완료"
 echo ""
-echo "3️⃣ 단계 2: 현재 활성 사용자 수 확인"
-echo "--------------------------------"
 
 # 대기열 상태 확인
-response=$(curl -s "http://localhost:9090/undongpedia/reservation/queue-status/1?memberNo=1")
-echo "📊 현재 상태: $response"
+test_queue_status
 
-echo ""
-echo "4️⃣ 단계 3: 동시 예약 요청 (50명)"
-echo "-----------------------------"
-
-# 50명이 동시에 예약 요청
-for i in {1..50}
-do
-    curl -s -X POST http://localhost:9090/undongpedia/reservation/book \
-         -H "Content-Type: application/json" \
-         -d "{\"courseSeq\":20,\"scheduleId\":1,\"memberNo\":$i}" &
-    
-    # 10명씩 배치로 나누어 전송
-    if [ $((i % 10)) -eq 0 ]; then
-        echo "📤 $i명 예약 요청 전송..."
-        sleep 1
-    fi
+# 하트비트 테스트
+echo "🎯 테스트 2: 하트비트 전송"
+echo "-------------------------"
+for i in {9001..9005}; do
+    test_heartbeat $i
+    sleep 1
 done
 
-# 모든 요청 완료 대기
+# 대기열 상태 재확인
+test_queue_status
+
+# 예약 요청 테스트
+echo "🎯 테스트 3: 예약 요청 (5명 동시)"
+echo "--------------------------------"
+for i in {8001..8005}; do
+    test_booking $i &
+done
 wait
-echo "✅ 50명 예약 요청 완료"
-
+echo "예약 요청 테스트 완료"
 echo ""
-echo "5️⃣ 단계 4: 최종 대기열 상태 확인"
-echo "-----------------------------"
 
-# 여러 사용자의 대기열 상태 확인
-for i in {1..5}
-do
-    echo "👤 사용자 $i 상태:"
-    curl -s "http://localhost:9090/undongpedia/reservation/queue-status/1?memberNo=$i" | jq
-    echo ""
-done
+# 최종 상태 확인
+test_queue_status
 
-echo ""
-echo "6️⃣ 단계 5: Redis 데이터 직접 확인 (선택사항)"
-echo "----------------------------------------"
-echo "Redis CLI에서 다음 명령어로 확인 가능:"
-echo "redis-cli ZCARD heartBeat:course:1"
-echo "redis-cli ZCARD queue:course:1"
-echo "redis-cli ZRANGE queue:course:1 0 -1 WITHSCORES"
-
-echo ""
-echo "🎉 대기열 시뮬레이션 완료!"
-echo "===============================" 
+echo "🏁 모든 테스트 완료!" 

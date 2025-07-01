@@ -28,7 +28,7 @@
         </property>
     </bean>
 
-    <context:component-scan base-package="com.up.spring.config, com.up.spring.reservation.websocket"/>
+    <context:component-scan base-package="com.up.spring"/>
 
 <!--    추후 local에서 server로 변경-->
     <context:property-placeholder

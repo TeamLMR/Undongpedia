@@ -3,12 +3,22 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 
+<!-- 온라인 장바구니 가격 계산 -->
 <c:forEach var="cart" items="${cartList}">
-    <c:set var="origin" value="${cart.cartCourse.coursePrice}" />
-    <c:set var="discount" value="${origin * (cart.cartCourse.courseDiscount) / 100}" />
+    <c:set var="origin" value="${cart.cartCourse.coursePrice}"/>
+    <c:set var="discount" value="${origin * (cart.cartCourse.courseDiscount) / 100}"/>
 
-    <c:set var="resultOriginPrice" value="${resultOriginPrice + origin}" />
-    <c:set var="resultDiscountPrice" value="${resultDiscountPrice - discount}" />
+    <c:set var="resultOriginPrice" value="${resultOriginPrice + origin}"/>
+    <c:set var="resultDiscountPrice" value="${resultDiscountPrice - discount}"/>
+</c:forEach>
+
+<!-- 오프라인 장바구니 가격 계산 -->
+<c:forEach var="offlineCart" items="${offlineCartList}">
+    <c:set var="offlineOrigin" value="${offlineCart.cartCourse.coursePrice}"/>
+    <c:set var="offlineDiscount" value="${offlineOrigin * (offlineCart.cartCourse.courseDiscount) / 100}"/>
+
+    <c:set var="resultOriginPrice" value="${resultOriginPrice + offlineOrigin}"/>
+    <c:set var="resultDiscountPrice" value="${resultDiscountPrice - offlineDiscount}"/>
 </c:forEach>
 
 <main class="main">
@@ -49,13 +59,18 @@
                                             <div class="col-lg-8 col-12 mt-3 mt-lg-0 mb-lg-0 mb-3">
                                                 <div class="product-info d-flex align-items-center">
                                                     <div class="product-image">
-                                                        <img src="${pageContext.request.contextPath}${cart.cartCourse.courseThumbnail}" alt="Product" class="w-100 h-100 object-fit-cover" loading="lazy">
+                                                        <img src="${pageContext.request.contextPath}${cart.cartCourse.courseThumbnail}"
+                                                             alt="Product" class="w-100 h-100 object-fit-cover"
+                                                             loading="lazy">
                                                     </div>
                                                     <div class="product-details">
                                                         <h6 class="product-title">${cart.cartCourse.courseTitle}</h6>
-                                                        <form action="${pageContext.request.contextPath}/cart/remove" method="post" style="display:inline;">
-                                                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                                                <input type="hidden" name="removeCartSeq" value="${cart.cartSeq}" />
+                                                        <form action="${pageContext.request.contextPath}/cart/remove"
+                                                              method="post" style="display:inline;">
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-secondary btn-sm">
+                                                                <input type="hidden" name="removeCartSeq"
+                                                                       value="${cart.cartSeq}"/>
                                                                 <i class="bi bi-trash"></i> Remove
                                                             </button>
                                                         </form>
@@ -66,21 +81,24 @@
                                                 <div class="price-tag">
                                                     <div class="text-danger fs-5 text-end">
                                                         <span id="discount">
-                                                            <fmt:formatNumber type="number" maxFractionDigits="3" value="${cart.cartCourse.courseDiscount}"/>
+                                                            <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                                              value="${cart.cartCourse.courseDiscount}"/>
                                                         </span>
                                                         <span>%</span>
                                                     </div>
                                                     <div class="original-price text-secondary text-end">
                                                         <span>₩</span>
                                                         <span id="origin-price">
-                                                        <fmt:formatNumber type="number" maxFractionDigits="3" value="${cart.cartCourse.coursePrice}"/>
+                                                        <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                                          value="${cart.cartCourse.coursePrice}"/>
                                                         </span>
                                                         <span>-></span>
                                                     </div>
                                                     <div class="current-price fs-4 text-end">
                                                         <span>₩</span>
                                                         <span id="price">
-                                                                <fmt:formatNumber type="number" maxFractionDigits="3" value="${cart.cartCourse.coursePrice * (100-cart.cartCourse.courseDiscount)/100}"/>
+                                                                <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                                                  value="${cart.cartCourse.coursePrice * (100-cart.cartCourse.courseDiscount)/100}"/>
                                                         </span>
                                                     </div>
                                                 </div>
@@ -89,7 +107,67 @@
                                     </div>
                                 </c:forEach>
                             </c:if>
-                            <c:if test="${empty cartList}">
+                            <c:if test="${not empty offlineCartList}">
+                                <c:forEach var="offlineCart" items="${offlineCartList}">
+                                    <div class="cart-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-lg-8 col-12 mt-3 mt-lg-0 mb-lg-0 mb-3">
+                                                <div class="product-info d-flex align-items-center">
+                                                    <div class="product-details">
+                                                        <h6 class="product-title">${offlineCart.cartCourse.courseTitle}</h6>
+                                                        <p class="text-muted mb-1">
+                                                            <i class="bi bi-calendar"></i>
+                                                            <fmt:formatDate value="${offlineCart.cartCourseSchedule.courseDate}" pattern="yyyy-MM-dd"/>
+                                                            ${offlineCart.cartCourseSchedule.courseStartTime}
+                                                        </p>
+                                                        <p class="text-muted mb-1">
+                                                            <i class="bi bi-geo-alt"></i>
+                                                            ${offlineCart.cartCourseSchedule.courseLocation}
+                                                        </p>
+                                                        <form action="${pageContext.request.contextPath}/cart/remove"
+                                                              method="post" style="display:inline;">
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-secondary btn-sm">
+                                                                <input type="hidden" name="removeCartSeq"
+                                                                       value="${offlineCart.cartSeq}"/>
+                                                                <i class="bi bi-trash"></i> Remove
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4 col-12 mt-3 mt-lg-0 text-center">
+                                                <div class="price-tag">
+                                                    <div class="text-danger fs-5 text-end">
+                                                        <span id="discount">
+                                                            <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                                              value="${offlineCart.cartCourse.courseDiscount}"/>
+                                                        </span>
+                                                        <span>%</span>
+                                                    </div>
+                                                    <div class="original-price text-secondary text-end">
+                                                        <span>₩</span>
+                                                        <span id="origin-price">
+                                                        <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                                          value="${offlineCart.cartCourse.coursePrice}"/>
+                                                        </span>
+                                                        <span>-></span>
+                                                    </div>
+                                                    <div class="current-price fs-4 text-end">
+                                                        <span>₩</span>
+                                                        <span id="price">
+                                                                <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                                                  value="${offlineCart.cartCourse.coursePrice * (100-offlineCart.cartCourse.courseDiscount)/100}"/>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </c:if>
+
+                            <c:if test="${empty cartList && empty offlineCartList}">
                                 <%--칼럼 빈값--%>
                                 <div class="col-lg-12 text-secondary text-center">
                                     장바구니에 상품이 없습니다.
@@ -113,23 +191,27 @@
                             <div class="summary-item discount">
                                 <span class="summary-label">할인</span>
                                 <span class="summary-value">
-                                    <fmt:formatNumber type="number" maxFractionDigits="3" value="${resultDiscountPrice}"/>
+                                    <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                      value="${resultDiscountPrice}"/>
                                 </span>
                             </div>
                             <div class="summary-total">
                                 <span class="summary-label">총 금액</span>
                                 <span class="summary-value">₩</span>
                                 <span class="summary-value">
-                                        <fmt:formatNumber type="number" maxFractionDigits="3" value="${resultOriginPrice+resultDiscountPrice}"/>
+                                        <fmt:formatNumber type="number" maxFractionDigits="3"
+                                                          value="${resultOriginPrice+resultDiscountPrice}"/>
                                 </span>
                             </div>
 
                             <div class="checkout-button">
-                                <c:if test="${not empty cartList}">
-                                    <img src= "${pageContext.request.contextPath}/resources/images/btn_npaygr_pay.svg" class="w-100" alt="" onclick="checkout()">
+                                <c:if test="${not empty cartList || not empty offlineCartList}">
+                                    <img src="${pageContext.request.contextPath}/resources/images/btn_npaygr_pay.svg"
+                                         class="w-100" alt="" onclick="checkout()">
                                 </c:if>
-                                <c:if test="${empty cartList}">
-                                    <img src= "${pageContext.request.contextPath}/resources/images/btn_deactivated_pay.svg" class="w-100" alt="">
+                                <c:if test="${empty cartList && empty offlineCartList}">
+                                    <img src="${pageContext.request.contextPath}/resources/images/btn_deactivated_pay.svg"
+                                         class="w-100" alt="">
                                 </c:if>
                             </div>
 

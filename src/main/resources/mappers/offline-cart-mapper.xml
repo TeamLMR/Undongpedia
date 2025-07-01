@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="offlineCart">
+
+    <resultMap id="offlineCartMap" type="offlineCart">
+        <id column="CART_SEQ" property="cartSeq"/>
+        <result column="MEMBER_NO" property="memberNo"/>
+        <result column="TEMP_RESERVATION_ID" property="tempReservationId"/>
+        <result column="CART_TIMESTAMP" property="cartTimeStamp"/>
+
+        <!-- Course 객체 매핑 -->
+        <association property="cartCourse" javaType="course">
+            <id column="COURSE_SEQ" property="courseSeq"/>
+            <result column="COURSE_TITLE" property="courseTitle"/>
+            <result column="COURSE_PRICE" property="coursePrice"/>
+            <result column="COURSE_DISCOUNT" property="courseDiscount"/>
+            <result column="COURSE_THUMBNAIL" property="courseThumbnail"/>
+            <result column="COURSE_CONTENT" property="courseContent"/>
+            <result column="COURSE_TARGET" property="courseTarget"/>
+            <result column="COURSE_TYPE" property="courseType"/>
+        </association>
+
+        <!-- CourseSchedule 객체 매핑 -->
+        <association property="cartCourseSchedule" javaType="courseSchedule">
+            <id column="SCHEDULE_ID" property="scheduleId"/>
+            <result column="COURSE_SEQ" property="courseSeq"/>
+            <result column="COURSE_DATE" property="courseDate"/>
+            <result column="COURSE_START_TIME" property="courseStartTime"/>
+            <result column="COURSE_END_TIME" property="courseEndTime"/>
+            <result column="COURSE_CAPACITY" property="courseCapacity"/>
+            <result column="COURSE_LOCATION" property="courseLocation"/>
+            <result column="BOOKED_SEATS" property="bookedSeats"/>
+            <result column="STATUS" property="status"/>
+        </association>
+    </resultMap>
+
+    <select id="searchOfflineCartsByMemberNo" parameterType="_long" resultMap="offlineCartMap">
+        SELECT oc.CART_SEQ, oc.MEMBER_NO, oc.TEMP_RESERVATION_ID, oc.CART_TIMESTAMP,
+               c.COURSE_SEQ, c.COURSE_TITLE, c.COURSE_PRICE, c.COURSE_DISCOUNT,
+               c.COURSE_THUMBNAIL, c.COURSE_CONTENT, c.COURSE_TARGET, c.COURSE_TYPE,
+               cs.SCHEDULE_ID, cs.COURSE_DATE, cs.COURSE_START_TIME, cs.COURSE_END_TIME,
+               cs.COURSE_CAPACITY, cs.COURSE_LOCATION, cs.BOOKED_SEATS, cs.STATUS
+        FROM OFFLINE_CART oc
+                 JOIN COURSE c ON oc.COURSE_SEQ = c.COURSE_SEQ
+                 JOIN COURSE_SCHEDULE cs ON oc.SCHEDULE_ID = cs.SCHEDULE_ID
+        WHERE oc.MEMBER_NO = #{memberNo}
+        ORDER BY oc.CART_TIMESTAMP DESC
+    </select>
+
+    <insert id="insertOfflineCart" parameterType="offlineCart">
+        INSERT INTO OFFLINE_CART (
+            CART_SEQ, MEMBER_NO, COURSE_SEQ, SCHEDULE_ID,
+            TEMP_RESERVATION_ID, CART_TIMESTAMP
+        ) VALUES (
+                     SEQ_CART.NEXTVAL, #{memberNo}, #{cartCourse.courseSeq}, #{cartCourseSchedule.scheduleId},
+                     #{tempReservationId}, DEFAULT
+                 )
+    </insert>
+
+    <delete id="deleteOfflineCartBySeq" parameterType="_int">
+        DELETE FROM OFFLINE_CART WHERE CART_SEQ = #{cartSeq}
+    </delete>
+
+    <delete id="deleteOfflineCartByTempReservationId" parameterType="string">
+        DELETE FROM OFFLINE_CART WHERE TEMP_RESERVATION_ID = #{tempReservationId}
+    </delete>
+
+</mapper>
