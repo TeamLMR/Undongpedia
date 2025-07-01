@@ -3,13 +3,20 @@ package com.up.spring.payment.controller;
 import com.up.spring.member.model.dto.Member;
 import com.up.spring.payment.model.dto.Cart;
 import com.up.spring.payment.model.dto.NaverProperty;
+import com.up.spring.payment.model.dto.OfflineCart;
 import com.up.spring.payment.model.dto.Orders;
 import com.up.spring.payment.model.service.CartService;
+import com.up.spring.payment.model.service.OfflineCartService;
 import com.up.spring.payment.model.service.OrderService;
+import com.up.spring.course.model.dto.Course;
+import com.up.spring.course.model.dto.CourseSchedule;
+import com.up.spring.course.model.service.CourseService;
+import com.up.spring.course.model.service.CourseScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +25,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,25 +39,50 @@ public class PaymentController {
     private final CartService cartService;
     private final NaverProperty naverProperty;
     private final OrderService orderService;
+    private final OfflineCartService offlineCartService;
+    private final CourseService courseService;
+    private final CourseScheduleService courseScheduleService;
 
     private List<String> getCartCourseNames(long memberNo){
-        List<Cart> cartList =  cartService.searchCartsByMemberNo(memberNo);
         List<String> cartNames = new ArrayList<>();
-
+        
+        // 온라인 장바구니
+        List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
         for (Cart cart : cartList) {
             cartNames.add(cart.getCartCourse().getCourseTitle());
         }
+        
+        // 오프라인 장바구니
+        List<OfflineCart> offlineCartList = offlineCartService.searchOfflineCartByMemberNo(memberNo);
+        for (OfflineCart offlineCart : offlineCartList) {
+            String courseName = offlineCart.getCartCourse().getCourseTitle();
+            cartNames.add(courseName + " (오프라인 예약)");
+        }
+        
         return cartNames;
     }
 
     private int[] getCartCountAndPrice(long memberNo){
-        List<Cart> cartList =  cartService.searchCartsByMemberNo(memberNo);
-        int productCount = cartList.size();
+        int productCount = 0;
         int totalPayAmount = 0;
-
+        
+        // 온라인 장바구니
+        List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
+        productCount += cartList.size();
+        
         for (Cart cart : cartList) {
             int coursePrice = cart.getCartCourse().getCoursePrice();
             double discountPrice = (double) (coursePrice * (100 - cart.getCartCourse().getCourseDiscount())) /100;
+            totalPayAmount += (int) (discountPrice);
+        }
+        
+        // 오프라인 장바구니
+        List<OfflineCart> offlineCartList = offlineCartService.searchOfflineCartByMemberNo(memberNo);
+        productCount += offlineCartList.size();
+        
+        for (OfflineCart offlineCart : offlineCartList) {
+            int coursePrice = offlineCart.getCartCourse().getCoursePrice();
+            double discountPrice = (double) (coursePrice * (100 - offlineCart.getCartCourse().getCourseDiscount())) /100;
             totalPayAmount += (int) (discountPrice);
         }
 
@@ -82,7 +115,11 @@ public class PaymentController {
 
         //네이버는 이름에 건수를 자동 처리를 해주네.. 참고
         String joinNames = "";
-        joinNames = productNames.get(0);
+        if (productNames.isEmpty()) {
+            joinNames = "상품 없음"; // 기본값 설정
+        } else {
+            joinNames = productNames.get(0);
+        }
         log.debug(joinNames);
 
         //부가세 (10%)
@@ -125,17 +162,27 @@ public class PaymentController {
     @PostMapping("/cart/remove")
     public String removeCart(@RequestParam("removeCartSeq") int removeCartSeq, Model model) {
         String loc = "common/msg";
-        log.debug("removeCartSeq" + removeCartSeq);
+        log.debug("removeCartSeq: {}", removeCartSeq);
 
         long memberNo = returnMemberNo();
         if (memberNo != 0) {
             /*
             * 1. 멤버 세션이 있을 때만
             * 2. 삭제시 값 받아서 확인
-            * 3. 다시 카트 리스트 가져와서 반환
+            * 3. 온라인 장바구니에서 먼저 시도, 실패하면 오프라인 장바구니에서 시도
+            * 4. 다시 카트 리스트 가져와서 반환
             * */
+            
+            // 먼저 온라인 장바구니에서 삭제 시도
             int deleteCartResult = cartService.deleteCartByNo(removeCartSeq);
-            if(deleteCartResult == 1){
+            
+
+            if (deleteCartResult != 1) {
+                deleteCartResult = offlineCartService.deleteOfflineCartByNo(removeCartSeq);
+                log.debug("오프라인 장바구니 삭제 결과: {}", deleteCartResult);
+            }
+            
+            if (deleteCartResult == 1) {
                 //삭제 성공시 카트 리스트 반환하도록 다시 위치 보냄
                 loc = "redirect:/cart";
             } else {
@@ -157,7 +204,9 @@ public class PaymentController {
         long memberNo = returnMemberNo();
         if (memberNo != 0) {
             List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
+            List<OfflineCart> offlineCartList = offlineCartService.searchOfflineCartByMemberNo(memberNo);
             model.addAttribute("cartList", cartList);
+            model.addAttribute("offlineCartList", offlineCartList);
             loc = "payment/cart";
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
@@ -201,13 +250,20 @@ public class PaymentController {
         if (memberNo != 0) {
             //결제창 오픈시 들어갈 정보들
             //카트 내 장바구니들 전체 결제
-            HttpHeaders headers = getHeaders("start");
             List<String> cartNames = getCartCourseNames(memberNo);
             int[] countAndPrice = getCartCountAndPrice(memberNo);
-
-            Map<String, Object> oPayMap = setNaverPayMap(cartNames, countAndPrice[0], countAndPrice[1], request);
-            model.addAttribute("oPayMap", oPayMap);
-            loc = "payment/start";
+            
+            // 장바구니가 비어있는지 확인
+            if (countAndPrice[0] == 0) {
+                model.addAttribute("msg", "장바구니에 상품이 없습니다.");
+                model.addAttribute("loc", "/cart");
+                loc = "common/msg";
+            } else {
+                HttpHeaders headers = getHeaders("start");
+                Map<String, Object> oPayMap = setNaverPayMap(cartNames, countAndPrice[0], countAndPrice[1], request);
+                model.addAttribute("oPayMap", oPayMap);
+                loc = "payment/start";
+            }
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
             model.addAttribute("loc", "/common/msg");
@@ -306,5 +362,72 @@ public class PaymentController {
         }
 
         return loc;
+    }
+
+    //오프라인 장바구니
+    @PostMapping("/cart/add-offline")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addOfflineCart(
+            @RequestParam String tempReservationId,
+            @RequestParam Long scheduleId,
+            @RequestParam Long courseSeq) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            long memberNo = returnMemberNo();
+            if (memberNo == 0) {
+                response.put("success", false);
+                response.put("message", "로그인이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            Course course = courseService.searchById(courseSeq);
+            if (course == null) {
+                response.put("success", false);
+                response.put("message", "강의 정보를 찾을 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            List<CourseSchedule> schedules = courseScheduleService.searchScheduleByCourseSeq(courseSeq);
+            CourseSchedule targetSchedule = schedules.stream()
+                    .filter(schedule -> schedule.getScheduleId().equals(scheduleId))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (targetSchedule == null) {
+                response.put("success", false);
+                response.put("message", "스케줄 정보를 찾을 수 없습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // OfflineCart 객체 생성
+            OfflineCart offlineCart = OfflineCart.builder()
+                    .memberNo(memberNo)
+                    .tempReservationId(tempReservationId)
+                    .cartCourse(course)
+                    .cartCourseSchedule(targetSchedule)
+                    .build();
+
+            int result = offlineCartService.addToOfflineCart(memberNo, offlineCart);
+            
+            if (result > 0) {
+                response.put("success", true);
+                response.put("message", "장바구니에 추가되었습니다.");
+                log.info("오프라인 장바구니 추가 성공 - memberNo: {}, tempReservationId: {}, scheduleId: {}", 
+                        memberNo, tempReservationId, scheduleId);
+            } else {
+                response.put("success", false);
+                response.put("message", "장바구니 추가에 실패했습니다.");
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("오프라인 장바구니 추가 중 오류 발생", e);
+            response.put("success", false);
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 }

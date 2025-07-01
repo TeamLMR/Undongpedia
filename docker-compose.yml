@@ -46,9 +46,12 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command:  redis-server --appendonly yes --notify-keyspace-events Ex
+
+
     volumes:
       - redis-data:/data
+
 
   # Redis Commander (Redis GUI - 옵션)
   redis-commander:
