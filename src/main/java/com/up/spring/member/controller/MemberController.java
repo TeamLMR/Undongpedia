@@ -233,4 +233,9 @@ public class MemberController {
         return "redirect:/member/request-password-update";
     }
 
+    @RequestMapping("/member/forgot-password")
+    public String forgotPassword() {
+        return "auth/forgot-password";
+    }
+
 }

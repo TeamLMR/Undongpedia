@@ -60,7 +60,7 @@
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between">
                                     <label for="password" class="form-label">비밀번호</label>
-                                    <a href="${path}/forgot-password" class="forgot-link">비밀번호를 잊으셨나요?</a>
+                                    <a href="${path}/member/forgot-password" class="forgot-link">비밀번호를 잊으셨나요?</a>
                                 </div>
                                 <input type="password" class="form-control" id="password" name="password"
                                        placeholder="비밀번호를 입력하세요" required="" autocomplete="current-password">

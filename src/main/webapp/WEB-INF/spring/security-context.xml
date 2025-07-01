@@ -20,6 +20,7 @@
     <security:csrf disabled="true"/>
 
     <security:intercept-url pattern="/loginpage" access="permitAll()"/>
+    <security:intercept-url pattern="/member/forgot-password" access="permitAll()"/>
     <security:intercept-url pattern="/login.do" access="permitAll()"/>
     <security:intercept-url pattern="/" access="permitAll()"/>
     <security:intercept-url pattern="/sessionmax.do" access="permitAll()"/>
