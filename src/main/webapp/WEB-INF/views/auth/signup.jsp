@@ -26,7 +26,7 @@
                             <p>운동백과와 함께 건강한 몸을 만들어요!</p>
                         </div>
 
-                        <form action="${path}/savemember" method="POST" id="signupForm">
+                        <form action="${path}/mypage/savemember" method="POST" id="signupForm">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <div class="form-group">

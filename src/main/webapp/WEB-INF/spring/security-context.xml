@@ -21,11 +21,13 @@
 
     <security:intercept-url pattern="/loginpage" access="permitAll()"/>
     <security:intercept-url pattern="/member/forgot-password" access="permitAll()"/>
+    <security:intercept-url pattern="/member/update-password" access="permitAll()"/>
     <security:intercept-url pattern="/login.do" access="permitAll()"/>
     <security:intercept-url pattern="/" access="permitAll()"/>
     <security:intercept-url pattern="/sessionmax.do" access="permitAll()"/>
     <security:intercept-url pattern="/signup" access="permitAll()"/>
     <security:intercept-url pattern="/savemember" access="permitAll()"/>
+    <security:intercept-url pattern="/mypage/savemember" access="permitAll()"/>
     <security:intercept-url pattern="/email" access="permitAll()"/>
     <security:intercept-url pattern="/email/**" access="permitAll()"/>
     <security:intercept-url pattern="/main/**" access="permitAll()"/>
