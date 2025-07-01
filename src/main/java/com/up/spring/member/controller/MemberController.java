@@ -1,6 +1,7 @@
 package com.up.spring.member.controller;
 
 import com.up.spring.coach.model.dto.CoachApply;
+import com.up.spring.common.EmailService;
 import com.up.spring.email.model.dto.PasswordUpdateValidationResult;
 import com.up.spring.email.model.service.PasswordUpdateService;
 import com.up.spring.member.model.dto.Member;
@@ -34,6 +35,7 @@ public class MemberController {
     private final OrderService orderService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final PasswordUpdateService passwordUpdateService;
+    private final EmailService emailService;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -78,7 +80,7 @@ public class MemberController {
     }
 
     /*auth 관련*/
-    @RequestMapping("/mypage/signup")
+    @RequestMapping("/signup")
     public String signup() {
 
         return "auth/signup";
@@ -91,14 +93,17 @@ public class MemberController {
 
     @PostMapping("/mypage/savemember")
     public String savemember(@ModelAttribute("member") Member member) {
-        log.info("{}",member);
-        String password = member.getMemberPassword();
-        log.info("{}",member);
-        member.setMemberPassword(passwordEncoder.encode(password));
-        log.info("{}", member);
-        int result=memberService.saveMember(member);
-        log.info("{}, {}", member, result);
 
+        String password = member.getMemberPassword();
+        member.setMemberPassword(passwordEncoder.encode(password));
+        int result=memberService.saveMember(member);
+        if(result > 0){
+            try {
+                emailService.sendWelcomeEmail(member.getMemberId(), member.getMemberName());
+            } catch (Exception e) {
+                log.error("웰컴 이메일 발송 실패", e);
+            }
+        }
         return "redirect:/";
     }
 
@@ -233,9 +238,41 @@ public class MemberController {
         return "redirect:/member/request-password-update";
     }
 
-    @RequestMapping("/member/forgot-password")
-    public String forgotPassword() {
-        return "auth/forgot-password";
+    @GetMapping("/member/forgot-password")
+    public String showForgotPasswordForm() {
+        return "member/forgot-password";
+    }
+
+    @PostMapping("/member/forgot-password")
+    public String processForgotPassword(@RequestParam String memberId, 
+                                       @RequestParam String memberName,
+                                       Model model,
+                                       RedirectAttributes redirectAttr) {
+        try {
+            Member member = memberService.searchById(memberId);
+
+            if (member == null) {
+                redirectAttr.addFlashAttribute("error", "해당 이메일로 가입된 회원이 없습니다.");
+                return "redirect:/member/forgot-password";
+            }
+            if (!memberName.equals(member.getMemberName())) {
+                redirectAttr.addFlashAttribute("error", "이름이 일치하지 않습니다.");
+                return "redirect:/member/forgot-password";
+            }
+
+            passwordUpdateService.createPasswordUpdateTokenForMember(member.getMemberNo(), member.getMemberId());
+
+            // 성공 시 model에 값 전달
+            model.addAttribute("success", true);
+            model.addAttribute("memberId", memberId);
+            model.addAttribute("memberName", memberName);
+            return "member/forgot-password";
+
+        } catch (Exception e) {
+            log.error("비밀번호 찾기 처리 중 오류 발생", e);
+            redirectAttr.addFlashAttribute("error", "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            return "redirect:/member/forgot-password";
+        }
     }
 
 }

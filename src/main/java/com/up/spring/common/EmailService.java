@@ -39,9 +39,9 @@ public class EmailService {
 
     // 2. 웰컴 이메일
     public void sendWelcomeEmail(String memberId, String memberName) throws MessagingException {
-        String htmlContent = loadTemplate("welcome.html")
+        String htmlContent = loadTemplate("welcome_email.html")
                 .replace("{USER_NAME}", memberName)
-                .replace("{WEBSITE_URL}", "https://운동백과.com");
+                .replace("{WEBSITE_URL}", "http://localhost:9090/undongpedia");
         sendHtmlEmail(memberId, "운동백과 가입을 축하드립니다!", htmlContent);
     }
 
