@@ -39,4 +39,22 @@
                )
     </insert>
 
+    <update id="updateMemberNickname" parameterType="map">
+        UPDATE MEMBER
+        SET MEMBER_NICKNAME = #{memberNickname}
+        WHERE MEMBER_NO = #{memberNo}
+    </update>
+
+    <select id="selectOne" parameterType="long" resultMap="memberResultMap">
+        SELECT *
+        FROM member
+        WHERE member_no = #{memberNo}
+    </select>
+
+    <update id="updatePassword" parameterType="member">
+        UPDATE member
+        SET member_password = #{memberPassword}
+        WHERE member_no = #{memberNo}
+    </update>
+
 </mapper>

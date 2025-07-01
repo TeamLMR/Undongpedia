@@ -16,36 +16,52 @@ public class MemberServiceImpl implements MemberService {
     private final SqlSession session;
 
 
-    private final MemberDao memberDaoImpl;
+    private final MemberDao memberDao;
 
     @Override
     public Member searchById(String memberId) {
-        return memberDaoImpl.searchById(session, memberId);
+        return memberDao.searchById(session, memberId);
     }
 
     @Override
     @Transactional
     public int saveMember(Member member) {
-        return memberDaoImpl.saveMember(session, member);
+        return memberDao.saveMember(session, member);
     }
 
     @Override
-    public int updateMember(Member member) {
-        return 0;
+    public int updateMemberNickname(Long memberNo, String nickname) {
+        return memberDao.updateMemberNickname(session, memberNo, nickname);
     }
 
     @Override
     public CoachApply getCoachApply(Long memberNo) {
-        return memberDaoImpl.getCoachApply(session, memberNo);
+        return memberDao.getCoachApply(session, memberNo);
     }
 
     @Override
     public int updateCoachApply(CoachApply coachApply) {
-        return memberDaoImpl.updateCoachApply(session, coachApply);
+        return memberDao.updateCoachApply(session, coachApply);
     }
 
     @Override
     public int insertCoachApply(CoachApply coachApply) {
-        return memberDaoImpl.insertCoachApply(session, coachApply);
+        return memberDao.insertCoachApply(session, coachApply);
+    }
+
+    @Override
+    public String findEmailByMemberNo(Long memberNo) {
+        Member member = memberDao.selectOne(session, memberNo);
+        return member != null ? member.getMemberId() : null;
+    }
+
+    @Override
+    @Transactional
+    public void updatePassword(Long memberNo, String encodedPassword) {
+        Member member = Member.builder()
+                .memberNo(memberNo)
+                .memberPassword(encodedPassword)
+                .build();
+        memberDao.updatePassword(session, member);
     }
 }

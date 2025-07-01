@@ -1,12 +1,16 @@
 package com.up.spring.member.controller;
 
 import com.up.spring.coach.model.dto.CoachApply;
+import com.up.spring.email.model.dto.PasswordUpdateValidationResult;
+import com.up.spring.email.model.service.PasswordUpdateService;
 import com.up.spring.member.model.dto.Member;
 import com.up.spring.member.model.service.MemberService;
 import com.up.spring.payment.model.dto.Orders;
 import com.up.spring.payment.model.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -14,13 +18,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.Mapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpSession;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @Slf4j
@@ -29,6 +33,7 @@ public class MemberController {
     private final MemberService memberService;
     private final OrderService orderService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordUpdateService passwordUpdateService;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -134,6 +139,98 @@ public class MemberController {
             model.addAttribute("loc", "/mypage");
         }
         return "common/msg";
+    }
+
+    @PostMapping("/member/update")
+    public String updateMember(@RequestParam("lastName") String nickname, Model model) {
+        // 현재 로그인한 사용자 정보 가져오기
+        Member loginMember = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        // 닉네임만 업데이트
+        loginMember.setMemberNickname(nickname);
+
+        // 서비스 호출
+        int result = memberService.updateMemberNickname(loginMember.getMemberNo(), nickname);
+
+        if (result > 0) {
+            model.addAttribute("msg", "닉네임이 성공적으로 변경되었습니다.");
+            model.addAttribute("loc", "/mypage");
+        } else {
+            model.addAttribute("msg", "닉네임 변경에 실패했습니다.");
+            model.addAttribute("loc", "/mypage");
+        }
+
+        return "common/msg";
+    }
+
+    @PostMapping("/member/request-password-update")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> requestPasswordUpdate() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Member loginMember = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (loginMember == null) {
+                response.put("success", false);
+                response.put("message", "로그인이 필요한 서비스입니다.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            passwordUpdateService.createPasswordUpdateTokenForMember(loginMember.getMemberNo(), loginMember.getMemberId());
+            response.put("success", true);
+            response.put("message", "비밀번호 업데이트 링크가 이메일로 발송되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("비밀번호 재설정 요청 중 오류 발생", e);
+            response.put("success", false);
+            response.put("message", "이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/member/update-password")
+    public String showPasswordUpdateForm(@RequestParam String token, Model model) {
+        PasswordUpdateValidationResult result = passwordUpdateService.validatePasswordUpdateToken(token);
+        
+        if (!result.isValid()) {
+            model.addAttribute("error", result.getErrorMessage());
+            if (result.getMemberNo() != null) {
+                model.addAttribute("memberNo", result.getMemberNo());
+                return "member/expired-token";
+            }
+            return "member/invalid-token";
+        }
+        
+        model.addAttribute("token", token);
+        return "member/update-password";
+    }
+
+    @PostMapping("/member/update-password")
+    public String updatePassword(
+            @RequestParam String token,
+            @RequestParam String newPassword,
+            RedirectAttributes redirectAttr) {
+        try {
+            passwordUpdateService.updatePassword(token, newPassword);
+            redirectAttr.addFlashAttribute("message", "비밀번호가 성공적으로 변경되었습니다.");
+            return "redirect:/logout.do";
+        } catch (IllegalStateException e) {
+            redirectAttr.addFlashAttribute("error", e.getMessage());
+            return "redirect:/member/update-password?token=" + token;
+        }
+    }
+
+    @PostMapping("/member/resend-update-link")
+    public String resendUpdateLink(@RequestParam Long memberNo, HttpSession session, RedirectAttributes redirectAttr) {
+        Member loginMember = (Member) session.getAttribute("loginMember");
+        if (loginMember == null || !loginMember.getMemberNo().equals(memberNo)) {
+            redirectAttr.addFlashAttribute("error", "유효하지 않은 요청입니다.");
+            return "redirect:/member/login";
+        }
+
+        passwordUpdateService.createPasswordUpdateTokenForMember(memberNo, loginMember.getMemberId());
+        redirectAttr.addFlashAttribute("message", "새로운 비밀번호 업데이트 링크가 이메일로 발송되었습니다.");
+        return "redirect:/member/request-password-update";
     }
 
 }

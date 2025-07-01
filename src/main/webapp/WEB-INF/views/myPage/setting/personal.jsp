@@ -1,11 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="path" value="${pageContext.request.contextPath}"/>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
 
 <%-- 현재 로그인한 사용자 정보를 JavaScript 전역변수로 설정 --%>
 <script>
     window.currentUserEmail = '${loginMember.memberId}';
     window.currentUserName = '${loginMember.memberName}';
+    window.contextPath = '${path}';
 </script>
 
 <style>
@@ -330,7 +332,7 @@
         <p>개인정보를 안전하게 관리하세요</p>
     </div>
 
-    <form action="/member/update" method="POST" id="updateForm">
+    <form action="${pageContext.request.contextPath}/member/update" method="POST" id="updateForm">
 
         <!-- 읽기 전용 정보 섹션 -->
         <div class="info-section">
@@ -430,48 +432,58 @@
         btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>전송 중...';
 
         // 실제 API 호출
-        fetch('/undongpedia/email/send-password-reset', {
+        fetch(window.contextPath + '/member/request-password-update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `email=\${encodeURIComponent(window.currentUserEmail)}&memberName=\${encodeURIComponent(window.currentUserName)}`
+            }
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // 성공 메시지 표시
-                    const emailMessage = document.getElementById('emailSentMessage');
-                    if (emailMessage) {
-                        emailMessage.style.display = 'flex';
-                    }
-
-                    // 버튼 상태 변경
-                    btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>전송 완료';
-                    btn.classList.remove('btn-outline-primary');
-                    btn.classList.add('btn-success');
-
-                    // 3초 후 원래 상태로 복원
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="bi bi-envelope me-2"></i>비밀번호 변경 링크 재전송';
-                        btn.classList.remove('btn-success');
-                        btn.classList.add('btn-outline-primary');
-                    }, 3000);
-
-                } else {
-                    // 실패 시 버튼 복원
-                    btn.disabled = false;
-                    btn.innerHTML = originalHTML;
-                    alert(data.message || '이메일 발송에 실패했습니다.');
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // 로그인이 필요한 경우
+                    window.location.href = '/member/login';
+                    throw new Error('로그인이 필요합니다.');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+                throw new Error('서버 오류가 발생했습니다.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // 성공 메시지 표시
+                const emailMessage = document.getElementById('emailSentMessage');
+                if (emailMessage) {
+                    emailMessage.style.display = 'flex';
+                }
+
+                // 버튼 상태 변경
+                btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>전송 완료';
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-success');
+
+                // 3초 후 원래 상태로 복원
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-envelope me-2"></i>비밀번호 변경 링크 재전송';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-primary');
+                }, 3000);
+            } else {
+                // 실패 시 버튼 복원
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
+                alert(data.message || '이메일 발송에 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            if (error.message !== '로그인이 필요합니다.') {
                 alert('서버 오류가 발생했습니다.');
-            });
+            }
+        });
     }
 
     // ===== 페이지 로드 시 실행 =====

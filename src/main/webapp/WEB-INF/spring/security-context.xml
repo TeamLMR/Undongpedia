@@ -33,8 +33,6 @@
     <security:intercept-url pattern="/reservation/**" access="permitAll()"/>
     <security:intercept-url pattern="/**" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
 
-
-
     <security:logout logout-url="/logout.do"/>
 
     <security:remember-me
@@ -44,20 +42,19 @@
         user-service-ref="loginService"
     />
 
-
 </security:http>
 
     <security:authentication-manager>
         <security:authentication-provider user-service-ref="loginService">
             <security:password-encoder ref="passwordEncoder"/>
         </security:authentication-provider>
-
     </security:authentication-manager>
+
     <bean id="loginService" class="com.up.spring.security.LoginService">
-        <constructor-arg index="0" ref="memberDao2"/>
+        <constructor-arg index="0" ref="memberDao"/>
         <constructor-arg index="1" ref="sqlSessionTemplate"/>
     </bean>
-    <bean id="memberDao2" class="com.up.spring.member.model.dao.MemberDaoImpl"/>
+
     <import resource="root-context.xml"/>
     <bean id="failure" class="com.up.spring.security.AuthFailureHandler"/>
 </beans>
