@@ -4,6 +4,45 @@
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
 
+<script>
+    // 이미지가 없는 경우를 체크하기 위해 해당 이미지의 URL을 변수에 저장
+    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
+
+    // 이미지가 있는지 체크하는 함수
+    function checkImageExists(imageUrl) {
+        // 새로운 이미지 객체 생성
+        const img = new Image();
+        // 이미지 URL 설정
+        img.src = '${pageContext.request.contextPath}'+imageUrl;
+
+        // 이미지 로드가 성공한 경우
+        img.onload = function () {
+            // 이미지가 존재하는 경우 true를 반환
+            return true;
+        };
+        // 이미지 로드가 실패한 경우
+        img.onerror = function () {
+            // 이미지가 존재하지 않는 경우 false를 반환
+            return false;
+        };
+        console.log(img.src);
+        // 이미지가 존재하는지 여부를 반환
+        return img.complete;
+    }
+
+    // 이미지가 없는 경우 defaultImageUrl을 반환하는 함수
+    function getImageUrl(imageUrl) {
+        console.log("imageUrl: "+ imageUrl)
+        // 이미지가 존재하는 경우 해당 URL을 반환
+        if (checkImageExists(imageUrl)) {
+            return imageUrl;
+        }
+        // 이미지가 존재하지 않는 경우 defaultImageUrl을 반환
+        return defaultImageUrl;
+    }
+
+
+</script>
 
 <c:set var="dummyImg" value="${pageContext.request.contextPath}/resources/images/dummy.webp"/>
 <main class="main">
@@ -44,7 +83,7 @@
                                                 <span class="btn btn-primary btn-sm">최대 ${event.maxConcurrentUsers}명</span>
                                             </div>
 
-                                            <button type="button" 
+                                            <button type="button"
                                                class="btn btn-light btn-lg px-5 py-3 fw-bold text-primary event-btn"
                                                data-course-seq="${event.courseSeq}"
                                                data-open-time="${event.openDateTime.time}"
@@ -58,7 +97,7 @@
                                         <!-- 이미지 -->
                                         <div class="col-lg-6 d-flex align-items-center justify-content-center">
                                             <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
-                                                <img src="${pageContext.request.contextPath}${event.courseThumbnail != null ? event.courseThumbnail : '/resources/images/dummy.webp'}" 
+                                                <img src="${pageContext.request.contextPath}${event.courseThumbnail != null ? event.courseThumbnail : '/resources/images/dummy.png'}"
                                                      class="w-100 h-100 object-fit-cover" alt="${event.courseTitle}">
                                             </div>
                                         </div>
@@ -118,14 +157,14 @@
                     prevEl: ".swiper-button-prev"
                 }
             });
-            
+
             // 카운트다운 타이머 초기화
             initCountdownTimers();
         });
-        
+
         function initCountdownTimers() {
             const timers = document.querySelectorAll('.countdown-timer');
-            
+
             timers.forEach(timer => {
                 const openTime = parseInt(timer.getAttribute('data-open-time'));
                 if (openTime) {
@@ -135,11 +174,11 @@
                 }
             });
         }
-        
+
         function updateCountdown(element, openTime) {
             const now = new Date().getTime();
             const distance = openTime - now;
-            
+
             if (distance < 0) {
                 element.innerHTML = "예약하러 가기";
                 element.parentElement.classList.remove('btn-light');
@@ -147,23 +186,23 @@
                 element.parentElement.setAttribute('data-is-open', 'true');
                 return;
             }
-            
+
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            
+
             element.innerHTML = `⏰ \${days}일 \${hours.toString().padStart(2, '0')}:\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}`;
             element.parentElement.setAttribute('data-is-open', 'false');
         }
-        
+
         // 이벤트 버튼 클릭 핸들러
         function handleEventButtonClick(button) {
             const openTime = parseInt(button.getAttribute('data-open-time'));
             const courseSeq = button.getAttribute('data-course-seq');
             const now = new Date().getTime();
             const isOpen = button.getAttribute('data-is-open') === 'true';
-            
+
             if (isOpen || (openTime && openTime <= now)) {
                 // 오픈된 경우 -> 예약 페이지로 이동
                 window.location.href = contextPath + '/reservation/queue/' + courseSeq;
@@ -172,24 +211,24 @@
                 showPreOpenModal(openTime);
             }
         }
-        
+
         // 오픈 전 모달 표시
         function showPreOpenModal(openTime) {
             const now = new Date().getTime();
             const distance = openTime - now;
-            
+
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            
+
             const timeText = days + '일 ' + hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
-            
+
             document.getElementById('preOpenTimeText').textContent = timeText;
             const modal = new bootstrap.Modal(document.getElementById('preOpenModal'));
             modal.show();
         }
-        
+
         // contextPath 설정
         const contextPath = '${pageContext.request.contextPath}';
     </script>
@@ -260,21 +299,26 @@
                 <!-- 강의 카드 -->
                 <c:if test="${not empty courseList}">
                     <c:forEach var="c" items="${courseList}">
-                        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 list-to-detail" id="${c.courseSeq}">
                             <div class="card h-100 border-0 shadow-sm">
                                 <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">
-                                    <img src="${pageContext.request.contextPath}${c.courseThumbnail}" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
+                                    <img id="productImage${c.courseSeq}" src="" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
+                                    <script>
+                                        // 이미지가 있으면 myImage 아이디를 갖고 있는 img 태그에 적용한다.
+                                        // 없으면 getImageUrl 함수안에 return defaultImageUrl; 실행.
+                                        document.getElementById("productImage${c.courseSeq}").src = getImageUrl("${c.courseThumbnail}");
+                                    </script>
                                 </div>
                                 <div class="card-body d-flex flex-column justify-content-between" style="min-height: 240px;">
                                     <div>
                                         <p class="text-muted small mb-1">${c.memberNickname}</p>
-                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTitle}</h5>
+                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTarget}</h5>
                                         <p class="card-text text-secondary small text-truncate">${c.courseContent}</p>
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
-                                        <span class="btn btn-light btn-sm">${c.cateValue}</span>
-                                        <span class="btn btn-light btn-sm">${c.courseType=='ON'?'온라인':'오프라인'}</span>
-                                        <span class="btn btn-light btn-sm">
+                                        <span class="badge bg-light text-secondary border">${c.cateValue}</span>
+                                        <span class="badge bg-light text-secondary border">${c.courseType=='ON'?'온라인':'오프라인'}</span>
+                                        <span class="badge bg-light text-secondary border">
                                             <c:forEach begin="1" end="5" var="i">
                                                 <c:choose>
                                                     <c:when test="${i <= c.courseDifficult}">
@@ -288,11 +332,11 @@
                                         </span>
 
                                     </div>
-                                    <div class="btn btn-sm btn-primary d-flex align-items-center justify-content-between mt-3">
+                                    <div class="badge bg-primary border d-flex align-items-center justify-content-between mt-3">
                                         <div class="text-light">
                                             <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>
                                         </div>
-                                        <a href="#" class="text-light">수강평 100+</a>
+                                        <div class="text-light">수강평 100+</div>
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">
                                         <span class="text-danger text-decoration-line-through fs-6">
@@ -302,17 +346,19 @@
                                         <span class="fw-bold fs-6 text-primary">
                                             ₩ <fmt:formatNumber type="number" maxFractionDigits="3" value="${c.coursePrice * ((100-c.courseDiscount)/100)}"/>
                                         </span>
+                                        <button id="${c.courseSeq}" type="button" class="bi-cart btn-primary btn cart-btn"></button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </c:forEach>
                 </c:if>
 
             </div>
         </div>
     </section>
+
+    </button>
     <!-- /Best Sellers Section -->
     <script>
     let page = 1;
@@ -324,7 +370,6 @@
         const scrollTop = $(window).scrollTop();
         const windowHeight = $(window).height();
         const documentHeight = $(document).height();
-
         if (scrollTop + windowHeight >= documentHeight - 50) {
             isLoading = true;
             page++;
@@ -332,7 +377,7 @@
             $.ajax({
                 url: "${pageContext.request.contextPath}/main/ajaxLoadMoreData",
                 type: "GET",
-                data: { page: page },
+                data: {page: page},
                 success: function (data) {
                     if (data.length === 0) {
                         hasMore = false;
@@ -342,34 +387,35 @@
 
                     // 예시 템플릿 렌더링
                     data.forEach(function (course) {
-                        let stars="";
-                        for(let i=1; i<6; i++){
-                            if(i<= course['courseDifficult']) {
+                        let stars = "";
+                        for (let i = 1; i < 6; i++) {
+                            if (i <= course['courseDifficult']) {
                                 stars += '<span style="color: gold;">★</span>'
                             } else {
                                 stars += '<span style="color: lightgray;">★</span>'
                             }
                         }
+
                         $("#courseList").append(
-                            '<div class="col-12 col-sm-6 col-md-4 col-lg-3">'
+                            '<div class="col-12 col-sm-6 col-md-4 col-lg-3 list-to-detail" id="' + course['courseSeq']+ '">'
                             + '<div class="card h-100 border-0 shadow-sm">'
                             + '    <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">'
-                            + '        <img src="${pageContext.request.contextPath}' + course['courseThumbnail'] + '" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">'
+                            + '        <img id="productImage'+ course['courseSeq']+'" src="" className="w-100 h-100 object-fit-cover" alt="강의 썸네일"/>'
                             + '    </div>'
                             + '    <div class="card-body d-flex flex-column justify-content-between" style="min-height: 240px;">'
                             + '        <div>'
                             + '            <p class="text-muted small mb-1">' + course['memberNickname'] + '</p>'
                             + '            <h5 class="card-title fw-semibold text-truncate">' + course['courseTitle'] + '</h5>'
-                            + '            <p class="card-text text-secondary small text-truncate">' + course['courseContent'] + '</p>'
+                            + '            <p class="card-text text-secondary small text-truncate">' + course['courseTarget'] + '</p>'
                             + '        </div>'
                             + '        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">'
-                            + '            <span class="btn btn-light btn-sm">' + course['cateValue'] + '</span>'
-                            + '            <span class="btn btn-light btn-sm">' + (course['courseType'] === 'ON' ? '온라인' : '오프라인') + '</span>'
-                            + '            <span class="btn btn-light btn-sm">'
-                            + '               '+stars+''
+                            + '            <span class="badge bg-light text-secondary border">' + course['cateValue'] + '</span>'
+                            + '            <span class="badge bg-light text-secondary border">' + (course['courseType'] === 'ON' ? '온라인' : '오프라인') + '</span>'
+                            + '            <span class="badge bg-light text-secondary border">'
+                            + '               ' + stars + ''
                             + '            </span>'
                             + '        </div>'
-                            + '        <div class="btn btn-sm btn-primary d-flex align-items-center justify-content-between mt-3">'
+                            + '        <div class="badge bg-primary border d-flex align-items-center justify-content-between mt-3">'
                             + '            <div class="text-light">'
                             + '                <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>'
                             + '            </div>'
@@ -382,12 +428,44 @@
                             + '            <span> ➡️ </span>'
                             + '            <span class="fw-bold fs-6 text-primary">'
                             + '                ₩ ' + (course['coursePrice'] * ((100 - course['courseDiscount']) / 100)) + ''
+                            + '            </span>'
+                            + '            <button id="'+course['courseSeq']+'" type="button" class="btn-primary btn cart-btn"><i class="bi-cart"></i>'
                             + '</span>'
                             + '</div>'
                             + '</div>'
                             + '</div>'
                             + '</div>'
                         );
+                        const $img = $("#productImage" + course['courseSeq']);
+                        const fullPath = '${pageContext.request.contextPath}' + course['courseThumbnail'];
+                        $img.attr('src', fullPath);
+                        $img.on('error', function () {
+                            console.error('이미지 로드 실패, 대체 이미지로 교체');
+                            $(this).attr('src', '${pageContext.request.contextPath}/resources/images/dummy.png');
+                        });
+
+                        let selectedCourseId = null;
+                        $('.list-to-detail').on('click', function (e){
+                            const id = $(this).attr("id");
+                            const redirectUrl = "${pageContext.request.contextPath}/course/detail?courseSeq=" + id;
+                            location.assign(redirectUrl);
+                        })
+
+                        $('.cart-btn').on('click', function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // 클릭된 버튼의 id에 courseId 있음
+                            selectedCourseId = $(this).attr("id");
+                            // 모달 열기
+                            $('#cartModal').modal('show');
+                        });
+
+                        $('#confirmCartBtn').on('click', function () {
+                            if (selectedCourseId) {
+                                const redirectUrl = "${pageContext.request.contextPath}/cart/add?id=" + selectedCourseId;
+                                location.assign(redirectUrl);
+                            }
+                        });
                     });
                 },
                 error: function () {
@@ -419,12 +497,12 @@
                 </div>
                 <h4 class="fw-bold mb-3">아직이지롱~</h4>
                 <p class="text-muted mb-4">선착순 이벤트가 아직 시작되지 않았습니다.<br>조금만 더 기다려주세요!</p>
-                
+
                 <div class="alert alert-info d-flex align-items-center justify-content-center">
                     <i class="bi bi-info-circle-fill me-2"></i>
                     <strong>오픈까지 남은 시간: <span id="preOpenTimeText" class="text-primary"></span></strong>
                 </div>
-                
+
                 <p class="small text-muted">
                     ⏰ 정확한 시간에 자동으로 오픈됩니다<br>
                     📱 페이지를 새로고침하지 마시고 기다려주세요
@@ -438,6 +516,55 @@
         </div>
     </div>
 </div>
+
+
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">장바구니</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+
+            <div class="modal-body">
+                장바구니에 담으시겠습니까?
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">아니오</button>
+                <button type="button" class="btn btn-primary" id="confirmCartBtn">네</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedCourseId = null;
+    $('.list-to-detail').on('click', function (e){
+        const id = $(this).attr("id");
+        const redirectUrl = "${pageContext.request.contextPath}/course/detail?courseSeq=" + id;
+        location.assign(redirectUrl);
+    })
+
+    $('.cart-btn').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // 클릭된 버튼의 id에 courseId 있음
+        selectedCourseId = $(this).attr("id");
+        // 모달 열기
+        $('#cartModal').modal('show');
+    });
+
+    $('#confirmCartBtn').on('click', function () {
+        if (selectedCourseId) {
+            const redirectUrl = "${pageContext.request.contextPath}/cart/add?id=" + selectedCourseId;
+            location.assign(redirectUrl);
+        }
+    });
+</script>
+
 
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>
 
