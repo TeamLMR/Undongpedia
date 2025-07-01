@@ -5,8 +5,12 @@ import com.up.spring.coach.model.service.CoachService;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
 import com.up.spring.course.model.dto.Section;
+import com.up.spring.course.model.service.CourseService;
+import com.up.spring.member.model.dto.Member;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +28,20 @@ import java.util.*;
 @Controller
 @RequestMapping("/coach")
 @Slf4j
+@RequiredArgsConstructor
 public class CoachController {
-    @Autowired
-    private CoachService coachService;
+    private final CoachService coachService;
+    private final CourseService courseService;
+
+    public long returnMemberNo(){
+        Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        long memberNo = 0;
+        if (m != null){
+            memberNo = m.getMemberNo();
+        }
+        return memberNo;
+    }
+
     @RequestMapping("/dashboard")
     public String dashboard(Model model) {
         return "/coach/dashboard";
@@ -129,14 +144,34 @@ public class CoachController {
         return "redirect:/coach/addCourseSection?courseSeq="+courseSeq;
 
     }
-
-    @RequestMapping("/courseReview")
-    public String courseReview(Model model) {
-        return "/coach/management/review";
+    @RequestMapping("/coursemanager")
+    public String courseManager(Model model) {
+        long memberNo = returnMemberNo();
+        String loc = "common/msg";
+        if(memberNo != 0){
+            List<Course> courseList = courseService.searchCourseListByMemberNo(memberNo);
+            model.addAttribute("courseList", courseList);
+            loc = "/coach/management/course";
+        } else {
+            model.addAttribute("msg", "로그인을 확인해주세요.");
+            model.addAttribute("loc", "/common/msg");
+        }
+        return loc;
     }
-    @RequestMapping("/courseQna")
+
+    @RequestMapping("/coursereview")
+    public String courseReview(Model model) {
+        return "/coach/management/reviews";
+    }
+
+    @RequestMapping("/courseqna")
     public String courseQna(Model model) {
-        return "/coach/management/courseQna";
+        return "/coach/management/qna";
+    }
+
+    @RequestMapping("/payment")
+    public String coursePayment(Model model) {
+        return "/coach/management/payment";
     }
 
     @PostMapping("/upload/editorImage")

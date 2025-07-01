@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import java.util.List;
+
 @Repository
 public class CourseDaoImpl implements CourseDao {
     @Override
@@ -45,5 +47,10 @@ public class CourseDaoImpl implements CourseDao {
     @Override
     public int insertReview(SqlSession sqlSession, Review review) {
         return sqlSession.insert("course.insertReview", review);
+    }
+
+    @Override
+    public List<Course> searchCourseListByMemberNo(SqlSession sqlSession, long memberNo) {
+        return sqlSession.selectList("course.searchCourseListByMemberNo", memberNo);
     }
 }

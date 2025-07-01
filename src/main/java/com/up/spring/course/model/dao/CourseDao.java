@@ -9,6 +9,7 @@ import java.util.Map;
 
 public interface CourseDao {
     Course searchById(SqlSession sqlSession, long courseSeq);
+    List<Course> searchCourseListByMemberNo(SqlSession sqlSession, long memberNo);
     List<Review> getReviewList(SqlSession sqlSession, long courseSeq, Map<String, Object> params);
     int getReviewListCount(SqlSession sqlSession, long courseSeq);
     int getReviewByUser(SqlSession sqlSession, Review review);

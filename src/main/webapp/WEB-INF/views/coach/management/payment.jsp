@@ -14,9 +14,8 @@
         <div class="container-fluid">
             <div class="container-fluid">
                 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                    <h1 class="h3 mb-0 text-gray-800">수강평</h1>
+                    <h1 class="h3 mb-0 text-gray-800">수익 관리</h1>
                 </div>
-
                 <%--content row--%>
                 <div class="row">
                     <!-- Pie Chart -->
@@ -51,6 +50,6 @@
                 </div>
             </div>
         </div>
-</div>
+    </div>
 
-<jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>
+    <jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>

@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.List;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -74,5 +76,10 @@ public class CourseServiceImpl implements CourseService {
             return 0;
         }
         return courseDao.insertReview(sqlSession,review);
+    }
+
+    @Override
+    public List<Course> searchCourseListByMemberNo(long memberNo) {
+        return courseDao.searchCourseListByMemberNo(sqlSession, memberNo);
     }
 }

@@ -40,7 +40,11 @@
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
         WHERE COURSE_SEQ=#{courseSeq}
     </select>
-
+    <select id="searchCourseListByMemberNo" resultMap="courseResultMap" parameterType="_long">
+        SELECT C.*,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        FROM COURSE C
+        WHERE MEMBER_NO=#{memberNo}
+    </select>
     <select id="getReviewList" resultMap="reviewResultMap" parameterType="_long">
         SELECT R.*, M.MEMBER_NICKNAME
         FROM COURSE_REVIEW R
