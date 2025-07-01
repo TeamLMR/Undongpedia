@@ -9,21 +9,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Controller
 @RequestMapping("/coach")
@@ -119,14 +115,7 @@ public class CoachController {
                     try (OutputStream os = new FileOutputStream(saveFile)) {
                         os.write(file.getBytes());
                     }
-
-                    log.info("업로드 완료: {}", saveFile.getAbsolutePath());
-
-                    // DB 저장용 정보도 curriculum 객체에 세팅 가능
-//                     curriculum.setVideoFileName(fileRename);
                      curriculum.setCurrVideoUrl("/resources/upload/course/videos/" + fileRename);
-                     log.debug(curriculum.toString());
-                    coachService.insertCurriculum(curriculum);
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -135,6 +124,8 @@ public class CoachController {
                 }
             }
         }
+        coachService.insertCurriculum(curriculum);
+
         return "redirect:/coach/addCourseSection?courseSeq="+courseSeq;
 
     }
@@ -147,4 +138,38 @@ public class CoachController {
     public String courseQna(Model model) {
         return "/coach/management/courseQna";
     }
+
+    @PostMapping("/upload/editorImage")
+    @ResponseBody
+    public Map<String, Object> uploadImageForEditor(@RequestParam("upload") MultipartFile upload, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String uploadPath = request.getServletContext().getRealPath("/resources/upload/course/editor");
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) uploadDir.mkdirs();
+
+            String originalName = upload.getOriginalFilename();
+            String ext = originalName.substring(originalName.lastIndexOf("."));
+            String uuidName = UUID.randomUUID().toString() + ext;
+
+            File file = new File(uploadDir, uuidName);
+            upload.transferTo(file);
+
+            String fileUrl = request.getContextPath() + "/resources/upload/course/editor/" + uuidName;
+
+            // CKEditor가 요구하는 형식
+            response.put("uploaded", 1);
+            response.put("fileName", uuidName);
+            response.put("url", fileUrl);
+        } catch (IOException e) {
+            response.put("uploaded", 0);
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "파일 업로드 중 오류가 발생했습니다.");
+            response.put("error", error);
+        }
+
+        return response;
+    }
+
 }
