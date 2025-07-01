@@ -25,8 +25,13 @@
                             <!-- Card Header - Dropdown -->
                             <div class="card-header py-3 align-items-center justify-content-between">
                                 <div class="row text-secondary-emphasis small text-sm-center">
-                                    <div class="col-5">
-                                        제목
+                                    <div class="col-5 d-flex justify-content-start">
+                                        <div class="col-4 d-flex justify-content-start">
+                                            썸네일
+                                        </div>
+                                        <div class="col-8 d-flex justify-content-start">
+                                            제목
+                                        </div>
                                     </div>
                                     <div class="col-1">
                                         카테고리
@@ -49,15 +54,15 @@
                                 </div>
                             </div>
                             <!-- Card Body -->
-                            <div class="card-body">
+                            <div class="card-body ">
                                 <c:if test="${not empty courseList}">
                                     <c:forEach var="course" items="${courseList}">
-                                    <div class="row text-secondary-emphasis small text-sm-center align-items-center">
-                                        <div class="col-5 d-flex gap-3">
-                                            <div style="width: 50px;">
-                                                <img src="${pageContext.request.contextPath}${course.courseThumbnail}" alt="썸네일" class="img-fluid rounded">
+                                    <div class="row text-secondary-emphasis small text-sm-center p-3 align-items-center border-bottom">
+                                        <div class="col-5 d-flex justify-content-start">
+                                            <div class="col-4 d-flex justify-content-start" style="width: 50px;">
+                                                <img src="${pageContext.request.contextPath}${course.courseThumbnail}" alt="썸네일" class="object-fit-cover img-fluid rounded">
                                             </div>
-                                            <div class="flex-grow-1">
+                                            <div class="col-8 d-flex justify-content-start">
                                                     ${course.courseTitle}
                                             </div>
                                         </div>
@@ -86,7 +91,6 @@
                                         </div>
                                     </div>
                                     </c:forEach>
-
                                 </c:if>
                                 <c:if test="${empty courseList}">
                                     <div class="text-secondary text-sm text-center">
