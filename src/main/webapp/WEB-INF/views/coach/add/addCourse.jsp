@@ -49,10 +49,12 @@
                                         <div class="row no-gutters align-items-center">
                                             <div class="col">
                                                 <div class="form-group">
-                                                    <input type="text" class="form-control form-control-user"
-                                                           name="courseContent"
-                                                           id="courseContent"
-                                                           placeholder="ex) 자세 교정이 필요하신 분! 이번 코스를 통해 ... ">
+                                                    <textarea
+                                                            class="form-control"
+                                                            name="courseContent"
+                                                            id="courseContent"
+                                                            rows="15"
+                                                            placeholder="ex) 자세 교정이 필요하신 분! 이번 코스를 통해 ..."></textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -227,7 +229,20 @@
 
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-        <script>let cropper;
+        <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+        <script>
+        ClassicEditor
+            .create(document.querySelector('#courseContent'),
+                {
+                    ckfinder: {
+                        uploadUrl: '${pageContext.request.contextPath}/coach/upload/editorImage' // 컨트롤러 URL
+                    }
+                })
+            .catch(error => {
+                console.error(error);
+            });
+
+        let cropper;
         let croppedImageBlob = null;
 
         const input = document.getElementById('inputImage');

@@ -17,10 +17,71 @@
         <result column="COURSE_CREATE_TIME" property="courseCreateTime"/>
         <result column="MEMBER_NO" property="memberNo"/>
         <result column="COURSE_TYPE" property="courseType"/>
+        <result column="CATE_VALUE" property="cateValue"/>
+        <result column="MEMBER_NICKNAME" property="memberNickname"/>
+    </resultMap>
+
+    <resultMap id="reviewResultMap" type="review">
+        <id column="REVIEW_SEQ" property="reviewSeq"/>
+        <result column="MEMBER_SEQ" property="memberSeq"/>
+        <result column="COURSE_SEQ" property="courseSeq"/>
+        <result column="REVIEW_TITLE" property="reviewTitle"/>
+        <result column="REVIEW_CONTENT" property="reviewContent"/>
+        <result column="REVIEW_RATE" property="reviewRate"/>
+        <result column="REVIEW_CREATE_TIME" property="reviewCreateDate"/>
+        <result column="REVIEW_DELETE_TIME" property="reviewDeleteDate"/>
+        <result column="MEMBER_NICKNAME" property="memberNickname"/>
+
     </resultMap>
 
     <select id="searchById" resultMap="courseResultMap" parameterType="_long">
-        SELECT * FROM COURSE WHERE COURSE_SEQ=#{courseSeq}
+        SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        WHERE COURSE_SEQ=#{courseSeq}
     </select>
 
+    <select id="getReviewList" resultMap="reviewResultMap" parameterType="_long">
+        SELECT R.*, M.MEMBER_NICKNAME
+        FROM COURSE_REVIEW R
+        LEFT JOIN MEMBER M ON M.MEMBER_NO = R.MEMBER_SEQ
+        WHERE COURSE_SEQ = #{courseSeq}
+        AND REVIEW_DELETE_TIME IS NULL
+        ORDER BY REVIEW_CREATE_TIME DESC
+    </select>
+    <select id="getReviewListCount" resultType="_int" parameterType="_long">
+        SELECT COUNT(*)
+        FROM COURSE_REVIEW
+        WHERE COURSE_SEQ = #{courseSeq}
+          AND REVIEW_DELETE_TIME IS NULL
+    </select>
+
+    <select id="getReviewByUser" resultType="_int" parameterType="review">
+        SELECT COUNT(*)
+        FROM COURSE_REVIEW
+        WHERE COURSE_SEQ = #{courseSeq}
+          AND MEMBER_SEQ = #{memberSeq}
+          AND REVIEW_DELETE_TIME IS NULL
+    </select>
+    <select id="getReviewRateList" resultType="map" parameterType="_long">
+        SELECT r.rate AS REVIEW_RATE,
+               COUNT(cr.review_rate) AS RATE_COUNT
+        FROM (
+                 SELECT 5 AS rate FROM dual
+                 UNION ALL SELECT 4 FROM dual
+                 UNION ALL SELECT 3 FROM dual
+                 UNION ALL SELECT 2 FROM dual
+                 UNION ALL SELECT 1 FROM dual
+             ) r
+                 LEFT JOIN course_review cr
+                           ON cr.review_rate = r.rate
+                               AND cr.course_seq = #{courseSeq}
+                               AND cr.review_delete_time IS NULL
+        GROUP BY r.rate
+        ORDER BY r.rate DESC
+    </select>
+
+    <insert id="insertReview" parameterType="review">
+        INSERT INTO COURSE_REVIEW VALUES (SEQ_COURSE_REVIEW.nextval,#{memberSeq},#{courseSeq},#{reviewTitle},#{reviewContent},#{reviewRate},DEFAULT,NULL)
+    </insert>
 </mapper>
