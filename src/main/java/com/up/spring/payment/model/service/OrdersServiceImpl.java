@@ -37,7 +37,7 @@ public class OrdersServiceImpl implements OrderService{
         return timestamp;
     }
 
-    private Orders buildOrders(Map<String, Object> detail, long memberNo, int courseSeq){
+    private Orders buildOrders(Map<String, Object> detail, long memberNo, long courseSeq){
         log.debug(detail.toString());
         int totalPayAmount =(int)detail.get("totalPayAmount");
 
@@ -95,7 +95,7 @@ public class OrdersServiceImpl implements OrderService{
     //TODO:강사님헬프
     @Override
     @Transactional
-    public int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq) {
+    public int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, long courseSeq) {
         int success = 1;
         int fail = 0;
         if (res == null || res.isEmpty()) {

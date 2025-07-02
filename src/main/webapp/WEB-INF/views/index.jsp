@@ -40,8 +40,6 @@
         // 이미지가 존재하지 않는 경우 defaultImageUrl을 반환
         return defaultImageUrl;
     }
-
-
 </script>
 
 <c:set var="dummyImg" value="${pageContext.request.contextPath}/resources/images/dummy.webp"/>
@@ -142,6 +140,7 @@
             </style>
         </div>
     </section>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             // Swiper 초기화
@@ -445,6 +444,7 @@
                         });
 
                         let selectedCourseId = null;
+
                         $('.list-to-detail').on('click', function (e){
                             const id = $(this).attr("id");
                             const redirectUrl = "${pageContext.request.contextPath}/course/detail?courseSeq=" + id;
@@ -456,16 +456,11 @@
                             e.stopPropagation();
                             // 클릭된 버튼의 id에 courseId 있음
                             selectedCourseId = $(this).attr("id");
+                            $('#courseSeq').val(selectedCourseId);
                             // 모달 열기
                             $('#cartModal').modal('show');
                         });
 
-                        $('#confirmCartBtn').on('click', function () {
-                            if (selectedCourseId) {
-                                const redirectUrl = "${pageContext.request.contextPath}/cart/add?id=" + selectedCourseId;
-                                location.assign(redirectUrl);
-                            }
-                        });
                     });
                 },
                 error: function () {
@@ -478,7 +473,6 @@
         }
     });
     </script>
-
 </main>
 
 <!-- 이벤트 오픈 전 모달 -->
@@ -532,14 +526,16 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">아니오</button>
-                <button type="button" class="btn btn-primary" id="confirmCartBtn">네</button>
+                <form action="${pageContext.request.contextPath}/cart/add" method="post" >
+                    <input type="hidden" value="" id="courseSeq" name="addCourseSeq">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">아니오</button>
+                    <button type="submit" class="btn btn-primary" id="confirmCartBtn">네</button>
+                </form>
             </div>
 
         </div>
     </div>
 </div>
-
 <script>
     let selectedCourseId = null;
     $('.list-to-detail').on('click', function (e){
@@ -553,18 +549,55 @@
         e.stopPropagation();
         // 클릭된 버튼의 id에 courseId 있음
         selectedCourseId = $(this).attr("id");
+        console.log("selectedCourseId: " +selectedCourseId);
         // 모달 열기
+        $('#courseSeq').val(selectedCourseId);
         $('#cartModal').modal('show');
-    });
-
-    $('#confirmCartBtn').on('click', function () {
-        if (selectedCourseId) {
-            const redirectUrl = "${pageContext.request.contextPath}/cart/add?id=" + selectedCourseId;
-            location.assign(redirectUrl);
-        }
     });
 </script>
 
+
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultModalLabel">알림</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+
+            <div class="modal-body" id="resultModalMessage">
+                <!--메세지 -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">확인</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const result = urlParams.get('result');
+            const msg = urlParams.get('msg');
+            console.log(urlParams, result, msg);
+            if (result && msg) {
+                if (result === 'success') {
+                    $('#resultModal .modal-body').text(msg);
+                    $('#resultModal').modal('show');
+                } else if (result === 'fail') {
+                    $('#resultModal .modal-body').text(msg);
+                    $('#resultModal').modal('show');
+                }
+            }
+        }
+    });
+</script>
 
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>
 

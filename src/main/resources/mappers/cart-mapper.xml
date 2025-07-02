@@ -16,7 +16,6 @@
         </collection>
     </resultMap>
 
-    <!--TODO: Map에 course 타입 같이 넣어야하는데 List로는 안넣고싶ㅇ므 -->
     <select id="searchCartsByMemberNo" parameterType="_long" resultMap="cartMap">
         SELECT CA.CART_SEQ, CA.MEMBER_NO, CA.CART_TIMESTAMP, CA.COURSE_SEQ,
                CO.COURSE_SEQ, CO.COURSE_TITLE, CO.COURSE_CONTENT, CO.COURSE_PRICE, CO.COURSE_DISCOUNT, CO.COURSE_THUMBNAIL
@@ -24,8 +23,15 @@
                  JOIN COURSE CO ON CA.COURSE_SEQ = CO.COURSE_SEQ WHERE CA.MEMBER_NO = #{memberNo}
     </select>
 
-    <insert id="insertCart" parameterType="course">
-        INSERT INTO CART VALUES (#{cartSeq}, DEFAULT, #{memberNo}, #{courseSeq})
+    <select id="isCourseInCart" parameterType="cart" resultType="_int">
+        SELECT COUNT(*)
+        FROM CART
+        WHERE MEMBER_NO = #{memberNo}
+          AND COURSE_SEQ = #{courseSeq}
+    </select>
+
+    <insert id="insertCart" parameterType="cart">
+        INSERT INTO CART VALUES (SEQ_CART.NEXTVAL, DEFAULT, #{memberNo}, #{courseSeq})
     </insert>
 
     <delete id="deleteCartByNo" parameterType="_int">
