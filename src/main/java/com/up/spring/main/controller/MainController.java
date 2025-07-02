@@ -42,6 +42,12 @@ public class MainController {
         params.put("cPage", cPage);
         params.put("numPerPage", numPerPage);
         List<Course> courseList = mainService.getCourseList(params);
+        log.info("메인 페이지 강의 목록: {}개 조회됨", courseList.size());
+        if (!courseList.isEmpty()) {
+            Course firstCourse = courseList.get(0);
+            log.info("첫 번째 강의 - 제목: {}, 평점: {}, 리뷰수: {}", 
+                    firstCourse.getCourseTitle(), firstCourse.getAvgRating(), firstCourse.getReviewCount());
+        }
         model.addAttribute("courseList", courseList);
         
         // 활성화된 이벤트 강의 조회
@@ -95,6 +101,11 @@ public class MainController {
         filters.put("numPerPage", numPerPage);
         
         List<Course> result = mainService.getFilteredCourses(filters);
+
+        if (!result.isEmpty()) {
+            Course firstCourse = result.get(0);
+
+        }
         return result;
     }
 }

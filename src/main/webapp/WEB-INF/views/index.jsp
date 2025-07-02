@@ -260,11 +260,11 @@
                 </button>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item difficulty-filter" data-difficulty="all" href="#">전체</a></li>
-                    <li><a class="dropdown-item difficulty-filter" data-difficulty="1" href="#">⭐️ 처음 배우신 분 추천</a></li>
-                    <li><a class="dropdown-item difficulty-filter" data-difficulty="2" href="#">⭐️⭐️ 코스를 한 번 이상 이수한 멤버에게 추천</a></li>
-                    <li><a class="dropdown-item difficulty-filter" data-difficulty="3" href="#">⭐️⭐️⭐️ 기본기가 능숙한 멤버에게 추천</a></li>
-                    <li><a class="dropdown-item difficulty-filter" data-difficulty="4" href="#">⭐️⭐️⭐️⭐️ 6개월 이상 꾸준히 숙련된 멤버에게 추천</a></li>
-                    <li><a class="dropdown-item difficulty-filter" data-difficulty="5" href="#">⭐️⭐️⭐️⭐️⭐️ 해당 운동 숙련자에게 추천</a></li>
+                    <li><a class="dropdown-item difficulty-filter" data-difficulty="1" href="#">⭐️ </a></li>
+                    <li><a class="dropdown-item difficulty-filter" data-difficulty="2" href="#">⭐️⭐️</a></li>
+                    <li><a class="dropdown-item difficulty-filter" data-difficulty="3" href="#">⭐️⭐️⭐️</a></li>
+                    <li><a class="dropdown-item difficulty-filter" data-difficulty="4" href="#">⭐️⭐️⭐️⭐️</a></li>
+                    <li><a class="dropdown-item difficulty-filter" data-difficulty="5" href="#">⭐️⭐️⭐️⭐️⭐️</a></li>
                 </ul>
             </div>
 
@@ -280,16 +280,16 @@
                 </ul>
             </div>
 
-            <!-- 드롭다운: 별점순 -->
+            <!-- 드롭다운: 정렬 -->
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                    별점순
+                    최신순
                 </button>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item sort-filter" data-sort="latest" href="#">최신순</a></li>
                     <li><a class="dropdown-item sort-filter" data-sort="price_asc" href="#">가격 낮은순</a></li>
                     <li><a class="dropdown-item sort-filter" data-sort="price_desc" href="#">가격 높은순</a></li>
-                    <li><a class="dropdown-item sort-filter" data-sort="rating" href="#">별점순</a></li>
+                    <li><a class="dropdown-item sort-filter" data-sort="rating" href="#">평점순</a></li>
                 </ul>
             </div>
 
@@ -316,7 +316,7 @@
                                     <div>
                                         <p class="text-muted small mb-1">${c.memberNickname}</p>
                                         <h5 class="card-title fw-semibold text-truncate">${c.courseTarget}</h5>
-                                        <p class="card-text text-secondary small text-truncate">${c.courseContent}</p>
+<%--                                        <p class="card-text text-secondary small text-truncate">${c.courseContent}</p>--%>
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
                                         <span class="badge bg-light text-secondary border">${c.cateValue}</span>
@@ -337,9 +337,9 @@
                                     </div>
                                     <div class="badge bg-primary border d-flex align-items-center justify-content-between mt-3">
                                         <div class="text-light">
-                                            <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>
+                                            <i class="bi bi-heart-fill"></i> <fmt:formatNumber value="${c.avgRating != null ? c.avgRating : 0.0}" pattern="0.0"/> <span class="text-muted"></span>
                                         </div>
-                                        <div class="text-light">수강평 100+</div>
+                                        <div class="text-light">수강평 ${c.reviewCount != null ? c.reviewCount : 0}개</div>
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">
                                         <span class="text-danger text-decoration-line-through fs-6">
@@ -405,6 +405,15 @@
                 }
                 
                 updateCourseList(data);
+                
+                if (resetPage) {
+                    page = 1; // 페이지 초기화
+                }
+                
+                // 8개 미만이면 더 이상 로드할 데이터가 없다고 가정
+                if (data.length < 8) {
+                    hasMore = false;
+                }
             },
             error: function() {
                 console.error('필터링 실패');
@@ -449,9 +458,9 @@
                 + '        </div>'
                 + '        <div class="badge bg-primary border d-flex align-items-center justify-content-between mt-3">'
                 + '            <div class="text-light">'
-                + '                <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>'
+                + '                <i class="bi bi-heart-fill"></i> ' + (course['avgRating'] != null ? parseFloat(course['avgRating']).toFixed(1) : '0.0') + ' <span class="text-muted"></span>'
                 + '            </div>'
-                + '            <div class="text-light">수강평 100+</div>'
+                + '            <div class="text-light">수강평 ' + (course['reviewCount'] != null ? course['reviewCount'] : 0) + '개</div>'
                 + '        </div>'
                 + '        <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">'
                 + '            <span class="text-danger text-decoration-line-through fs-6">'
@@ -537,7 +546,7 @@
             'latest': '최신순',
             'price_asc': '가격 낮은순',
             'price_desc': '가격 높은순',
-            'rating': '별점순'
+            'rating': '평점순'
         };
         sortButton.text(sortTexts[currentFilters.sortBy] || '최신순');
     }
@@ -595,87 +604,8 @@
         const windowHeight = $(window).height();
         const documentHeight = $(document).height();
         if (scrollTop + windowHeight >= documentHeight - 50) {
-            isLoading = true;
-            page++;
-
-            $.ajax({
-                url: "${pageContext.request.contextPath}/main/filterCourses",
-                type: "GET",
-                data: Object.assign({page: page}, currentFilters),
-                success: function (data) {
-                    if (data.length === 0) {
-                        hasMore = false;
-                        $("#courseList").append("<p class='text-center mt-3' style='color: lightgray'>마지막 페이지 입니다.</p>");
-                        return;
-                    }
-
-                    // 예시 템플릿 렌더링
-                    data.forEach(function (course) {
-                        let stars = "";
-                        for (let i = 1; i < 6; i++) {
-                            if (i <= course['courseDifficult']) {
-                                stars += '<span style="color: gold;">★</span>'
-                            } else {
-                                stars += '<span style="color: lightgray;">★</span>'
-                            }
-                        }
-
-                        $("#courseList").append(
-                            '<div class="col-12 col-sm-6 col-md-4 col-lg-3 list-to-detail" id="' + course['courseSeq']+ '">'
-                            + '<div class="card h-100 border-0 shadow-sm">'
-                            + '    <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">'
-                            + '        <img id="productImage'+ course['courseSeq']+'" src="" className="w-100 h-100 object-fit-cover" alt="강의 썸네일"/>'
-                            + '    </div>'
-                            + '    <div class="card-body d-flex flex-column justify-content-between" style="min-height: 240px;">'
-                            + '        <div>'
-                            + '            <p class="text-muted small mb-1">' + course['memberNickname'] + '</p>'
-                            + '            <h5 class="card-title fw-semibold text-truncate">' + course['courseTitle'] + '</h5>'
-                            + '            <p class="card-text text-secondary small text-truncate">' + course['courseTarget'] + '</p>'
-                            + '        </div>'
-                            + '        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">'
-                            + '            <span class="badge bg-light text-secondary border">' + course['cateValue'] + '</span>'
-                            + '            <span class="badge bg-light text-secondary border">' + (course['courseType'] === 'ON' ? '온라인' : '오프라인') + '</span>'
-                            + '            <span class="badge bg-light text-secondary border">'
-                            + '               ' + stars + ''
-                            + '            </span>'
-                            + '        </div>'
-                            + '        <div class="badge bg-primary border d-flex align-items-center justify-content-between mt-3">'
-                            + '            <div class="text-light">'
-                            + '                <i class="bi bi-heart-fill"></i> 4.8 <span class="text-muted"></span>'
-                            + '            </div>'
-                            + '            <a href="#" class="text-light">수강평 100+</a>'
-                            + '        </div>'
-                            + '        <div class="d-flex flex-wrap align-items-center mt-3 gap-3 justify-content-end mb-3">'
-                            + '            <span class="text-danger text-decoration-line-through fs-6">'
-                            + '                ₩ ' + course['coursePrice'] + ''
-                            + '            </span>'
-                            + '            <span> ➡️ </span>'
-                            + '            <span class="fw-bold fs-6 text-primary">'
-                            + '                ₩ ' + (course['coursePrice'] * ((100 - course['courseDiscount']) / 100)) + ''
-                            + '            </span>'
-                            + '            <button id="'+course['courseSeq']+'" type="button" class="btn-primary btn cart-btn"><i class="bi-cart"></i>'
-                            + '</span>'
-                            + '</div>'
-                            + '</div>'
-                            + '</div>'
-                            + '</div>'
-                        );
-                        const $img = $("#productImage" + course['courseSeq']);
-                        const fullPath = '${pageContext.request.contextPath}' + course['courseThumbnail'];
-                        $img.attr('src', fullPath);
-                        $img.on('error', function () {
-                            console.error('이미지 로드 실패, 대체 이미지로 교체');
-                            $(this).attr('src', '${pageContext.request.contextPath}/resources/images/dummy.png');
-                        });
-                    });
-                },
-                error: function () {
-                    console.error("데이터 불러오기 실패");
-                },
-                complete: function () {
-                    isLoading = false;
-                }
-            });
+            page++; // 페이지 증가
+            loadFilteredCourses(false); // resetPage = false로 호출
         }
     });
     </script>
