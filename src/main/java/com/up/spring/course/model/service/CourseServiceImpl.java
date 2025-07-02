@@ -3,6 +3,8 @@ package com.up.spring.course.model.service;
 
 import com.up.spring.course.model.dao.CourseDao;
 import com.up.spring.course.model.dto.Course;
+import com.up.spring.course.model.dto.Curriculum;
+import com.up.spring.course.model.dto.Progress;
 import com.up.spring.course.model.dto.Review;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
@@ -81,5 +83,30 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public List<Course> searchCourseListByMemberNo(long memberNo) {
         return courseDao.searchCourseListByMemberNo(sqlSession, memberNo);
+    }
+
+    @Override
+    public Curriculum getFirstCurriculum(long courseSeq) {
+        return courseDao.getFirstCurriculum(sqlSession,courseSeq);
+    }
+
+    @Override
+    public Curriculum getCurriculumBySeq(long currSeq) {
+        return courseDao.getCurriculumBySeq(sqlSession,currSeq);
+    }
+
+    @Override
+    public Progress getProgressBySeq(Map<String, Object> params) {
+        return courseDao.getProgressBySeq(sqlSession,params);
+    }
+
+    @Override
+    public int insertProgress(Progress progress) {
+        return courseDao.insertProgress(sqlSession,progress);
+    }
+
+    @Override
+    public int updateProgress(Progress progress) {
+        return courseDao.updateProgress(sqlSession,progress);
     }
 }

@@ -1,6 +1,8 @@
 package com.up.spring.course.model.dao;
 
 import com.up.spring.course.model.dto.Course;
+import com.up.spring.course.model.dto.Curriculum;
+import com.up.spring.course.model.dto.Progress;
 import com.up.spring.course.model.dto.Review;
 import org.apache.ibatis.session.SqlSession;
 
@@ -15,4 +17,9 @@ public interface CourseDao {
     int getReviewByUser(SqlSession sqlSession, Review review);
     List<Map<String, Object>> getReviewRateList(SqlSession sqlSession, long courseSeq);
     int insertReview(SqlSession sqlSession, Review review);
+    Curriculum getFirstCurriculum(SqlSession sqlSession, long courseSeq);
+    Curriculum getCurriculumBySeq(SqlSession sqlSession, long currSeq);
+    Progress getProgressBySeq(SqlSession sqlSession, Map<String,Object> params);
+    int insertProgress(SqlSession sqlSession, Progress progress);
+    int updateProgress(SqlSession sqlSession, Progress progress);
 }

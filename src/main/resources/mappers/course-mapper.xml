@@ -31,7 +31,30 @@
         <result column="REVIEW_CREATE_TIME" property="reviewCreateDate"/>
         <result column="REVIEW_DELETE_TIME" property="reviewDeleteDate"/>
         <result column="MEMBER_NICKNAME" property="memberNickname"/>
+    </resultMap>
 
+    <resultMap id="curriculumMap" type="curriculum">
+        <id column="CURR_SEQ" property="currSeq"/>
+        <result column="CURR_TITLE" property="currTitle"/>
+        <result column="CURR_VIDEO_URL" property="currVideoUrl"/>
+        <result column="CURR_VIDEO_TYPE" property="currVideoType"/>
+        <result column="CURR_PREVIEW" property="currPreview"/>
+        <result column="CURR_ORDER" property="currOrder"/>
+        <result column="SECTION_SEQ" property="sectionSeq"/>
+    </resultMap>
+
+    <resultMap id="progressMap" type="progress">
+        <id column="PRG_SEQ" property="prgSeq"/>
+        <result column="PRG_PLAY_TIME" property="prgPlayTime"/>
+        <result column="PRG_TOTAL_TIME" property="prgTotalTime"/>
+        <result column="PRG_COMPLETE_YN" property="prgCompleteYn"/>
+        <result column="PGR_LAST_VIEW_TIME" property="prgLastViewTime"/>
+        <result column="PRG_CREATE_TIME" property="prgCreateTime"/>
+        <result column="PRG_UPDATE_TIME" property="prgUpdateTime"/>
+        <result column="MEMBER_SEQ" property="memberSeq"/>
+        <result column="COURSE_SEQ" property="courseSeq"/>
+        <result column="SECTION_SEQ" property="sectionSeq"/>
+        <result column="CURR_SEQ" property="currSeq"/>
     </resultMap>
 
     <select id="searchById" resultMap="courseResultMap" parameterType="_long">
@@ -88,4 +111,40 @@
     <insert id="insertReview" parameterType="review">
         INSERT INTO COURSE_REVIEW VALUES (SEQ_COURSE_REVIEW.nextval,#{memberSeq},#{courseSeq},#{reviewTitle},#{reviewContent},#{reviewRate},DEFAULT,NULL)
     </insert>
+
+    <select id="getFirstCurriculum" parameterType="_long" resultMap="curriculumMap">
+        SELECT *
+        FROM (
+                 SELECT C.*
+                 FROM CURRICULUM C
+                          LEFT JOIN SECTION S ON C.SECTION_SEQ = S.SECTION_SEQ
+                 WHERE S.COURSE_SEQ = #{courseSeq}
+                 ORDER BY S.SECTION_ORDER, C.CURR_ORDER
+             )
+        WHERE ROWNUM = 1
+    </select>
+    <select id="getCurriculumBySeq" parameterType="_long" resultMap="curriculumMap">
+        SELECT *
+        FROM CURRICULUM
+        WHERE CURR_SEQ = #{courrSeq}
+    </select>
+
+    <select id="getProgressBySeq" parameterType="map" resultMap="progressMap">
+        SELECT *
+        FROM COURSE_PROGRESS
+        WHERE CURR_SEQ = #{currSeq}
+        AND MEMBER_SEQ = #{memberSeq}
+    </select>
+    <insert id="insertProgress" parameterType="progress">
+        INSERT INTO COURSE_PROGRESS (PRG_SEQ, PRG_PLAY_TIME, PRG_TOTAL_TIME, PRG_CREATE_TIME, MEMBER_SEQ, COURSE_SEQ, SECTION_SEQ, CURR_SEQ)
+        VALUES (SEQ_PROGRESS.nextval,${prgPlayTime},${prgTotalTime},SYSTIMESTAMP,${memberSeq},${courseSeq},${sectionSeq},${currSeq})
+    </insert>
+    <update id="updateProgress" parameterType="progress">
+        UPDATE COURSE_PROGRESS
+        SET
+           PRG_PLAY_TIME = ${prgPlayTime},
+           PGR_LAST_VIEW_TIME = SYSTIMESTAMP,
+           PRG_UPDATE_TIME = SYSTIMESTAMP
+        WHERE PRG_SEQ = ${prgSeq}
+    </update>
 </mapper>

@@ -45,6 +45,7 @@
 
 <!-- Main JS File -->
 <script src="${pageContext.request.contextPath}/resources/assets/js/main.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 
 </body>
 
