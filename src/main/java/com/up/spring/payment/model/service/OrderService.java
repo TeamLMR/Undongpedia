@@ -9,8 +9,8 @@ import java.util.Map;
 public interface OrderService {
     int insertOrder(Orders order);
     int insertOrderDetails(OrderDetails details);
-    int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq);
-    int insertOfflineOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq, Long scheduleId, String tempReservationId);
+    int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, long courseSeq);
+    int insertOfflineOrderAndOrderDetails(Map<String, Object> res, long memberNo, long courseSeq, Long scheduleId, String tempReservationId);
     Orders selectOrderById(int ordersSeq);
     List<Orders> selectOrdersByMember(Long memberNo);
     int cancelOrderById(int ordersSeq);

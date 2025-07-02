@@ -391,7 +391,7 @@ public class PaymentController {
                     if (!offlineCartList.isEmpty() && isInsertSuccess) {
                         for (int i = 0; i < offlineCartList.size(); i++) {
                             OfflineCart offlineCart = offlineCartList.get(i);
-                            int courseSeq = offlineCart.getCartCourse().getCourseSeq().intValue();
+                            long courseSeq = offlineCart.getCartCourse().getCourseSeq();
                             Long scheduleId = offlineCart.getCartCourseSchedule().getScheduleId();
                             String tempReservationId = offlineCart.getTempReservationId();
                             
@@ -542,7 +542,7 @@ public class PaymentController {
     /**
      * 스케줄 관련 캐시 무효화 (성능 최적화)
      */
-    private void invalidateScheduleCache(int courseSeq, Long scheduleId) {
+    private void invalidateScheduleCache(long courseSeq, Long scheduleId) {
         try {
             // 단일 키 삭제 (성능 우선)
             String[] directKeys = {
