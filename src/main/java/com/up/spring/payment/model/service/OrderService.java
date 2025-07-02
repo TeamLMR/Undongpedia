@@ -15,4 +15,5 @@ public interface OrderService {
     Orders selectOrderById(int ordersSeq);
     List<Orders> selectOrdersByMember(Long memberNo);
     int cancelOrderById(int ordersSeq);
+    int cancelOrdersByPaymentId(String paymentId);
 }

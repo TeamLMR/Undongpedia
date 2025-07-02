@@ -92,6 +92,11 @@ public class OrdersServiceImpl implements OrderService{
     }
 
     @Override
+    public int cancelOrdersByPaymentId(String paymentId) {
+        return ordersDao.cancelOrdersByPaymentId(session, paymentId);
+    }
+
+    @Override
     public int isCoursePaidByMember(Orders orders) {
         return ordersDao.isCoursePaidByMember(session, orders);
     }

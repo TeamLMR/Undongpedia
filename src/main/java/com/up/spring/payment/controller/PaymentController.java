@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -294,25 +295,30 @@ public class PaymentController {
         
         // 주문 취소 전에 주문 정보 조회 (좌석 복구를 위해)
         Orders cancelOrder = orderService.selectOrderById(ordersSeq);
-        
-        int result = orderService.cancelOrderById(ordersSeq);
-        if (result == 1) {
-            // 오프라인 예약인 경우 스케줄 좌석 복구
-            if (cancelOrder != null && cancelOrder.getScheduleId() != null) {
-                try {
-                    boolean seatRestoreResult = courseScheduleService.cancelSeat(cancelOrder.getScheduleId());
-                    if (seatRestoreResult) {
-                        log.info("주문 취소 시 좌석 복구 성공 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
-                        // 좌석 복구 성공 시 관련 캐시 무효화
-                        invalidateScheduleCache(cancelOrder.getCourseSeq(), cancelOrder.getScheduleId());
-                    } else {
-                        log.error("주문 취소 시 좌석 복구 실패 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+        if (cancelOrder != null) {
+            String paymentId = cancelOrder.getDetail().getOrdersPaymentId();
+            int result = orderService.cancelOrdersByPaymentId(paymentId);
+            //result값이 1보다 커질 수 있음(삭제 칼럼 값)
+            log.debug("result: " + result);
+
+            if (result > 1) {
+                // 오프라인 예약인 경우 스케줄 좌석 복구
+                if (cancelOrder.getScheduleId() != null) {
+                    try {
+                        boolean seatRestoreResult = courseScheduleService.cancelSeat(cancelOrder.getScheduleId());
+                        if (seatRestoreResult) {
+                            log.info("주문 취소 시 좌석 복구 성공 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                            // 좌석 복구 성공 시 관련 캐시 무효화
+                            invalidateScheduleCache(cancelOrder.getCourseSeq(), cancelOrder.getScheduleId());
+                        } else {
+                            log.error("주문 취소 시 좌석 복구 실패 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                        }
+                    } catch (Exception e) {
+                        log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
                     }
-                } catch (Exception e) {
-                    log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
                 }
+                loc = "redirect:/mypage";
             }
-            loc = "redirect:/mypage/purchaseHistory";
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
             model.addAttribute("loc", "/mypage");
