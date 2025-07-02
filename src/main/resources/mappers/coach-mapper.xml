@@ -61,6 +61,7 @@
         FROM SECTION S
         LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
         WHERE S.COURSE_SEQ = #{courseSeq}
+        ORDER BY S.SECTION_ORDER,C.CURR_ORDER
     </select>
 
     <insert id="insertSection" parameterType="section">
