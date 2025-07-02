@@ -29,4 +29,8 @@ public class Course {
     private String courseType; // Check (COURSE_TYPE IN ('ON','OFF','EVENT')) 코스 온라인 오프라인 이벤트(오프라인 실시간예약)
     private String memberNickname;
     private String cateValue;
+    
+    // 리뷰 관련 필드
+    private Double avgRating;      // 평점 평균 (없으면 0.0)
+    private Integer reviewCount;   // 리뷰 개수 (없으면 0)
 }

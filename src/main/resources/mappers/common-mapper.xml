@@ -26,6 +26,8 @@
         <result column="COURSE_TYPE" property="courseType"/>
         <result column="MEMBER_NICKNAME" property="memberNickname"/>
         <result column="CATE_VALUE" property="cateValue"/>
+        <result column="AVG_RATING" property="avgRating"/>
+        <result column="REVIEW_COUNT" property="reviewCount"/>
     </resultMap>
     
     <resultMap type="com.up.spring.main.dto.EventCourse" id="eventCourseMap">
@@ -63,9 +65,21 @@
     </select>
 
     <select id="getCourseList" resultMap="courseListMap">
-        SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        SELECT 
+            C.*,
+            M.MEMBER_NICKNAME,
+            (SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE,
+            COALESCE(AVG(R.REVIEW_RATE), 0.0) AS AVG_RATING,
+            COUNT(R.REVIEW_SEQ) AS REVIEW_COUNT
         FROM COURSE C
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ
+            AND R.REVIEW_DELETE_TIME IS NULL
+        GROUP BY C.COURSE_SEQ, C.COURSE_TITLE, C.COURSE_CONTENT, 
+                 C.COURSE_CATEGORY, C.COURSE_DIFFICULT, C.COURSE_PRICE,
+                 C.COURSE_DISCOUNT, C.COURSE_THUMBNAIL, C.COURSE_TARGET,
+                 C.COURSE_PREPARATION, C.COURSE_EXPOSE, C.COURSE_CONFIRM_TIME,
+                 C.COURSE_CREATE_TIME, C.MEMBER_NO, C.COURSE_TYPE, M.MEMBER_NICKNAME
     </select>
     
     <select id="getActiveEventCourses" resultMap="eventCourseMap">
@@ -104,9 +118,69 @@
     
     <!-- 디버깅용: 모든 이벤트 강의 조회 -->
     <select id="getAllEventCourses" resultMap="courseListMap">
-        SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        SELECT 
+            C.*,
+            M.MEMBER_NICKNAME,
+            (SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE,
+            COALESCE(AVG(R.REVIEW_RATE), 0.0) AS AVG_RATING,
+            COUNT(R.REVIEW_SEQ) AS REVIEW_COUNT
         FROM COURSE C
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ
+            AND R.REVIEW_DELETE_TIME IS NULL
         WHERE C.COURSE_TYPE = 'EVENT'
+        GROUP BY C.COURSE_SEQ, C.COURSE_TITLE, C.COURSE_CONTENT, 
+                 C.COURSE_CATEGORY, C.COURSE_DIFFICULT, C.COURSE_PRICE,
+                 C.COURSE_DISCOUNT, C.COURSE_THUMBNAIL, C.COURSE_TARGET,
+                 C.COURSE_PREPARATION, C.COURSE_EXPOSE, C.COURSE_CONFIRM_TIME,
+                 C.COURSE_CREATE_TIME, C.MEMBER_NO, C.COURSE_TYPE, M.MEMBER_NICKNAME
+    </select>
+    
+    <!-- 필터링된 강의 목록 조회 -->
+    <select id="getFilteredCourses" parameterType="map" resultMap="courseListMap">
+        SELECT 
+            C.*, 
+            M.MEMBER_NICKNAME, 
+            (SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE,
+            COALESCE(AVG(R.REVIEW_RATE), 0.0) AS AVG_RATING,
+            COUNT(R.REVIEW_SEQ) AS REVIEW_COUNT
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ 
+            AND R.REVIEW_DELETE_TIME IS NULL
+        WHERE 1=1
+        
+        <!-- 온라인/오프라인 필터 -->
+        <if test="courseType != null and courseType != 'all'">
+            AND C.COURSE_TYPE = #{courseType}
+        </if>
+        
+        <!-- 난이도 필터 -->
+        <if test="difficulty != null and difficulty != 'all'">
+            AND C.COURSE_DIFFICULT = #{difficulty}
+        </if>
+        
+        <!-- 가격 필터 -->
+        <if test="priceType == 'free'">
+            AND C.COURSE_PRICE = 0
+        </if>
+        <if test="priceType == 'paid'">
+            AND C.COURSE_PRICE > 0
+        </if>
+        
+        GROUP BY C.COURSE_SEQ, C.COURSE_TITLE, C.COURSE_CONTENT, 
+                 C.COURSE_CATEGORY, C.COURSE_DIFFICULT, C.COURSE_PRICE,
+                 C.COURSE_DISCOUNT, C.COURSE_THUMBNAIL, C.COURSE_TARGET,
+                 C.COURSE_PREPARATION, C.COURSE_EXPOSE, C.COURSE_CONFIRM_TIME,
+                 C.COURSE_CREATE_TIME, C.MEMBER_NO, C.COURSE_TYPE, M.MEMBER_NICKNAME
+        
+        <!-- 정렬 -->
+        <choose>
+            <when test="sortBy == 'price_asc'">ORDER BY C.COURSE_PRICE ASC</when>
+            <when test="sortBy == 'price_desc'">ORDER BY C.COURSE_PRICE DESC</when>
+            <when test="sortBy == 'rating'">ORDER BY AVG_RATING DESC</when>
+            <when test="sortBy == 'latest'">ORDER BY C.COURSE_CREATE_TIME DESC</when>
+            <otherwise>ORDER BY C.COURSE_CREATE_TIME DESC</otherwise>
+        </choose>
     </select>
 </mapper>
