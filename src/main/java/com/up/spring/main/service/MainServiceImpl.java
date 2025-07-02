@@ -31,4 +31,9 @@ public class MainServiceImpl implements MainService {
     public List<EventCourse> getActiveEventCourses() {
         return mainDao.getActiveEventCourses(session);
     }
+    
+    @Override
+    public List<Course> getFilteredCourses(Map<String, Object> filters) {
+        return mainDao.selectFilteredCourses(session, filters);
+    }
 }

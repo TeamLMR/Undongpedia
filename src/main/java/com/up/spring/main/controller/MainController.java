@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -70,5 +71,30 @@ public class MainController {
         params.put("cPage", cPage);
         params.put("numPerPage", numPerPage);
         return mainService.getCourseList(params);
+    }
+    
+    @RequestMapping("/main/filterCourses")
+    @ResponseBody
+    public List<Course> filterCourses(
+            @RequestParam(defaultValue = "all") String courseType,
+            @RequestParam(defaultValue = "all") String difficulty, 
+            @RequestParam(defaultValue = "all") String priceType,
+            @RequestParam(defaultValue = "latest") String sortBy,
+            @RequestParam(defaultValue = "1") int page
+    ) {
+
+        int cPage = page;
+        int numPerPage = 8;
+
+        Map<String, Object> filters = new HashMap<>();
+        filters.put("courseType", courseType);
+        filters.put("difficulty", difficulty);
+        filters.put("priceType", priceType);
+        filters.put("sortBy", sortBy);
+        filters.put("cPage", cPage);
+        filters.put("numPerPage", numPerPage);
+        
+        List<Course> result = mainService.getFilteredCourses(filters);
+        return result;
     }
 }

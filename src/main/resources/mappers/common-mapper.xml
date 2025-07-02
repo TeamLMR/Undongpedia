@@ -109,4 +109,39 @@
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
         WHERE C.COURSE_TYPE = 'EVENT'
     </select>
+    
+    <!-- 필터링된 강의 목록 조회 -->
+    <select id="getFilteredCourses" parameterType="map" resultMap="courseListMap">
+        SELECT C.*, M.MEMBER_NICKNAME, (SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        WHERE 1=1
+        
+        <!-- 온라인/오프라인 필터 -->
+        <if test="courseType != null and courseType != 'all'">
+            AND C.COURSE_TYPE = #{courseType}
+        </if>
+        
+        <!-- 난이도 필터 -->
+        <if test="difficulty != null and difficulty != 'all'">
+            AND C.COURSE_DIFFICULT = #{difficulty}
+        </if>
+        
+        <!-- 가격 필터 -->
+        <if test="priceType == 'free'">
+            AND C.COURSE_PRICE = 0
+        </if>
+        <if test="priceType == 'paid'">
+            AND C.COURSE_PRICE > 0
+        </if>
+        
+        <!-- 정렬 -->
+        <choose>
+            <when test="sortBy == 'price_asc'">ORDER BY C.COURSE_PRICE ASC</when>
+            <when test="sortBy == 'price_desc'">ORDER BY C.COURSE_PRICE DESC</when>
+            <when test="sortBy == 'rating'">ORDER BY C.COURSE.RATING DESC</when>
+            <when test="sortBy == 'latest'">ORDER BY C.COURSE_CREATE_TIME DESC</when>
+            <otherwise>ORDER BY C.COURSE_CREATE_TIME DESC</otherwise>
+        </choose>
+    </select>
 </mapper>
