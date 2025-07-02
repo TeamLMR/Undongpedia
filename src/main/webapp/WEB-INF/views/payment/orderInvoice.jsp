@@ -59,8 +59,8 @@
 
     <!-- 주문 정보 -->
     <div class="d-flex justify-content-between mb-4">
-        <div>거래일자: <fmt:formatDate value="${orders.createdAt}" pattern="yyyy.MM.dd" /></div>
-        <div>주문번호: ${orders.detail.ordersPaymentId}</div>
+        <div>거래일자: <fmt:formatDate value="${ordersList[0].ordersTimestamp}" pattern="yyyy.MM.dd" /></div>
+        <div>주문번호: ${ordersList[0].detail.ordersPaymentId}</div>
     </div>
 
     <!-- 공급자 정보 -->
@@ -82,22 +82,44 @@
             <th>단가</th>
             <th>공급가액</th>
             <th>세액</th>
+            <th>비고</th>
         </tr>
         </thead>
         <tbody>
-        <tr>
-            <td>${orders.courseTitle}</td>
-            <td>1</td>
-            <td>₩<fmt:formatNumber value="${orders.ordersPrice}" type="number" /></td>
-            <td>₩<fmt:formatNumber value="${orders.ordersPrice}" type="number" /></td>
-            <td>₩<fmt:formatNumber value="${orders.ordersPrice * 0.1}" type="number" /></td>
-        </tr>
+        <c:if test="${ordersList[0].ordersStatus eq 'CANC'}">
+            <c:set var="colorClass"  value="bg-danger-subtle"/>
+            <c:set var="bigoText"  value="환불 완료"/>
+        </c:if>
+        <c:if test="${ordersList[0].ordersStatus eq 'PAID'}">
+            <c:set var="colorClass"  value="bg-primary-subtle"/>
+            <c:set var="bigoText"  value="비고 없음"/>
+        </c:if>
+        <c:forEach var="orderInvoice" items="${ordersList}">
+            <tr class="${colorClass}">
+                <c:forEach var="course" items="${orderInvoice.courses}">
+                    <td>${course.courseTitle}</td>
+                    <td>1</td>
+                    <c:set var="resultPrice" value="${course.coursePrice - (course.coursePrice * course.courseDiscount / 100)}"/>
+                    <td>₩<fmt:formatNumber value="${resultPrice}" type="number" /></td>
+                    <td>₩<fmt:formatNumber value="${resultPrice}" type="number" /></td>
+                    <td>₩<fmt:formatNumber value="${resultPrice*0.1}" type="number" /></td>
+                    <td>${bigoText}</td>
+                </c:forEach>
+            </tr>
+        </c:forEach>
         </tbody>
         <tfoot>
         <tr class="summary">
             <td colspan="3">합계</td>
-            <td>₩<fmt:formatNumber value="${orders.ordersPrice}" type="number" /></td>
-            <td>₩<fmt:formatNumber value="${orders.ordersPrice * 0.1}" type="number" /></td>
+            <c:if test="${ordersList[0].ordersStatus eq 'CANC'}">
+                <td>₩0</td>
+                <td>₩0</td>
+            </c:if>
+            <c:if test="${ordersList[0].ordersStatus eq 'PAID'}">
+                <td>₩<fmt:formatNumber value="${ordersList[0].ordersPrice}" type="number" /></td>
+                <td>₩<fmt:formatNumber value="${ordersList[0].ordersPrice * 0.1}" type="number" /></td>
+            </c:if>
+            <td> </td>
         </tr>
         </tfoot>
     </table>

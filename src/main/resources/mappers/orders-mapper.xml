@@ -38,7 +38,28 @@
             <result property="ordersPayhistId" column="ORDERS_PAYHIST_ID" />
         </association>
     </resultMap>
+    <resultMap id="ordersInvoiceMap" type="ordersInvoice">
+        <id property="ordersSeq" column="ORDERS_SEQ"/>
+        <result property="ordersPrice" column="ORDERS_PRICE"/>
+        <result property="ordersStatus" column="ORDERS_STATUS"/>
+        <result property="ordersTimestamp" column="ORDERS_TIMESTAMP"/>
+        <result property="memberNo" column="MEMBER_NO"/>
+        <result property="courseSeq" column="COURSE_SEQ"/>
+        <result property="scheduleId" column="SCHEDULE_ID"/>
+        <result property="tempReservationId" column="TEMP_RESERVATION_ID"/>
+        <result property="courseType" column="COURSE_TYPE"/>
 
+        <association property="detail" javaType="orderDetails">
+            <id property="ordersSeq" column="ORDERS_SEQ" />
+            <result property="ordersPaymentId" column="ORDERS_PAYMENT_ID" />
+        </association>
+        <collection property="courses" ofType="course">
+            <id property="courseSeq" column="COURSE_SEQ" />
+            <result property="courseTitle" column="COURSE_TITLE" />
+            <result property="coursePrice" column="COURSE_PRICE" />
+            <result property="courseDiscount" column="COURSE_DISCOUNT" />
+        </collection>
+    </resultMap>
     <!-- INSERT -->
     <insert id="insertOrder" parameterType="orders">
         INSERT INTO ORDERS (
@@ -114,4 +135,15 @@
             WHERE OD.ORDERS_PAYMENT_ID = #{ordersPaymentId}
         )
     </update>
+
+    <select id="selectOrdersByPaymentIdAndMemberNo" parameterType="map" resultMap="ordersInvoiceMap">
+        SELECT o.ORDERS_SEQ, o.ORDERS_PRICE, o.ORDERS_STATUS,
+               o.ORDERS_TIMESTAMP, o.MEMBER_NO, o.COURSE_SEQ,
+               o.SCHEDULE_ID, o.TEMP_RESERVATION_ID, o.COURSE_TYPE,
+               d.ORDERS_SEQ, d.ORDERS_PAYMENT_ID, c.COURSE_TITLE, c.COURSE_PRICE, c.COURSE_DISCOUNT
+        FROM ORDERS o
+                 LEFT JOIN ORDER_DETAILS d ON o.ORDERS_SEQ = d.ORDERS_SEQ
+                 LEFT JOIN COURSE c ON o.COURSE_SEQ = c.COURSE_SEQ
+        WHERE o.MEMBER_NO = #{memberNo} AND d.ORDERS_PAYMENT_ID = #{ordersPaymentId}
+    </select>
 </mapper>

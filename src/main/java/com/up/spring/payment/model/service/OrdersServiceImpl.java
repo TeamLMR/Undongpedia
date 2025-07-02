@@ -3,6 +3,7 @@ package com.up.spring.payment.model.service;
 import com.up.spring.payment.model.dao.OrdersDao;
 import com.up.spring.payment.model.dto.OrderDetails;
 import com.up.spring.payment.model.dto.Orders;
+import com.up.spring.payment.model.dto.OrdersInvoice;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
@@ -84,6 +85,11 @@ public class OrdersServiceImpl implements OrderService{
                 .tempReservationId(tempReservationId)
                 .courseType("OFF")
                 .build();
+    }
+
+    @Override
+    public List<OrdersInvoice> selectOrdersByPaymentIdAndMemberNo(Map<String, Object> orders) {
+        return ordersDao.selectOrdersByPaymentIdAndMemberNo(session, orders);
     }
 
     @Override

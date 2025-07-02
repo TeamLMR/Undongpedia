@@ -2,15 +2,23 @@ package com.up.spring.payment.model.dao;
 
 import com.up.spring.payment.model.dto.OrderDetails;
 import com.up.spring.payment.model.dto.Orders;
+import com.up.spring.payment.model.dto.OrdersInvoice;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 
 public class OrdersDaoImpl implements OrdersDao {
+
+    @Override
+    public List<OrdersInvoice> selectOrdersByPaymentIdAndMemberNo(SqlSession session, Map<String, Object> orders) {
+        return session.selectList("selectOrdersByPaymentIdAndMemberNo", orders);
+    }
+
     @Override
     public int cancelOrdersByPaymentId(SqlSession session, String paymentId) {
         return session.update("cancelOrdersByPaymentId", paymentId);
