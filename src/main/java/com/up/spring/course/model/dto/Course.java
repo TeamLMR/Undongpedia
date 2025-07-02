@@ -26,7 +26,7 @@ public class Course {
     private Timestamp courseConfirmTime; // 승인일
     private int memberNo;
     private String courseExpose;
-    private String courseType; // Check (COURSE_TYPE IN ('ON','OFF')) 코스 온라인 오프라인
+    private String courseType; // Check (COURSE_TYPE IN ('ON','OFF','EVENT')) 코스 온라인 오프라인 이벤트(오프라인 실시간예약)
     private String memberNickname;
     private String cateValue;
 }

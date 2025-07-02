@@ -144,30 +144,19 @@
                     </div>
                   </div>
 
-                  <div class="row no-gutters align-items-center mb-3">
-                    <div class="col pl-3 pr-3">
-                      <div class="text-lg font-weight-bold text-info text-uppercase mb-1">최대 수강 인원</div>
-                      <div class="row no-gutters align-items-center">
-                        <div class="col">
-                          <div class="form-group">
-                            <input type="number" class="form-control form-control-user" min="1" max="50"
-                                   name="maxParticipants" id="maxParticipants" placeholder="ex) 10">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col pl-3 pr-3">
-                      <div class="text-lg font-weight-bold text-info text-uppercase mb-1">수업 시간 (분)</div>
-                      <div class="row no-gutters align-items-center">
-                        <div class="col">
-                          <div class="form-group">
-                            <input type="number" class="form-control form-control-user" min="30" max="300"
-                                   name="courseDuration" id="courseDuration" placeholder="ex) 60">
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                                                  <div class="row no-gutters align-items-center mb-3">
+                                    <div class="col pl-3 pr-3">
+                                        <div class="text-lg font-weight-bold text-info text-uppercase mb-1">최대 수강 인원</div>
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <input type="number" class="form-control form-control-user" min="1" max="50"
+                                                           name="maxParticipants" id="maxParticipants" placeholder="ex) 10">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                   <div class="row no-gutters align-items-center mb-3">
                     <div class="col pl-3 pr-3">
@@ -259,14 +248,13 @@
                       </div>
 
                       <div class="row">
-                        <div class="col-md-2">
-                          <label class="font-weight-bold">반복 패턴</label>
-                          <select name="schedules[0].repeatType" class="form-control form-control-sm">
-                            <option value="WEEKLY">매주</option>
-                            <option value="BIWEEKLY">격주</option>
-                            <option value="MONTHLY">매월</option>
-                          </select>
-                        </div>
+                                                                    <div class="col-md-2">
+                                                <label class="font-weight-bold">반복 패턴</label>
+                                                <select name="schedules[0].repeatType" class="form-control form-control-sm">
+                                                    <option value="WEEKLY">매주</option>
+                                                    <option value="BIWEEKLY">격주</option>
+                                                </select>
+                                            </div>
                         <div class="col-md-2">
                           <label class="font-weight-bold">요일</label>
                           <select name="schedules[0].dayOfWeek" class="form-control form-control-sm">
@@ -297,20 +285,19 @@
                         </div>
                       </div>
 
-                      <div class="row mt-2">
-                        <div class="col-md-12">
-                          <label class="font-weight-bold">스케줄 설명 (선택)</label>
-                          <input type="text" name="schedules[0].description" class="form-control form-control-sm"
-                                 placeholder="ex) 초급자 대상 기초반">
-                        </div>
-                      </div>
+
                     </div>
                   </div>
 
-                  <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>안내:</strong> 매주 반복되는 스케줄을 설정하면 자동으로 해당 기간 동안의 모든 수업 일정이 생성됩니다.
-                  </div>
+                                                  <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>안내:</strong> 
+                                    <ul class="mb-0 mt-2">
+                                        <li><strong>매주</strong>: 매주 해당 요일마다 수업 생성</li>
+                                        <li><strong>격주</strong>: 2주마다 해당 요일에 수업 생성</li>
+                                        <li>예시: 매주 수요일 19:00~20:00, 2024-01-01~2024-03-31 → 해당 기간의 모든 수요일에 수업 생성</li>
+                                    </ul>
+                                </div>
                 </div>
               </div>
 
@@ -418,22 +405,14 @@
         calculateDiscountedPrice();
       });
 
-      // 수강 인원 및 수업 시간 유효성 검사
-      $('#maxParticipants').on('input', function() {
-        const participants = $(this).val();
-        if(participants < 1 || participants > 50) {
-          $(this).val(10);
-          alert("수강 인원은 1~50명 사이로 입력해주세요.");
-        }
-      });
-
-      $('#courseDuration').on('input', function() {
-        const duration = $(this).val();
-        if(duration < 30 || duration > 300) {
-          $(this).val(60);
-          alert("수업 시간은 30~300분 사이로 입력해주세요.");
-        }
-      });
+              // 수강 인원 유효성 검사
+        $('#maxParticipants').on('input', function() {
+            const participants = $(this).val();
+            if(participants < 1 || participants > 50) {
+                $(this).val(10);
+                alert("수강 인원은 1~50명 사이로 입력해주세요.");
+            }
+        });
 
       // 스케줄 추가 버튼 클릭
       document.getElementById('addScheduleBtn').addEventListener('click', function() {
@@ -443,26 +422,25 @@
       function addScheduleItem() {
         const container = document.getElementById('scheduleContainer');
         const newScheduleHtml = `
-                <div class="schedule-item border rounded p-3 mb-3" data-schedule-index="${scheduleIndex}">
+                <div class="schedule-item border rounded p-3 mb-3" data-schedule-index="\${scheduleIndex}">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-primary mb-0">스케줄 #${scheduleIndex + 1}</h6>
+                        <h6 class="text-primary mb-0">스케줄 #\${scheduleIndex + 1}</h6>
                         <button type="button" class="btn btn-sm btn-outline-danger remove-schedule-btn">
                             <i class="fas fa-trash"></i> 삭제
                         </button>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-2">
-                            <label class="font-weight-bold">반복 패턴</label>
-                            <select name="schedules[${scheduleIndex}].repeatType" class="form-control form-control-sm">
-                                <option value="WEEKLY">매주</option>
-                                <option value="BIWEEKLY">격주</option>
-                                <option value="MONTHLY">매월</option>
-                            </select>
-                        </div>
+                                                 <div class="col-md-2">
+                             <label class="font-weight-bold">반복 패턴</label>
+                             <select name="schedules[\${scheduleIndex}].repeatType" class="form-control form-control-sm">
+                                 <option value="WEEKLY">매주</option>
+                                 <option value="BIWEEKLY">격주</option>
+                             </select>
+                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">요일</label>
-                            <select name="schedules[${scheduleIndex}].dayOfWeek" class="form-control form-control-sm">
+                            <select name="schedules[\${scheduleIndex}].dayOfWeek" class="form-control form-control-sm">
                                 <option value="1">월요일</option>
                                 <option value="2">화요일</option>
                                 <option value="3">수요일</option>
@@ -474,29 +452,23 @@
                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">시작 시간</label>
-                            <input type="time" name="schedules[${scheduleIndex}].startTime" class="form-control form-control-sm" value="19:00">
+                            <input type="time" name="schedules[\${scheduleIndex}].startTime" class="form-control form-control-sm" value="19:00">
                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">종료 시간</label>
-                            <input type="time" name="schedules[${scheduleIndex}].endTime" class="form-control form-control-sm" value="20:00">
+                            <input type="time" name="schedules[\${scheduleIndex}].endTime" class="form-control form-control-sm" value="20:00">
                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">시작 날짜</label>
-                            <input type="date" name="schedules[${scheduleIndex}].startDate" class="form-control form-control-sm">
+                            <input type="date" name="schedules[\${scheduleIndex}].startDate" class="form-control form-control-sm">
                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">종료 날짜</label>
-                            <input type="date" name="schedules[${scheduleIndex}].endDate" class="form-control form-control-sm">
+                            <input type="date" name="schedules[\${scheduleIndex}].endDate" class="form-control form-control-sm">
                         </div>
                     </div>
 
-                    <div class="row mt-2">
-                        <div class="col-md-12">
-                            <label class="font-weight-bold">스케줄 설명 (선택)</label>
-                            <input type="text" name="schedules[${scheduleIndex}].description" class="form-control form-control-sm"
-                                   placeholder="ex) 초급자 대상 기초반">
-                        </div>
-                    </div>
+                   
                 </div>
             `;
 
@@ -530,31 +502,30 @@
         const scheduleItems = document.querySelectorAll('.schedule-item');
         scheduleItems.forEach((item, index) => {
           item.setAttribute('data-schedule-index', index);
-          item.querySelector('h6').textContent = `스케줄 #${index + 1}`;
+          item.querySelector('h6').textContent = `스케줄 #\${index + 1}`;
 
           // name 속성들 재설정
           const inputs = item.querySelectorAll('input, select');
           inputs.forEach(input => {
             const name = input.getAttribute('name');
             if (name && name.includes('schedules[')) {
-              const newName = name.replace(/schedules\[\d+\]/, `schedules[${index}]`);
+              const newName = name.replace(/schedules\[\d+\]/, `schedules[\${index}]`);
               input.setAttribute('name', newName);
             }
           });
         });
       }
 
-      // 폼 검증
-      function offlineCourseFormCheck() {
-        const title = document.getElementById('courseTitle').value.trim();
-        const content = document.getElementById('courseContent').value.trim();
-        const category = document.getElementById('courseCategory').value;
-        const price = document.getElementById('coursePrice').value;
-        const discount = document.getElementById('courseDiscount').value;
-        const thumbnail = document.getElementById('courseThumbnail').value;
-        const location = document.getElementById('courseLocation').value.trim();
-        const maxParticipants = document.getElementById('maxParticipants').value;
-        const duration = document.getElementById('courseDuration').value;
+              // 폼 검증
+        function offlineCourseFormCheck() {
+            const title = document.getElementById('courseTitle').value.trim();
+            const content = document.getElementById('courseContent').value.trim();
+            const category = document.getElementById('courseCategory').value;
+            const price = document.getElementById('coursePrice').value;
+            const discount = document.getElementById('courseDiscount').value;
+            const thumbnail = document.getElementById('courseThumbnail').value;
+            const location = document.getElementById('courseLocation').value.trim();
+            const maxParticipants = document.getElementById('maxParticipants').value;
 
         if (!title) {
           alert("코스 제목을 입력해주세요.");
@@ -598,17 +569,11 @@
           return false;
         }
 
-        if (!maxParticipants || parseInt(maxParticipants) < 1 || parseInt(maxParticipants) > 50) {
-          alert("최대 수강 인원을 1~50명 사이로 입력해주세요.");
-          document.getElementById('maxParticipants').focus();
-          return false;
-        }
-
-        if (!duration || parseInt(duration) < 30 || parseInt(duration) > 300) {
-          alert("수업 시간을 30~300분 사이로 입력해주세요.");
-          document.getElementById('courseDuration').focus();
-          return false;
-        }
+                    if (!maxParticipants || parseInt(maxParticipants) < 1 || parseInt(maxParticipants) > 50) {
+                alert("최대 수강 인원을 1~50명 사이로 입력해주세요.");
+                document.getElementById('maxParticipants').focus();
+                return false;
+            }
 
         // 스케줄 검증
         const scheduleItems = document.querySelectorAll('.schedule-item');
