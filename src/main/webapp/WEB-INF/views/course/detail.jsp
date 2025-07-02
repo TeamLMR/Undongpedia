@@ -4,43 +4,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
-<script>
-    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
 
-    // 이미지가 있는지 체크하는 함수
-    function checkImageExists(imageUrl) {
-        // 새로운 이미지 객체 생성
-        const img = new Image();
-        // 이미지 URL 설정
-        img.src = '${pageContext.request.contextPath}'+imageUrl;
-
-        // 이미지 로드가 성공한 경우
-        img.onload = function () {
-            // 이미지가 존재하는 경우 true를 반환
-            return true;
-        };
-        // 이미지 로드가 실패한 경우
-        img.onerror = function () {
-            // 이미지가 존재하지 않는 경우 false를 반환
-            return false;
-        };
-        console.log(img.src);
-        // 이미지가 존재하는지 여부를 반환
-        return img.complete;
-    }
-
-    // 이미지가 없는 경우 defaultImageUrl을 반환하는 함수
-    function getImageUrl(imageUrl) {
-        console.log("imageUrl: "+ imageUrl)
-        // 이미지가 존재하는 경우 해당 URL을 반환
-        if (checkImageExists(imageUrl)) {
-            return imageUrl;
-        }
-        // 이미지가 존재하지 않는 경우 defaultImageUrl을 반환
-        return defaultImageUrl;
-    }
-
-</script>
 <style>
     .product-description-wrapper {
         position: relative;
@@ -129,12 +93,7 @@
                                 <!-- 이미지 -->
                                 <div class="col-lg-6 d-flex align-items-center justify-content-center">
                                     <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
-                                        <img id="productImage" src="" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
-                                        <script>
-                                            // 이미지가 있으면 myImage 아이디를 갖고 있는 img 태그에 적용한다.
-                                            // 없으면 getImageUrl 함수안에 return defaultImageUrl; 실행.
-                                            document.getElementById("productImage").src = getImageUrl("${course.courseThumbnail}");
-                                        </script>
+                                        <img id="productImage" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
                                     </div>
                                 </div>
                             </div>
@@ -399,7 +358,33 @@
                 button.textContent = '더보기';
             }
         });
+        setImage();
     })
+    async function setImage() {
+        const imageUrl = await getImageUrl("${course.courseThumbnail}");
+        document.getElementById('productImage').src = imageUrl;
+    }
+
+    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
+
+    function checkImageExists(imageUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = '${pageContext.request.contextPath}' + imageUrl;
+            img.onload = function () {
+                resolve(true);  // 이미지 있음
+            };
+            img.onerror = function () {
+                resolve(false); // 이미지 없음
+            };
+        });
+    }
+
+    // 비동기로 이미지 체크 후 URL 반환
+    async function getImageUrl(imageUrl) {
+        const exists = await checkImageExists(imageUrl);
+        return exists ? '${pageContext.request.contextPath}'+imageUrl : defaultImageUrl;
+    }
 
     function fn_paging(page) {
         $.ajax({
@@ -478,9 +463,5 @@
 
         return year+"-"+month+"-"+day+" "+hours+":"+minutes+":"+seconds;
     }
-    // 이미지가 없는 경우를 체크하기 위해 해당 이미지의 URL을 변수에 저장
-    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
-
-
 </script>
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>
