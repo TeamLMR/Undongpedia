@@ -69,6 +69,24 @@ public class OrdersServiceImpl implements OrderService{
                 .build();
     }
 
+    private Orders buildOfflineOrders(Map<String, Object> detail, long memberNo, int courseSeq, Long scheduleId, String tempReservationId){
+        log.debug(detail.toString());
+        int totalPayAmount = (int)detail.get("totalPayAmount");
+
+        //만약 primaryPayMeans가 null이면 point처리
+        String primaryPayMeans = detail.get("primaryPayMeans").equals("") ? "POINT" :(String) detail.get("primaryPayMeans");
+
+        return Orders.builder()
+                .ordersPrice(totalPayAmount)
+                .ordersPrimaryPay(primaryPayMeans)
+                .memberNo(memberNo)
+                .courseSeq(courseSeq)
+                .scheduleId(scheduleId)
+                .tempReservationId(tempReservationId)
+                .courseType("OFF")
+                .build();
+    }
+
     @Override
     public int cancelOrderById(int ordersSeq) {
         return ordersDao.cancelOrderById(session, ordersSeq);
@@ -119,6 +137,55 @@ public class OrdersServiceImpl implements OrderService{
         }
 
         log.debug("Order, OrderDetails Inserted Successfully");
+        //다 성공했으면 success
+        return success;
+    }
+
+    @Override
+    @Transactional
+    public int insertOfflineOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq, Long scheduleId, String tempReservationId) {
+        int success = 1;
+        int fail = 0;
+        if (res == null || res.isEmpty()) {
+            return fail;
+        }
+        //detail 사용
+        Map<String, Object> body = (Map<String, Object>) res.get("body");
+        Map<String, Object> detail = (Map<String, Object>) body.get("detail");
+
+        if (memberNo == 0) {
+            return fail;
+        }
+        if (courseSeq == 0) {
+            return fail;
+        }
+        //오프라인 order 객체 생성
+        Orders ordersData = buildOfflineOrders(detail, memberNo, courseSeq, scheduleId, tempReservationId);
+        if (ordersData == null) {
+            return fail;
+        }
+        log.debug("오프라인 주문 데이터: {}", ordersData.toString());
+        
+        //오프라인 order insert
+        int orderResult = ordersDao.insertOfflineOrder(session, ordersData);
+        if (orderResult != 1) {
+            return fail;
+        }
+
+        //orderDetail 객체 생성
+        OrderDetails orderDetails = buildOrderDetails(detail);
+        if (orderDetails == null) {
+            return fail;
+        }
+        log.debug(orderDetails.toString());
+
+        //orderDetail insert
+        int orderDetailResult = insertOrderDetails(orderDetails);
+        if (orderDetailResult != 1) {
+            return fail;
+        }
+
+        log.debug("Offline Order, OrderDetails Inserted Successfully");
         //다 성공했으면 success
         return success;
     }

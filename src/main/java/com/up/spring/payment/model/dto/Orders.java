@@ -23,6 +23,11 @@ public class Orders {
     private Timestamp updatedAt;
     private String courseTitle;
 
+    //오프라인 관련 컬럼
+    private Long scheduleId;
+    private String tempReservationId;
+    private String courseType;
+
     private OrderDetails detail; // 1:1 상세 정보 (nullable)
 }
 
