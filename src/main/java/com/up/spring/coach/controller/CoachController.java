@@ -92,6 +92,7 @@ public class CoachController {
         // DB에 저장할 경로 설정
         String dbPath = "/resources/upload/course/thumbnail/" + fileName;
         course.setCourseThumbnail(dbPath); // setter 필요
+        course.setCourseType("ON");
         Long insertTempCourse = coachService.insertTempCourse(course);
 
         List<Section> sectionList = coachService.getSectionList(course.getCourseSeq());
@@ -214,5 +215,48 @@ public class CoachController {
 
         return response;
     }
+
+    @PostMapping("/addOfflineCourseWithSchedule")
+    public String addOfflineCourse(Course course, Model model, HttpSession session) {
+        int memberNo = course.getMemberNo();
+        // 저장 경로
+        String realPath = session.getServletContext().getRealPath("/resources/upload/course/thumbnail");
+        File dir = new File(realPath);
+        if (!dir.exists()) dir.mkdirs();
+
+        // Base64 문자열 (data URI 포함될 수 있음)
+        String base64img = course.getCourseThumbnail();
+        if (base64img != null && base64img.contains(",")) {
+            base64img = base64img.split(",")[1]; // "data:image/jpeg;base64,..." 제거
+        }
+        // 디코딩
+        byte[] imageBytes = Base64.getDecoder().decode(base64img); // Java 8 이상 :contentReference[oaicite:1]{index=1}
+        int rnd = (int) (Math.random() * 1000) + 1;
+        Date d = new Date(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mmss");
+        String fileName = "COURSE_" + sdf.format(d) +  "_"+ rnd + ".jpg";
+
+        // 파일 저장
+        try (OutputStream os = new FileOutputStream(new File(dir, fileName))) {
+            os.write(imageBytes);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // DB에 저장할 경로 설정
+        String dbPath = "/resources/upload/course/thumbnail/" + fileName;
+        course.setCourseThumbnail(dbPath); // setter 필요
+        course.setCourseType("OFF");
+        Long insertTempCourse = coachService.insertTempCourse(course);
+
+        List<Section> sectionList = coachService.getSectionList(course.getCourseSeq());
+
+        model.addAttribute("tempCourseSeq", course.getCourseSeq());
+        model.addAttribute("sectionList", sectionList);
+
+        return "/coach/dashboard";
+    }
+
+
 
 }

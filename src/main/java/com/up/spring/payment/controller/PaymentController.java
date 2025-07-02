@@ -562,9 +562,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * 스케줄 관련 캐시 무효화 (성능 최적화)
-     */
+
     private void invalidateScheduleCache(long courseSeq, Long scheduleId) {
         try {
             // 단일 키 삭제 (성능 우선)

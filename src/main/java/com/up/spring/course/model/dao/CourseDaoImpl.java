@@ -1,6 +1,8 @@
 package com.up.spring.course.model.dao;
 
 import com.up.spring.course.model.dto.Course;
+import com.up.spring.course.model.dto.Curriculum;
+import com.up.spring.course.model.dto.Progress;
 import com.up.spring.course.model.dto.Review;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
@@ -52,5 +54,30 @@ public class CourseDaoImpl implements CourseDao {
     @Override
     public List<Course> searchCourseListByMemberNo(SqlSession sqlSession, long memberNo) {
         return sqlSession.selectList("course.searchCourseListByMemberNo", memberNo);
+    }
+
+    @Override
+    public Curriculum getFirstCurriculum(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.selectOne("course.getFirstCurriculum", courseSeq);
+    }
+
+    @Override
+    public Curriculum getCurriculumBySeq(SqlSession sqlSession, long currSeq) {
+        return sqlSession.selectOne("course.getCurriculumBySeq",currSeq);
+    }
+
+    @Override
+    public Progress getProgressBySeq(SqlSession sqlSession, Map<String, Object> params) {
+        return sqlSession.selectOne("course.getProgressBySeq", params);
+    }
+
+    @Override
+    public int insertProgress(SqlSession sqlSession, Progress progress) {
+        return sqlSession.insert("course.insertProgress", progress);
+    }
+
+    @Override
+    public int updateProgress(SqlSession sqlSession, Progress progress) {
+        return sqlSession.update("course.updateProgress", progress);
     }
 }

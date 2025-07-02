@@ -50,7 +50,7 @@
                 #{courseCategory},#{courseDifficult},#{coursePrice},
                 #{courseDiscount},#{courseThumbnail},#{courseTarget},
                 #{coursePreparation},'N',NULL,
-                SYSTIMESTAMP,#{memberNo}, 'ON')
+                SYSTIMESTAMP,#{memberNo}, #{courseType})
         <selectKey keyProperty="courseSeq" order="AFTER" resultType="_long">
             SELECT SEQ_COURSE.currval FROM DUAl
         </selectKey>
@@ -61,6 +61,7 @@
         FROM SECTION S
         LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
         WHERE S.COURSE_SEQ = #{courseSeq}
+        ORDER BY S.SECTION_ORDER,C.CURR_ORDER
     </select>
 
     <insert id="insertSection" parameterType="section">
