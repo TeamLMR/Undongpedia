@@ -82,6 +82,7 @@
       <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
           <a class="collapse-item" href="${path}/coach/addCourse">코스 등록하기</a>
+          <a class="collapse-item" href="${path}/coach/addOfflineCourse">오프라인 코스 등록하기</a>
           <a class="collapse-item" href="${path}/coach/coursemanager">코스 관리</a>
           <a class="collapse-item" href="${path}/coach/courseqna">코스 질문 관리</a>
           <a class="collapse-item" href="${path}/coach/coursereview">수강평</a>

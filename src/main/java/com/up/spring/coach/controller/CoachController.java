@@ -54,6 +54,14 @@ public class CoachController {
         model.addAttribute("categories", categories);
         return "/coach/add/addCourse";
     }
+    @RequestMapping("/addOfflineCourse")
+    public String addOfflineCourse(Model model) {
+
+        List<Category> categories = coachService.getCategoryAll();
+        model.addAttribute("categories", categories);
+        return "/coach/add/addOfflineCourse";
+    }
+
 
     @PostMapping("/addCourseSection")
     public String addCourseSection(Course course, Model model, HttpSession session) {

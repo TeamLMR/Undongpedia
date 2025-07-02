@@ -27,6 +27,11 @@ public class OrdersDaoImpl implements OrdersDao {
     }
 
     @Override
+    public int insertOfflineOrder(SqlSession session, Orders order) {
+        return session.insert("insertOfflineOrder", order);
+    }
+
+    @Override
     public int insertOrderDetails(SqlSession session, OrderDetails details) {
         return session.insert("insertOrderDetails", details);
     }

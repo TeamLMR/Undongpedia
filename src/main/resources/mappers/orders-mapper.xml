@@ -24,6 +24,9 @@
         <result property="createdAt" column="CREATED_AT"/>
         <result property="updatedAt" column="UPDATED_AT"/>
         <result property="courseTitle" column="COURSE_TITLE"/>
+        <result property="scheduleId" column="SCHEDULE_ID"/>
+        <result property="tempReservationId" column="TEMP_RESERVATION_ID"/>
+        <result property="courseType" column="COURSE_TYPE"/>
 
         <association property="detail" javaType="orderDatails">
             <id property="ordersSeq" column="ORDERS_SEQ" />
@@ -41,11 +44,23 @@
         INSERT INTO ORDERS (
             ORDERS_SEQ, ORDERS_PRICE, ORDERS_PRIMARYPAY, ORDERS_STATUS,
             ORDERS_TIMESTAMP, MEMBER_NO, COURSE_SEQ,
-            CANCEL_YN, CANCEL_TIMESTAMP, CREATED_AT, UPDATED_AT
+            CANCEL_YN, CANCEL_TIMESTAMP, CREATED_AT, UPDATED_AT, SCHEDULE_ID,TEMP_RESERVATION_ID,COURSE_TYPE
         ) VALUES (
                     SEQ_ORDERS.NEXTVAL, #{ordersPrice}, #{ordersPrimaryPay}, DEFAULT,
                      DEFAULT, #{memberNo}, #{courseSeq},
-                     DEFAULT, DEFAULT, DEFAULT, DEFAULT
+                     DEFAULT, DEFAULT, DEFAULT, DEFAULT,DEFAULT,DEFAULT,'ON'
+                 )
+    </insert>
+
+    <insert id="insertOfflineOrder" parameterType="orders">
+        INSERT INTO ORDERS (
+            ORDERS_SEQ, ORDERS_PRICE, ORDERS_PRIMARYPAY, ORDERS_STATUS,
+            ORDERS_TIMESTAMP, MEMBER_NO, COURSE_SEQ,
+            CANCEL_YN, CANCEL_TIMESTAMP, CREATED_AT, UPDATED_AT, SCHEDULE_ID,TEMP_RESERVATION_ID,COURSE_TYPE
+        ) VALUES (
+                     SEQ_ORDERS.NEXTVAL, #{ordersPrice}, #{ordersPrimaryPay}, DEFAULT,
+                     DEFAULT, #{memberNo}, #{courseSeq},
+                     DEFAULT, DEFAULT, DEFAULT, DEFAULT,#{scheduleId},#{tempReservationId},#{courseType}
                  )
     </insert>
 

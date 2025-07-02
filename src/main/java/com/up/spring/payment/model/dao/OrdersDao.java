@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface OrdersDao {
     int insertOrder(SqlSession session, Orders orders);
+    int insertOfflineOrder(SqlSession session, Orders order);
     int insertOrderDetails(SqlSession session, OrderDetails details);
     Orders selectOrderById(SqlSession session, int ordersSeq);
     List<Orders> selectOrdersByMember(SqlSession session, Long memberNo);

@@ -15,6 +15,7 @@ import com.up.spring.course.model.service.CourseService;
 import com.up.spring.course.model.service.CourseScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,7 @@ public class PaymentController {
     private final OfflineCartService offlineCartService;
     private final CourseService courseService;
     private final CourseScheduleService courseScheduleService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private List<String> getCartCourseNames(long memberNo){
         List<String> cartNames = new ArrayList<>();
@@ -289,8 +291,27 @@ public class PaymentController {
     @RequestMapping("/payment/cancel")
     public String paymentCancel(@RequestParam("id") int ordersSeq, Model model) {
         String loc = "common/msg";
+        
+        // 주문 취소 전에 주문 정보 조회 (좌석 복구를 위해)
+        Orders cancelOrder = orderService.selectOrderById(ordersSeq);
+        
         int result = orderService.cancelOrderById(ordersSeq);
         if (result == 1) {
+            // 오프라인 예약인 경우 스케줄 좌석 복구
+            if (cancelOrder != null && cancelOrder.getScheduleId() != null) {
+                try {
+                    boolean seatRestoreResult = courseScheduleService.cancelSeat(cancelOrder.getScheduleId());
+                    if (seatRestoreResult) {
+                        log.info("주문 취소 시 좌석 복구 성공 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                        // 좌석 복구 성공 시 관련 캐시 무효화
+                        invalidateScheduleCache(cancelOrder.getCourseSeq(), cancelOrder.getScheduleId());
+                    } else {
+                        log.error("주문 취소 시 좌석 복구 실패 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                    }
+                } catch (Exception e) {
+                    log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
+                }
+            }
             loc = "redirect:/mypage/purchaseHistory";
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
@@ -368,7 +389,7 @@ public class PaymentController {
                 log.debug("res:{}", res);
 
                 if (res != null && res.get("code").equals("Success")) {
-                    //카트 리스트만큼 반복
+                    //온라인 카트 리스트만큼 반복
                     List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
                     if (!cartList.isEmpty()) {
                         for (int i = 0; i < cartList.size(); i++) {
@@ -380,24 +401,72 @@ public class PaymentController {
                                 break;
                             }
                         }
-                        //TODO:완료시 카트 삭제까지
-                        //아 이거 다시 반복 안시키고싶은디 그리고 이거 분리시켜야할것같
-                        if (isInsertSuccess) {
-                            for (int i = 0; i < cartList.size(); i++) {
-                                int cartSeq = cartList.get(i).getCartSeq();
-                                int deleteCartResult = cartService.deleteCartByNo(cartSeq);
-                                if (deleteCartResult != 1) {
+                    }
+                    
+                    //오프라인 카트 리스트 처리 (추가)
+                    List<OfflineCart> offlineCartList = offlineCartService.searchOfflineCartByMemberNo(memberNo);
+                    if (!offlineCartList.isEmpty() && isInsertSuccess) {
+                        for (int i = 0; i < offlineCartList.size(); i++) {
+                            OfflineCart offlineCart = offlineCartList.get(i);
+                            int courseSeq = offlineCart.getCartCourse().getCourseSeq().intValue();
+                            Long scheduleId = offlineCart.getCartCourseSchedule().getScheduleId();
+                            String tempReservationId = offlineCart.getTempReservationId();
+                            
+                            // 주문 저장
+                            int resResult = orderService.insertOfflineOrderAndOrderDetails(res, memberNo, courseSeq, scheduleId, tempReservationId);
+                            if (resResult != 1) {
+                                isInsertSuccess = false;
+                                break;
+                            }
+                            
+                            // 스케줄 좌석 차감 (결제 완료 시)
+                            try {
+                                boolean seatResult = courseScheduleService.reserveSeat(scheduleId);
+                                if (!seatResult) {
+                                    log.error("스케줄 좌석 차감 실패 - scheduleId: {}, tempReservationId: {}", scheduleId, tempReservationId);
+                                    // 좌석 차감 실패 시에도 주문은 유지 (수동 처리 가능)
+                                } else {
+                                    log.info("스케줄 좌석 차감 성공 - scheduleId: {}, tempReservationId: {}", scheduleId, tempReservationId);
+                                    // 좌석 차감 성공 시 관련 캐시 무효화
+                                    invalidateScheduleCache(courseSeq, scheduleId);
+                                }
+                            } catch (Exception e) {
+                                log.error("스케줄 좌석 차감 중 오류 발생 - scheduleId: {}, tempReservationId: {}", scheduleId, tempReservationId, e);
+                            }
+                        }
+                    }
+                    
+                    //TODO:완료시 카트 삭제까지
+                    //아 이거 다시 반복 안시키고싶은디 그리고 이거 분리시켜야할것같
+                    if (isInsertSuccess) {
+                        // 온라인 장바구니 삭제
+                        for (int i = 0; i < cartList.size(); i++) {
+                            int cartSeq = cartList.get(i).getCartSeq();
+                            int deleteCartResult = cartService.deleteCartByNo(cartSeq);
+                            if (deleteCartResult != 1) {
+                                isCartDeleteSuccess = false;
+                                break;
+                            }
+                        }
+                        
+                        // 오프라인 장바구니 삭제 (추가)
+                        if (isCartDeleteSuccess) {
+                            for (int i = 0; i < offlineCartList.size(); i++) {
+                                int cartSeq = offlineCartList.get(i).getCartSeq();
+                                int deleteOfflineCartResult = offlineCartService.deleteOfflineCartByNo(cartSeq);
+                                if (deleteOfflineCartResult != 1) {
                                     isCartDeleteSuccess = false;
                                     break;
                                 }
                             }
                         }
+                    }
 
-                        if (isInsertSuccess && isCartDeleteSuccess) {
-                            log.debug("isInsertSuccess:{}", isInsertSuccess);
-                            log.debug("isCartDeleteSuccess:{}", isCartDeleteSuccess);
-                            loc = "redirect:/mypage";
-                        }
+                    if (isInsertSuccess && isCartDeleteSuccess) {
+                        log.debug("isInsertSuccess:{}", isInsertSuccess);
+                        log.debug("isCartDeleteSuccess:{}", isCartDeleteSuccess);
+                        log.info("온라인 장바구니 {}개, 오프라인 장바구니 {}개 결제 완료", cartList.size(), offlineCartList.size());
+                        loc = "redirect:/mypage";
                     }
                 }
 
@@ -484,6 +553,51 @@ public class PaymentController {
             response.put("success", false);
             response.put("message", "서버 오류가 발생했습니다.");
             return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * 스케줄 관련 캐시 무효화 (성능 최적화)
+     */
+    private void invalidateScheduleCache(int courseSeq, Long scheduleId) {
+        try {
+            // 단일 키 삭제 (성능 우선)
+            String[] directKeys = {
+                "course:available-dates:" + courseSeq,
+                "schedule:capacity:" + scheduleId
+            };
+            
+            for (String key : directKeys) {
+                Boolean deleted = redisTemplate.delete(key);
+                if (Boolean.TRUE.equals(deleted)) {
+                    log.debug("캐시 키 삭제: {}", key);
+                }
+            }
+            
+            // 패턴 매칭은 SCAN으로 안전하게 처리 (제한적)
+            String pattern = "course:timeslots:" + courseSeq + ":*";
+            org.springframework.data.redis.core.ScanOptions scanOptions = 
+                org.springframework.data.redis.core.ScanOptions.scanOptions()
+                    .match(pattern)
+                    .count(10) // 제한적으로만 처리
+                    .build();
+            
+            try (org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(scanOptions)) {
+                int deleteCount = 0;
+                while (cursor.hasNext() && deleteCount < 20) { // 최대 20개만 삭제
+                    String key = cursor.next();
+                    redisTemplate.delete(key);
+                    deleteCount++;
+                }
+                if (deleteCount > 0) {
+                    log.debug("캐시 패턴 삭제: {} ({}개 키)", pattern, deleteCount);
+                }
+            }
+            
+            log.debug("스케줄 캐시 무효화 완료 - courseSeq: {}, scheduleId: {}", courseSeq, scheduleId);
+            
+        } catch (Exception e) {
+            log.error("캐시 무효화 중 오류 발생 - courseSeq: {}, scheduleId: {}", courseSeq, scheduleId, e);
         }
     }
 }
