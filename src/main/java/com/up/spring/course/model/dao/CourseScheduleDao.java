@@ -32,4 +32,9 @@ public interface CourseScheduleDao {
 
     int decrementBookedSeats(SqlSession sqlSession, long scheduleId);
 
+    /**
+     * 스케줄 등록
+     */
+    int insertSchedule(SqlSession sqlSession, CourseSchedule schedule);
+
 }

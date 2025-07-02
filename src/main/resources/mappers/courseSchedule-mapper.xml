@@ -98,5 +98,16 @@
           AND COURSE_CAPACITY > BOOKED_SEATS
     </select>
 
+    <!-- 스케줄 등록 -->
+    <insert id="insertSchedule" parameterType="courseSchedule">
+        INSERT INTO COURSE_SCHEDULE (
+            SCHEDULE_ID, COURSE_SEQ, COURSE_DATE, COURSE_START_TIME, COURSE_END_TIME,
+            COURSE_CAPACITY, COURSE_LOCATION, BOOKED_SEATS, STATUS
+        ) VALUES (
+            SEQ_COURSE_SCHEDULE.NEXTVAL, #{courseSeq}, #{courseDate}, #{courseStartTime}, #{courseEndTime},
+            #{courseCapacity}, #{courseLocation}, 0, 'AVAILABLE'
+        )
+    </insert>
+
 
 </mapper>

@@ -28,4 +28,9 @@ public interface CourseScheduleService {
     int getAvailableSeats(long scheduleId);
     boolean reserveSeat(long scheduleId);
     boolean cancelSeat(long scheduleId);
+    
+    /**
+     * 스케줄 등록
+     */
+    int insertSchedule(CourseSchedule schedule);
 }
