@@ -68,7 +68,7 @@ public class OrdersServiceImpl implements OrderService{
                 .build();
     }
 
-    private Orders buildOfflineOrders(Map<String, Object> detail, long memberNo, int courseSeq, Long scheduleId, String tempReservationId){
+    private Orders buildOfflineOrders(Map<String, Object> detail, long memberNo, long courseSeq, Long scheduleId, String tempReservationId){
         log.debug(detail.toString());
         int totalPayAmount = (int)detail.get("totalPayAmount");
 
@@ -147,7 +147,7 @@ public class OrdersServiceImpl implements OrderService{
 
     @Override
     @Transactional
-    public int insertOfflineOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq, Long scheduleId, String tempReservationId) {
+    public int insertOfflineOrderAndOrderDetails(Map<String, Object> res, long memberNo, long courseSeq, Long scheduleId, String tempReservationId) {
         int success = 1;
         int fail = 0;
         if (res == null || res.isEmpty()) {

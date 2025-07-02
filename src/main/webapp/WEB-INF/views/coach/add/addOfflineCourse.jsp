@@ -169,7 +169,73 @@
                     </div>
                   </div>
 
-                  <!-- 썸네일, 교육대상, 준비물 등 기존 필드들... (생략 가능) -->
+                  <div class="row no-gutters align-items-center mb-3">
+                    <div class="col pl-3 pr-3">
+                      <div class="text-lg font-weight-bold text-info text-uppercase mb-1">썸네일 설정</div>
+                      <div class="row no-gutters align-items-center">
+                        <div class="col">
+                          <div class="form-group">
+                            <label id="thumbLabel" for="inputImage" class="col-3 thumbnail-upload-label form-control form-control-user"
+                                   style="height: 10vw; display: flex; justify-content: center;align-items: center;">
+                              썸네일을 등록하세요
+                            </label>
+                            <input class="form-control form-control-user" type="file" id="inputImage" accept="image/*" style="display: none"/>
+                            <input type="hidden" name="courseThumbnail" id="courseThumbnail"/>
+                          </div>
+                          <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+                               aria-hidden="true">
+                            <div class="modal-dialog modal-lg" role="document">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">이미지 크롭</h5>
+                                  <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                  </button>
+                                </div>
+                                <div class="modal-body text-center" style="overflow: hidden">
+                                  <img id="imagePreview" style="width: 100%; max-height: 500px;" />
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                                  <button type="button" class="btn btn-primary" id="cropButton">크롭 완료</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row no-gutters align-items-center mb-3">
+                    <div class="col pl-3 pr-3">
+                      <div class="text-lg font-weight-bold text-info text-uppercase mb-1">교육 대상</div>
+                      <div class="row no-gutters align-items-center">
+                        <div class="col">
+                          <div class="form-group">
+                            <input type="text" class="form-control form-control-user"
+                                   name="courseTarget" id="courseTarget"
+                                   placeholder="ex) 기초체력이 부족하신 분">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="row no-gutters align-items-center mb-3">
+                    <div class="col pl-3 pr-3">
+                      <div class="text-lg font-weight-bold text-info text-uppercase mb-1">준비물</div>
+                      <div class="row no-gutters align-items-center">
+                        <div class="col">
+                          <div class="form-group">
+                            <input type="text" class="form-control form-control-user"
+                                   name="coursePreparation" id="coursePreparation"
+                                   placeholder="ex) 편한 운동복, 수건, 물병">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -193,7 +259,7 @@
                       </div>
 
                       <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                           <label class="font-weight-bold">반복 패턴</label>
                           <select name="schedules[0].repeatType" class="form-control form-control-sm">
                             <option value="WEEKLY">매주</option>
@@ -206,7 +272,7 @@
                           <select name="schedules[0].dayOfWeek" class="form-control form-control-sm">
                             <option value="1">월요일</option>
                             <option value="2">화요일</option>
-                            <option value="3">수요일</option>
+                            <option value="3" selected>수요일</option>
                             <option value="4">목요일</option>
                             <option value="5">금요일</option>
                             <option value="6">토요일</option>
@@ -215,13 +281,17 @@
                         </div>
                         <div class="col-md-2">
                           <label class="font-weight-bold">시작 시간</label>
-                          <input type="time" name="schedules[0].startTime" class="form-control form-control-sm" value="09:00">
+                          <input type="time" name="schedules[0].startTime" class="form-control form-control-sm" value="19:00">
+                        </div>
+                        <div class="col-md-2">
+                          <label class="font-weight-bold">종료 시간</label>
+                          <input type="time" name="schedules[0].endTime" class="form-control form-control-sm" value="20:00">
                         </div>
                         <div class="col-md-2">
                           <label class="font-weight-bold">시작 날짜</label>
                           <input type="date" name="schedules[0].startDate" class="form-control form-control-sm">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                           <label class="font-weight-bold">종료 날짜</label>
                           <input type="date" name="schedules[0].endDate" class="form-control form-control-sm">
                         </div>
@@ -240,7 +310,6 @@
                   <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle"></i>
                     <strong>안내:</strong> 매주 반복되는 스케줄을 설정하면 자동으로 해당 기간 동안의 모든 수업 일정이 생성됩니다.
-                    <br>예시: 매주 수요일 19:00, 2024-01-01 ~ 2024-03-31 설정 시 해당 기간의 모든 수요일에 수업이 생성됩니다.
                   </div>
                 </div>
               </div>
@@ -267,8 +336,104 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <script>
+      ClassicEditor
+        .create(document.querySelector('#courseContent'),
+          {
+            ckfinder: {
+              uploadUrl: '${pageContext.request.contextPath}/coach/upload/editorImage'
+            }
+          })
+        .catch(error => {
+          console.error(error);
+        });
+
+      let cropper;
+      let croppedImageBlob = null;
       let scheduleIndex = 1;
+
+      const input = document.getElementById('inputImage');
+      const image = document.getElementById('imagePreview');
+
+      // 이미지 선택 시 모달 열기 + Cropper 적용
+      input.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          image.src = event.target.result;
+
+          // 모달 먼저 띄운 뒤 cropper 적용
+          $('#exampleModal').modal('show');
+
+          // Cropper 적용은 이미지가 실제로 DOM에 나타난 후에 해야 함
+          $('#exampleModal').on('shown.bs.modal', function () {
+            if (cropper) {
+              cropper.destroy();
+            }
+            cropper = new Cropper(image, {
+              aspectRatio: 16 / 9,
+              viewMode: 1,
+            });
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // 크롭 버튼 눌렀을 때
+      document.getElementById('cropButton').addEventListener('click', function () {
+        if (!cropper) return;
+
+        const canvas = cropper.getCroppedCanvas();
+        // base64 데이터 생성
+        const base64Image = canvas.toDataURL('image/jpeg');
+
+        // hidden input에 base64 문자열 저장
+        document.getElementById('courseThumbnail').value = base64Image;
+        document.getElementById('thumbLabel').innerHTML =`<img class='h-100' src='\${base64Image}'>`;
+        $('#exampleModal').modal('hide');
+      });
+
+      // 가격 계산
+      function calculateDiscountedPrice() {
+        const price = parseFloat($('#coursePrice').val()) || 0;
+        const discount = parseFloat($('#courseDiscount').val()) || 0;
+        const discountedPrice = Math.floor(price * (1 - discount / 100));
+        $('#priceResult').val(discountedPrice);
+      }
+
+      $('#coursePrice, #courseDiscount').on('input', function (){
+        const price = $('#coursePrice');
+        if(price.val() < 0){
+          price.val(0);
+          alert("양수만 입력 가능합니다.");
+        }
+        const discount = $('#courseDiscount');
+        if(discount.val() < 0 || discount.val() > 100) {
+          discount.val(0);
+          alert("0부터 100사이만 입력 가능합니다.")
+        }
+        calculateDiscountedPrice();
+      });
+
+      // 수강 인원 및 수업 시간 유효성 검사
+      $('#maxParticipants').on('input', function() {
+        const participants = $(this).val();
+        if(participants < 1 || participants > 50) {
+          $(this).val(10);
+          alert("수강 인원은 1~50명 사이로 입력해주세요.");
+        }
+      });
+
+      $('#courseDuration').on('input', function() {
+        const duration = $(this).val();
+        if(duration < 30 || duration > 300) {
+          $(this).val(60);
+          alert("수업 시간은 30~300분 사이로 입력해주세요.");
+        }
+      });
 
       // 스케줄 추가 버튼 클릭
       document.getElementById('addScheduleBtn').addEventListener('click', function() {
@@ -287,7 +452,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="font-weight-bold">반복 패턴</label>
                             <select name="schedules[${scheduleIndex}].repeatType" class="form-control form-control-sm">
                                 <option value="WEEKLY">매주</option>
@@ -309,13 +474,17 @@
                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">시작 시간</label>
-                            <input type="time" name="schedules[${scheduleIndex}].startTime" class="form-control form-control-sm" value="09:00">
+                            <input type="time" name="schedules[${scheduleIndex}].startTime" class="form-control form-control-sm" value="19:00">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="font-weight-bold">종료 시간</label>
+                            <input type="time" name="schedules[${scheduleIndex}].endTime" class="form-control form-control-sm" value="20:00">
                         </div>
                         <div class="col-md-2">
                             <label class="font-weight-bold">시작 날짜</label>
                             <input type="date" name="schedules[${scheduleIndex}].startDate" class="form-control form-control-sm">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="font-weight-bold">종료 날짜</label>
                             <input type="date" name="schedules[${scheduleIndex}].endDate" class="form-control form-control-sm">
                         </div>
@@ -333,8 +502,6 @@
 
         container.insertAdjacentHTML('beforeend', newScheduleHtml);
         scheduleIndex++;
-
-        // 첫 번째 스케줄이 아니면 삭제 버튼 보이기
         updateDeleteButtons();
       }
 
@@ -377,34 +544,69 @@
         });
       }
 
-      // 가격 계산
-      function calculateDiscountedPrice() {
-        const price = parseFloat($('#coursePrice').val()) || 0;
-        const discount = parseFloat($('#courseDiscount').val()) || 0;
-        const discountedPrice = Math.floor(price * (1 - discount / 100));
-        $('#priceResult').val(discountedPrice);
-      }
-
-      $('#coursePrice, #courseDiscount').on('input', calculateDiscountedPrice);
-
       // 폼 검증
       function offlineCourseFormCheck() {
         const title = document.getElementById('courseTitle').value.trim();
+        const content = document.getElementById('courseContent').value.trim();
+        const category = document.getElementById('courseCategory').value;
+        const price = document.getElementById('coursePrice').value;
+        const discount = document.getElementById('courseDiscount').value;
+        const thumbnail = document.getElementById('courseThumbnail').value;
         const location = document.getElementById('courseLocation').value.trim();
         const maxParticipants = document.getElementById('maxParticipants').value;
+        const duration = document.getElementById('courseDuration').value;
 
         if (!title) {
           alert("코스 제목을 입력해주세요.");
+          document.getElementById('courseTitle').focus();
           return false;
         }
 
+        if (!content) {
+          alert("코스 내용을 입력해주세요.");
+          document.getElementById('courseContent').focus();
+          return false;
+        }
+
+        if (!category) {
+          alert("코스 카테고리를 선택해주세요.");
+          document.getElementById('courseCategory').focus();
+          return false;
+        }
+
+        if (!price || parseInt(price) < 0) {
+          alert("코스 가격을 0 이상으로 입력해주세요.");
+          document.getElementById('coursePrice').focus();
+          return false;
+        }
+
+        if (discount && (parseInt(discount) < 0 || parseInt(discount) > 100)) {
+          alert("할인율은 0~100 사이로 입력해주세요.");
+          document.getElementById('courseDiscount').focus();
+          return false;
+        }
+
+        if (!thumbnail) {
+          alert("썸네일을 등록해주세요.");
+          return false;
+        }
+
+        // 오프라인 코스 전용 검증
         if (!location) {
           alert("수업 장소를 입력해주세요.");
+          document.getElementById('courseLocation').focus();
           return false;
         }
 
-        if (!maxParticipants || parseInt(maxParticipants) < 1) {
-          alert("최대 수강 인원을 입력해주세요.");
+        if (!maxParticipants || parseInt(maxParticipants) < 1 || parseInt(maxParticipants) > 50) {
+          alert("최대 수강 인원을 1~50명 사이로 입력해주세요.");
+          document.getElementById('maxParticipants').focus();
+          return false;
+        }
+
+        if (!duration || parseInt(duration) < 30 || parseInt(duration) > 300) {
+          alert("수업 시간을 30~300분 사이로 입력해주세요.");
+          document.getElementById('courseDuration').focus();
           return false;
         }
 
@@ -413,18 +615,18 @@
         for (let i = 0; i < scheduleItems.length; i++) {
           const startDate = scheduleItems[i].querySelector('input[name*="startDate"]').value;
           const endDate = scheduleItems[i].querySelector('input[name*="endDate"]').value;
-
+          
           if (!startDate || !endDate) {
             alert(`스케줄 #${i + 1}의 시작/종료 날짜를 입력해주세요.`);
             return false;
           }
-
+          
           if (new Date(startDate) >= new Date(endDate)) {
             alert(`스케줄 #${i + 1}의 종료 날짜는 시작 날짜보다 뒤여야 합니다.`);
             return false;
           }
         }
-
+        
         return true;
       }
 
@@ -434,7 +636,7 @@
         const nextMonth = new Date();
         nextMonth.setMonth(nextMonth.getMonth() + 3);
         const threeMonthsLater = nextMonth.toISOString().split('T')[0];
-
+        
         document.querySelector('input[name="schedules[0].startDate"]').value = today;
         document.querySelector('input[name="schedules[0].endDate"]').value = threeMonthsLater;
       });
@@ -442,4 +644,6 @@
     </script>
 
     <!-- End of Main Content -->
-<jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>
+    <jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>
+  </div>
+</div>
