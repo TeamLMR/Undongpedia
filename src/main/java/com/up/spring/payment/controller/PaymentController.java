@@ -1,6 +1,7 @@
 package com.up.spring.payment.controller;
 
 import com.up.spring.member.model.dto.Member;
+import com.up.spring.member.model.service.MemberService;
 import com.up.spring.payment.model.dto.Cart;
 import com.up.spring.payment.model.dto.NaverProperty;
 import com.up.spring.payment.model.dto.OfflineCart;
@@ -37,8 +38,9 @@ import java.util.*;
 @Controller
 @Slf4j
 public class PaymentController {
-    private final CartService cartService;
     private final NaverProperty naverProperty;
+
+    private final CartService cartService;
     private final OrderService orderService;
     private final OfflineCartService offlineCartService;
     private final CourseService courseService;
@@ -159,38 +161,53 @@ public class PaymentController {
         }
         return memberNo;
     }
+
     @PostMapping("/cart/add")
     public String addCart(@RequestParam("addCourseSeq") long courseSeq, Model model, RedirectAttributes redirectAttributes) {
         String loc = "common/msg";
         log.debug("courseSeq: {}", courseSeq);
         long memberNo = returnMemberNo();
         if  (memberNo != 0){
-            //중복 확인
-            Cart cart = Cart.builder()
-                    .memberNo(memberNo)
+            //구매한 이력이 있는지 체크
+            Orders orders = Orders.builder()
                     .courseSeq(courseSeq)
+                    .memberNo(memberNo)
                     .build();
 
-            int count = cartService.isCourseInCart(cart);
-            //이미 클래스가 존재한다면
-            if (count > 0){
+            int memberOrderCount = orderService.isCoursePaidByMember(orders);
+            //해당 클래스를 구매한 이력이 있다면
+            if (memberOrderCount > 0 ){
                 redirectAttributes.addAttribute("result", "fail");
-                redirectAttributes.addAttribute("msg", "이미 장바구니에 존재합니다.");
+                redirectAttributes.addAttribute("msg", "이미 구매한 상품은 장바구니에 넣을 수 없습니다.");
                 loc = "redirect:/";
-                //없다면 insert
+            //없다면 장바구니 내 중복 확인
             } else {
-                int result = cartService.insertCart(cart);
-                if(result == 1){
-                    redirectAttributes.addAttribute("result", "success");
-                    redirectAttributes.addAttribute("msg", "장바구니에 담았습니다.");
-                    loc = "redirect:/";
-                } else {
+                //중복 확인
+                Cart cart = Cart.builder()
+                        .memberNo(memberNo)
+                        .courseSeq(courseSeq)
+                        .build();
+                int cartCount = cartService.isCourseInCart(cart);
+                //이미 장바구니 내에 클래스가 존재한다면
+                if (cartCount > 0){
                     redirectAttributes.addAttribute("result", "fail");
-                    redirectAttributes.addAttribute("msg", "장바구니에 담지 못했습니다.");
+                    redirectAttributes.addAttribute("msg", "이미 장바구니에 존재합니다.");
                     loc = "redirect:/";
+                    //없다면 insert
+                } else {
+                    int result = cartService.insertCart(cart);
+                    if(result == 1){
+                        redirectAttributes.addAttribute("result", "success");
+                        redirectAttributes.addAttribute("msg", "장바구니에 담았습니다.");
+                        loc = "redirect:/";
+                    } else {
+                        redirectAttributes.addAttribute("result", "fail");
+                        redirectAttributes.addAttribute("msg", "장바구니에 담지 못했습니다.");
+                        loc = "redirect:/";
+                    }
                 }
             }
-
+        //그 외
         } else {
             model.addAttribute("msg", "로그인을 확인해주세요.");
             model.addAttribute("loc", "/");

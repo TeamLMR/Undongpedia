@@ -83,4 +83,7 @@
         ORDER BY o.ORDERS_TIMESTAMP DESC
     </select>
 
+    <select id="isCoursePaidByMember" parameterType="orders" resultType="_int">
+        SELECT COUNT(*) FROM ORDERS WHERE MEMBER_NO = #{memberNo} AND COURSE_SEQ = #{courseSeq} AND ORDERS_STATUS= 'PAID'
+    </select>
 </mapper>

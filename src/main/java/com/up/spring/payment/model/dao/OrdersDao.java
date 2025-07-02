@@ -7,9 +7,10 @@ import org.apache.ibatis.session.SqlSession;
 import java.util.List;
 
 public interface OrdersDao {
-    int insertOrder(SqlSession session, Orders order);
+    int insertOrder(SqlSession session, Orders orders);
     int insertOrderDetails(SqlSession session, OrderDetails details);
     Orders selectOrderById(SqlSession session, int ordersSeq);
     List<Orders> selectOrdersByMember(SqlSession session, Long memberNo);
     int cancelOrderById(SqlSession session, int ordersSeq);
+    int isCoursePaidByMember(SqlSession session, Orders orders);
 }

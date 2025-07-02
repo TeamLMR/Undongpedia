@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface OrderService {
-    int insertOrder(Orders order);
+    int isCoursePaidByMember(Orders orders);
+    int insertOrder(Orders orders);
     int insertOrderDetails(OrderDetails details);
     int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, long courseSeq);
     Orders selectOrderById(int ordersSeq);
