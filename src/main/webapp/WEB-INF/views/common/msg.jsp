@@ -6,7 +6,7 @@
     <script>
         setTimeout(()=>{
             location.replace("${pageContext.request.contextPath}${loc}");
-        }, 2000);
+        }, 3000);
     </script>
 </c:if>
 
@@ -30,7 +30,7 @@
                 <div class="col-lg-6" data-aos="fade-right" data-aos-delay="200">
                     <div class="error-content text-center text-lg-start">
                         <span class="error-badge" data-aos="fade-down" data-aos-delay="300">Message</span>
-                        <h1 class="error-title mt-4" data-aos="fade-up" data-aos-delay="400">${msg}</h1>
+                        <h1 class="mt-4" data-aos="fade-up" data-aos-delay="400">${msg}</h1>
                         <div class="error-actions mt-4" data-aos="fade-up" data-aos-delay="600">
                             <a href="${pageContext.request.contextPath}" class="btn btn-outline">
                                 <i class="bi bi-arrow-left me-2"></i>Return Home

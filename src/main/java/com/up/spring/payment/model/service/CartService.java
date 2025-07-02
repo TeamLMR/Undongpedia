@@ -8,4 +8,5 @@ public interface CartService {
     List<Cart> searchCartsByMemberNo(long memberNo);
     int insertCart(Cart cart);
     int deleteCartByNo(int cartSeq);
+    int isCourseInCart(Cart cart);
 }

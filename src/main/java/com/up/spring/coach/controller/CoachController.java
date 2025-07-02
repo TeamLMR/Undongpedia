@@ -109,7 +109,7 @@ public class CoachController {
     }
 
     @RequestMapping("/insertCurriculum")
-    public String insertCurriculum(Curriculum curriculum, Model model,int courseSeq, HttpSession session) {
+    public String insertCurriculum(Curriculum curriculum, Model model,long courseSeq, HttpSession session) {
         if ("UPLOAD".equals(curriculum.getCurrVideoType()) && curriculum.getCurrVideoFile() != null) {
             MultipartFile file = curriculum.getCurrVideoFile();
             if (!file.isEmpty()) {

@@ -15,8 +15,8 @@ public class Orders {
     private String ordersPrimaryPay;
     private String ordersStatus;
     private Timestamp ordersTimestamp;
-    private Long memberNo;
-    private int courseSeq;
+    private long memberNo;
+    private long courseSeq;
     private String cancelYn;
     private Timestamp cancelTimestamp;
     private Timestamp createdAt;

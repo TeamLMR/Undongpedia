@@ -9,7 +9,7 @@ import java.util.Map;
 public interface OrderService {
     int insertOrder(Orders order);
     int insertOrderDetails(OrderDetails details);
-    int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, int courseSeq);
+    int insertOrderAndOrderDetails(Map<String, Object> res, long memberNo, long courseSeq);
     Orders selectOrderById(int ordersSeq);
     List<Orders> selectOrdersByMember(Long memberNo);
     int cancelOrderById(int ordersSeq);

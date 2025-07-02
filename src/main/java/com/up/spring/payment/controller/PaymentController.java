@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -158,6 +159,45 @@ public class PaymentController {
         }
         return memberNo;
     }
+    @PostMapping("/cart/add")
+    public String addCart(@RequestParam("addCourseSeq") long courseSeq, Model model, RedirectAttributes redirectAttributes) {
+        String loc = "common/msg";
+        log.debug("courseSeq: {}", courseSeq);
+        long memberNo = returnMemberNo();
+        if  (memberNo != 0){
+            //중복 확인
+            Cart cart = Cart.builder()
+                    .memberNo(memberNo)
+                    .courseSeq(courseSeq)
+                    .build();
+
+            int count = cartService.isCourseInCart(cart);
+            //이미 클래스가 존재한다면
+            if (count > 0){
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "이미 장바구니에 존재합니다.");
+                loc = "redirect:/";
+                //없다면 insert
+            } else {
+                int result = cartService.insertCart(cart);
+                if(result == 1){
+                    redirectAttributes.addAttribute("result", "success");
+                    redirectAttributes.addAttribute("msg", "장바구니에 담았습니다.");
+                    loc = "redirect:/";
+                } else {
+                    redirectAttributes.addAttribute("result", "fail");
+                    redirectAttributes.addAttribute("msg", "장바구니에 담지 못했습니다.");
+                    loc = "redirect:/";
+                }
+            }
+
+        } else {
+            model.addAttribute("msg", "로그인을 확인해주세요.");
+            model.addAttribute("loc", "/");
+        }
+
+        return loc;
+    }
 
     @PostMapping("/cart/remove")
     public String removeCart(@RequestParam("removeCartSeq") int removeCartSeq, Model model) {
@@ -210,8 +250,7 @@ public class PaymentController {
             loc = "payment/cart";
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
-            model.addAttribute("loc", "/common/msg");
-            loc = "common/msg";
+            model.addAttribute("loc", "/");
         }
         return loc;
     }
@@ -225,7 +264,7 @@ public class PaymentController {
             loc = "payment/orderInvoice";
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
-            model.addAttribute("loc", "/common/msg");
+            model.addAttribute("loc", "/mypage");
         }
         return loc;
     }
@@ -238,7 +277,7 @@ public class PaymentController {
             loc = "redirect:/mypage/purchaseHistory";
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
-            model.addAttribute("loc", "/common/msg");
+            model.addAttribute("loc", "/mypage");
         }
         return loc;
     }
@@ -266,7 +305,7 @@ public class PaymentController {
             }
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
-            model.addAttribute("loc", "/common/msg");
+            model.addAttribute("loc", "/cart");
         }
         return loc;
     }
@@ -316,7 +355,7 @@ public class PaymentController {
                     List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
                     if (!cartList.isEmpty()) {
                         for (int i = 0; i < cartList.size(); i++) {
-                            int courseSeq = cartList.get(i).getCourseSeq();
+                            long courseSeq = cartList.get(i).getCourseSeq();
                             int resResult = orderService.insertOrderAndOrderDetails(res, memberNo, courseSeq);
                             //만약 실패하면 바로 메세지창으로 던짐
                             if (resResult != 1) {
