@@ -3,9 +3,11 @@ package com.up.spring.coach.controller;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.coach.model.service.CoachService;
 import com.up.spring.course.model.dto.Course;
+import com.up.spring.course.model.dto.CourseSchedule;
 import com.up.spring.course.model.dto.Curriculum;
 import com.up.spring.course.model.dto.Section;
 import com.up.spring.course.model.service.CourseService;
+import com.up.spring.course.model.service.CourseScheduleService;
 import com.up.spring.member.model.dto.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +24,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Controller
 @RequestMapping("/coach")
@@ -32,6 +39,7 @@ import java.util.*;
 public class CoachController {
     private final CoachService coachService;
     private final CourseService courseService;
+    private final CourseScheduleService courseScheduleService;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -217,46 +225,152 @@ public class CoachController {
     }
 
     @PostMapping("/addOfflineCourseWithSchedule")
-    public String addOfflineCourse(Course course, Model model, HttpSession session) {
-        int memberNo = course.getMemberNo();
-        // 저장 경로
-        String realPath = session.getServletContext().getRealPath("/resources/upload/course/thumbnail");
-        File dir = new File(realPath);
-        if (!dir.exists()) dir.mkdirs();
+    public String addOfflineCourse(Course course, HttpServletRequest request, Model model, HttpSession session) {
+        try {
+            int memberNo = course.getMemberNo();
+            // 저장 경로
+            String realPath = session.getServletContext().getRealPath("/resources/upload/course/thumbnail");
+            File dir = new File(realPath);
+            if (!dir.exists()) dir.mkdirs();
 
-        // Base64 문자열 (data URI 포함될 수 있음)
-        String base64img = course.getCourseThumbnail();
-        if (base64img != null && base64img.contains(",")) {
-            base64img = base64img.split(",")[1]; // "data:image/jpeg;base64,..." 제거
+            // Base64 문자열 (data URI 포함될 수 있음)
+            String base64img = course.getCourseThumbnail();
+            if (base64img != null && base64img.contains(",")) {
+                base64img = base64img.split(",")[1]; // "data:image/jpeg;base64,..." 제거
+            }
+            // 디코딩
+            byte[] imageBytes = Base64.getDecoder().decode(base64img);
+            int rnd = (int) (Math.random() * 1000) + 1;
+            Date d = new Date(System.currentTimeMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mmss");
+            String fileName = "COURSE_" + sdf.format(d) +  "_"+ rnd + ".jpg";
+
+            // 파일 저장
+            try (OutputStream os = new FileOutputStream(new File(dir, fileName))) {
+                os.write(imageBytes);
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // DB에 저장할 경로 설정
+            String dbPath = "/resources/upload/course/thumbnail/" + fileName;
+            course.setCourseThumbnail(dbPath);
+            course.setCourseType("OFF");
+            
+            // 코스 등록
+            coachService.insertTempCourse(course);
+            Long courseSeq = course.getCourseSeq(); // <selectKey>로 설정된 실제 courseSeq 사용
+
+
+
+            // 스케줄 등록 처리
+            createSchedulesFromRequest(request, courseSeq, course);
+
+            model.addAttribute("msg", "오프라인 코스와 스케줄이 성공적으로 등록되었습니다.");
+            model.addAttribute("loc", "/coach/dashboard");
+
+        } catch (Exception e) {
+
+            model.addAttribute("msg", "코스 등록 중 오류가 발생했습니다: " + e.getMessage());
+            model.addAttribute("loc", "/coach/addOfflineCourse");
         }
-        // 디코딩
-        byte[] imageBytes = Base64.getDecoder().decode(base64img); // Java 8 이상 :contentReference[oaicite:1]{index=1}
-        int rnd = (int) (Math.random() * 1000) + 1;
-        Date d = new Date(System.currentTimeMillis());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mmss");
-        String fileName = "COURSE_" + sdf.format(d) +  "_"+ rnd + ".jpg";
 
-        // 파일 저장
-        try (OutputStream os = new FileOutputStream(new File(dir, fileName))) {
-            os.write(imageBytes);
-        }catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // DB에 저장할 경로 설정
-        String dbPath = "/resources/upload/course/thumbnail/" + fileName;
-        course.setCourseThumbnail(dbPath); // setter 필요
-        course.setCourseType("OFF");
-        Long insertTempCourse = coachService.insertTempCourse(course);
-
-        List<Section> sectionList = coachService.getSectionList(course.getCourseSeq());
-
-        model.addAttribute("tempCourseSeq", course.getCourseSeq());
-        model.addAttribute("sectionList", sectionList);
-
-        return "/coach/dashboard";
+        return "common/msg";
     }
 
+        private void createSchedulesFromRequest(HttpServletRequest request, Long courseSeq, Course course) {
+
+        String courseLocation = request.getParameter("courseLocation");
+        String courseCapacityStr = request.getParameter("courseCapacity");
+        
+        // null 체크
+        if (courseLocation == null || courseCapacityStr == null) {
+            return;
+        }
+        
+        int courseCapacity = Integer.parseInt(courseCapacityStr);
+        
+
+        Pattern schedulePattern = Pattern.compile("schedules\\[(\\d+)\\]\\.(.+)");
+        Map<String, String> paramMap = request.getParameterMap().entrySet().stream()
+                .collect(HashMap::new, (map, entry) -> {
+                    String[] values = entry.getValue();
+                    if (values.length > 0) {
+                        map.put(entry.getKey(), values[0]);
+                    }
+                }, HashMap::putAll);
 
 
+        Map<Integer, Map<String, String>> scheduleGroups = new HashMap<>();
+        
+        for (Map.Entry<String, String> entry : paramMap.entrySet()) {
+            Matcher matcher = schedulePattern.matcher(entry.getKey());
+            if (matcher.matches()) {
+                int index = Integer.parseInt(matcher.group(1));
+                String field = matcher.group(2);
+                
+                scheduleGroups.computeIfAbsent(index, k -> new HashMap<>())
+                        .put(field, entry.getValue());
+            }
+        }
+
+        
+        for (Map<String, String> scheduleData : scheduleGroups.values()) {
+            String repeatType = scheduleData.get("repeatType");
+            String dayOfWeekStr = scheduleData.get("dayOfWeek");
+            String startTime = scheduleData.get("startTime");
+            String endTime = scheduleData.get("endTime");
+            String startDateStr = scheduleData.get("startDate");
+            String endDateStr = scheduleData.get("endDate");
+
+            // 스케줄 데이터 null 체크
+            if (repeatType == null || dayOfWeekStr == null || startTime == null || 
+                endTime == null || startDateStr == null || endDateStr == null) {
+
+                continue;
+            }
+
+            int dayOfWeek = Integer.parseInt(dayOfWeekStr);
+            LocalDate startDate = LocalDate.parse(startDateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            LocalDate endDate = LocalDate.parse(endDateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+            
+            generateSchedules(courseSeq, courseLocation, courseCapacity, repeatType, dayOfWeek, startTime, endTime, startDate, endDate);
+        }
+    }
+
+        private void generateSchedules(Long courseSeq, String courseLocation, int courseCapacity, 
+                                   String repeatType, int dayOfWeek, String startTime, String endTime, 
+                                   LocalDate startDate, LocalDate endDate) {
+        
+        // 시작 날짜에서 첫 번째 해당 요일 찾기
+        LocalDate currentDate = startDate;
+        while (currentDate.getDayOfWeek().getValue() != dayOfWeek) {
+            currentDate = currentDate.plusDays(1);
+            if (currentDate.isAfter(endDate)) {
+                return; // 기간 내에 해당 요일이 없음
+            }
+        }
+
+        // 반복 간격 설정 (매주: 7일, 격주: 14일)
+        int interval = "BIWEEKLY".equals(repeatType) ? 14 : 7;
+
+        // 해당 요일마다 스케줄 생성
+        while (!currentDate.isAfter(endDate)) {
+            CourseSchedule schedule = new CourseSchedule();
+            schedule.setCourseSeq(courseSeq);
+            schedule.setCourseDate(Date.valueOf(currentDate));
+            schedule.setCourseStartTime(startTime);
+            schedule.setCourseEndTime(endTime);
+            schedule.setCourseCapacity(courseCapacity);
+            schedule.setCourseLocation(courseLocation);
+            schedule.setBookedSeats(0);
+            schedule.setStatus("ACTIVE");
+
+            courseScheduleService.insertSchedule(schedule);
+            
+            // 다음 스케줄 날짜로 이동 (매주는 7일, 격주는 14일 후)
+            currentDate = currentDate.plusDays(interval);
+        }
+    }
 }

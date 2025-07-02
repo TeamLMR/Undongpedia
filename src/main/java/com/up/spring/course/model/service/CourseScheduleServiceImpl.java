@@ -137,4 +137,18 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
             return false;
         }
     }
+
+    @Override
+    public int insertSchedule(CourseSchedule schedule) {
+        try {
+            int result = courseScheduleDao.insertSchedule(sqlSession, schedule);
+            log.info("스케줄 등록 성공 - courseSeq: {}, date: {}, time: {}~{}", 
+                    schedule.getCourseSeq(), schedule.getCourseDate(), 
+                    schedule.getCourseStartTime(), schedule.getCourseEndTime());
+            return result;
+        } catch (Exception e) {
+            log.error("스케줄 등록 중 오류 발생 - courseSeq: {}", schedule.getCourseSeq(), e);
+            throw e;
+        }
+    }
 }

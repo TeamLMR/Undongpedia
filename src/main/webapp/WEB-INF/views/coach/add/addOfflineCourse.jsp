@@ -151,7 +151,7 @@
                                             <div class="col">
                                                 <div class="form-group">
                                                     <input type="number" class="form-control form-control-user" min="1" max="50"
-                                                           name="maxParticipants" id="maxParticipants" placeholder="ex) 10">
+                                                           name="courseCapacity" id="courseCapacity" placeholder="ex) 10">
                                                 </div>
                                             </div>
                                         </div>
