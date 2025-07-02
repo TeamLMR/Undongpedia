@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="orders">
-    <resultMap id="orderDetailsMap" type="orderDatails">
+    <resultMap id="orderDetailsMap" type="orderDetails">
         <id property="ordersSeq" column="ORDERS_SEQ" />
         <result property="ordersBank" column="ORDERS_BANK" />
         <result property="ordersAccountNo" column="ORDERS_ACCOUNT_NO" />
@@ -28,7 +28,7 @@
         <result property="tempReservationId" column="TEMP_RESERVATION_ID"/>
         <result property="courseType" column="COURSE_TYPE"/>
 
-        <association property="detail" javaType="orderDatails">
+        <association property="detail" javaType="orderDetails">
             <id property="ordersSeq" column="ORDERS_SEQ" />
             <result property="ordersBank" column="ORDERS_BANK" />
             <result property="ordersAccountNo" column="ORDERS_ACCOUNT_NO" />
@@ -65,7 +65,7 @@
     </insert>
 
     <!-- INSERT ORDER_DETAILS -->
-    <insert id="insertOrderDetails" parameterType="orderDatails">
+    <insert id="insertOrderDetails" parameterType="orderDetails">
         INSERT INTO ORDER_DETAILS (
             ORDERS_SEQ, ORDERS_BANK, ORDERS_ACCOUNT_NO,
             ORDERS_CARD_CORP, ORDERS_CARD_NO,
@@ -98,4 +98,20 @@
         ORDER BY o.ORDERS_TIMESTAMP DESC
     </select>
 
+    <select id="isCoursePaidByMember" parameterType="orders" resultType="_int">
+        SELECT COUNT(*) FROM ORDERS WHERE MEMBER_NO = #{memberNo} AND COURSE_SEQ = #{courseSeq} AND ORDERS_STATUS= 'PAID'
+    </select>
+    <update id="cancelOrdersByPaymentId" parameterType="string">
+        UPDATE ORDERS
+        SET
+            ORDERS_STATUS = 'CANC',
+            CANCEL_YN = 'Y',
+            CANCEL_TIMESTAMP = DEFAULT,
+            UPDATED_AT = DEFAULT
+        WHERE ORDERS_SEQ IN (
+            SELECT OD.ORDERS_SEQ
+            FROM ORDER_DETAILS OD
+            WHERE OD.ORDERS_PAYMENT_ID = #{ordersPaymentId}
+        )
+    </update>
 </mapper>

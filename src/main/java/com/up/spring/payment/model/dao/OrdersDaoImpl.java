@@ -11,6 +11,15 @@ import java.util.List;
 @Repository
 
 public class OrdersDaoImpl implements OrdersDao {
+    @Override
+    public int cancelOrdersByPaymentId(SqlSession session, String paymentId) {
+        return session.update("cancelOrdersByPaymentId", paymentId);
+    }
+
+    @Override
+    public int isCoursePaidByMember(SqlSession session, Orders orders) {
+        return session.selectOne("isCoursePaidByMember", orders);
+    }
 
     @Override
     public int cancelOrderById(SqlSession session, int ordersSeq) {

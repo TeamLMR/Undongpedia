@@ -1,6 +1,7 @@
 package com.up.spring.payment.controller;
 
 import com.up.spring.member.model.dto.Member;
+import com.up.spring.member.model.service.MemberService;
 import com.up.spring.payment.model.dto.Cart;
 import com.up.spring.payment.model.dto.NaverProperty;
 import com.up.spring.payment.model.dto.OfflineCart;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -38,8 +40,9 @@ import java.util.*;
 @Controller
 @Slf4j
 public class PaymentController {
-    private final CartService cartService;
     private final NaverProperty naverProperty;
+
+    private final CartService cartService;
     private final OrderService orderService;
     private final OfflineCartService offlineCartService;
     private final CourseService courseService;
@@ -161,38 +164,53 @@ public class PaymentController {
         }
         return memberNo;
     }
+
     @PostMapping("/cart/add")
     public String addCart(@RequestParam("addCourseSeq") long courseSeq, Model model, RedirectAttributes redirectAttributes) {
         String loc = "common/msg";
         log.debug("courseSeq: {}", courseSeq);
         long memberNo = returnMemberNo();
         if  (memberNo != 0){
-            //중복 확인
-            Cart cart = Cart.builder()
-                    .memberNo(memberNo)
+            //구매한 이력이 있는지 체크
+            Orders orders = Orders.builder()
                     .courseSeq(courseSeq)
+                    .memberNo(memberNo)
                     .build();
 
-            int count = cartService.isCourseInCart(cart);
-            //이미 클래스가 존재한다면
-            if (count > 0){
+            int memberOrderCount = orderService.isCoursePaidByMember(orders);
+            //해당 클래스를 구매한 이력이 있다면
+            if (memberOrderCount > 0 ){
                 redirectAttributes.addAttribute("result", "fail");
-                redirectAttributes.addAttribute("msg", "이미 장바구니에 존재합니다.");
+                redirectAttributes.addAttribute("msg", "이미 구매한 상품은 장바구니에 넣을 수 없습니다.");
                 loc = "redirect:/";
-                //없다면 insert
+            //없다면 장바구니 내 중복 확인
             } else {
-                int result = cartService.insertCart(cart);
-                if(result == 1){
-                    redirectAttributes.addAttribute("result", "success");
-                    redirectAttributes.addAttribute("msg", "장바구니에 담았습니다.");
-                    loc = "redirect:/";
-                } else {
+                //중복 확인
+                Cart cart = Cart.builder()
+                        .memberNo(memberNo)
+                        .courseSeq(courseSeq)
+                        .build();
+                int cartCount = cartService.isCourseInCart(cart);
+                //이미 장바구니 내에 클래스가 존재한다면
+                if (cartCount > 0){
                     redirectAttributes.addAttribute("result", "fail");
-                    redirectAttributes.addAttribute("msg", "장바구니에 담지 못했습니다.");
+                    redirectAttributes.addAttribute("msg", "이미 장바구니에 존재합니다.");
                     loc = "redirect:/";
+                    //없다면 insert
+                } else {
+                    int result = cartService.insertCart(cart);
+                    if(result == 1){
+                        redirectAttributes.addAttribute("result", "success");
+                        redirectAttributes.addAttribute("msg", "장바구니에 담았습니다.");
+                        loc = "redirect:/";
+                    } else {
+                        redirectAttributes.addAttribute("result", "fail");
+                        redirectAttributes.addAttribute("msg", "장바구니에 담지 못했습니다.");
+                        loc = "redirect:/";
+                    }
                 }
             }
-
+        //그 외
         } else {
             model.addAttribute("msg", "로그인을 확인해주세요.");
             model.addAttribute("loc", "/");
@@ -277,25 +295,30 @@ public class PaymentController {
         
         // 주문 취소 전에 주문 정보 조회 (좌석 복구를 위해)
         Orders cancelOrder = orderService.selectOrderById(ordersSeq);
-        
-        int result = orderService.cancelOrderById(ordersSeq);
-        if (result == 1) {
-            // 오프라인 예약인 경우 스케줄 좌석 복구
-            if (cancelOrder != null && cancelOrder.getScheduleId() != null) {
-                try {
-                    boolean seatRestoreResult = courseScheduleService.cancelSeat(cancelOrder.getScheduleId());
-                    if (seatRestoreResult) {
-                        log.info("주문 취소 시 좌석 복구 성공 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
-                        // 좌석 복구 성공 시 관련 캐시 무효화
-                        invalidateScheduleCache(cancelOrder.getCourseSeq(), cancelOrder.getScheduleId());
-                    } else {
-                        log.error("주문 취소 시 좌석 복구 실패 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+        if (cancelOrder != null) {
+            String paymentId = cancelOrder.getDetail().getOrdersPaymentId();
+            int result = orderService.cancelOrdersByPaymentId(paymentId);
+            //result값이 1보다 커질 수 있음(삭제 칼럼 값)
+            log.debug("result: " + result);
+
+            if (result > 1) {
+                // 오프라인 예약인 경우 스케줄 좌석 복구
+                if (cancelOrder.getScheduleId() != null) {
+                    try {
+                        boolean seatRestoreResult = courseScheduleService.cancelSeat(cancelOrder.getScheduleId());
+                        if (seatRestoreResult) {
+                            log.info("주문 취소 시 좌석 복구 성공 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                            // 좌석 복구 성공 시 관련 캐시 무효화
+                            invalidateScheduleCache(cancelOrder.getCourseSeq(), cancelOrder.getScheduleId());
+                        } else {
+                            log.error("주문 취소 시 좌석 복구 실패 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                        }
+                    } catch (Exception e) {
+                        log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
                     }
-                } catch (Exception e) {
-                    log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
                 }
+                loc = "redirect:/mypage";
             }
-            loc = "redirect:/mypage/purchaseHistory";
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
             model.addAttribute("loc", "/mypage");

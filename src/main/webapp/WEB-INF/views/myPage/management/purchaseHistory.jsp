@@ -5,7 +5,6 @@
 <div class="container px-3 px-md-5 my-5">
     <h2 class="fw-bold mb-5">구매내역</h2>
 
-
     <c:if test="${not empty ordersList}">
         <c:forEach var="orders" items="${ordersList}">
             <div class="position-relative mb-5">
@@ -78,7 +77,7 @@
             </div>
 
             <div class="modal-body">
-                해당 강의 결제를 정말 취소하시겠습니까?
+                해당 주문 번호의 강의 리스트 결제를 정말 취소하시겠습니까?
             </div>
 
             <div class="modal-footer">
