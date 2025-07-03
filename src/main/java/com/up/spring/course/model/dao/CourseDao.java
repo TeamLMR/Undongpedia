@@ -20,4 +20,6 @@ public interface CourseDao {
     int insertProgress(SqlSession sqlSession, Progress progress);
     int updateProgress(SqlSession sqlSession, Progress progress);
     List<Map<String, Object>> getSectionCurrWithProgress(SqlSession sqlSession, Map<String,Object> params);
+    List<Map<String, Object>> getMyLearningCourse(SqlSession sqlSession, long memberNo);
+
 }

@@ -111,4 +111,9 @@ public class CourseServiceImpl implements CourseService {
     public  List<Map<String, Object>> getSectionCurrWithProgress(Map<String, Object> params) {
         return courseDao.getSectionCurrWithProgress(sqlSession,params);
     }
+
+    @Override
+    public List<Map<String, Object>> getMyLearningCourse(long memberNo) {
+        return courseDao.getMyLearningCourse(sqlSession, memberNo);
+    }
 }
