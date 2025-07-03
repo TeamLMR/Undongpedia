@@ -62,7 +62,7 @@ public class QueueWebSocketHandler implements WebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         String userKey = sessionToUser.get(session.getId());
-        log.info("❌ 대기열 WebSocket 연결 종료: userKey={}, 상태={}", userKey, closeStatus);
+        log.info("대기열 WebSocket 연결 종료: userKey={}, 상태={}", userKey, closeStatus);
         cleanup(session);
     }
 

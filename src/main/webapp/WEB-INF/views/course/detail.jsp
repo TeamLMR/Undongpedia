@@ -4,6 +4,44 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
+
+<style>
+    .product-description-wrapper {
+        position: relative;
+        max-height: 200px; /* 초기에 보이는 높이 */
+        overflow: hidden;
+        transition: max-height 0.5s ease;
+    }
+
+    .product-description-wrapper::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(to bottom, transparent, white);
+        pointer-events: none;
+    }
+
+    .product-description-wrapper.expanded {
+        max-height: none;
+    }
+
+    .product-description-wrapper.expanded::after {
+        display: none;
+    }
+
+    .show-more-btn {
+        display: inline-block;
+        margin-top: 10px;
+        color: #007bff;
+        cursor: pointer;
+        font-weight: bold;
+        border: none;
+        background: none;
+    }
+</style>
 <main class="main">
     <section id="hero" class="hero bg-dark bg-gradient text-white border-top"
              style="padding-top: 3rem; padding-bottom: 3rem;">
@@ -45,18 +83,26 @@
                                             </c:forEach>
                                         </span>
                                     </div>
-
-                                    <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${course.courseSeq}"
-                                       class="btn btn-light btn-lg px-5 py-3 fw-bold">
-                                            <span class="fw-bold fs-4 text-primary">수강 신청 하기</span>
-                                    </a>
+                                    <c:choose>
+                                        <c:when test="${isPaid == true}">
+                                            <a href="${pageContext.request.contextPath}/course/viewer?courseSeq=${course.courseSeq}"
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold">
+                                                <span class="fw-bold fs-4 text-primary">📺 강의 시청!</span>
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${course.courseSeq}"
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold">
+                                                <span class="fw-bold fs-4 text-primary">수강 신청 하기</span>
+                                            </a>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
 
                                 <!-- 이미지 -->
                                 <div class="col-lg-6 d-flex align-items-center justify-content-center">
                                     <div class="ratio ratio-16x9 w-100 rounded overflow-hidden shadow-sm">
-                                        <img src="${pageContext.request.contextPath}${course.courseThumbnail != null ? course.courseThumbnail : '/resources/images/dummy.webp'}"
-                                             class="w-100 h-100 object-fit-cover" alt="${course.courseTitle}">
+                                        <img id="productImage" class="w-100 h-100 object-fit-cover" alt="강의 썸네일">
                                     </div>
                                 </div>
                             </div>
@@ -66,15 +112,6 @@
 
             </div>
 
-            <!-- Swiper 버튼 -->
-            <div class="swiper-button-prev h-50"></div>
-            <div class="swiper-button-next h-50"></div>
-            <style>
-                .swiper-button-prev,
-                .swiper-button-next {
-                    opacity: 0;
-                }
-            </style>
         </div>
     </section>
     <section id="product-details" class="product-details section">
@@ -83,21 +120,6 @@
                 <div class="col-12">
                     <div class="product-details-accordion">
                         <!-- Description Accordion -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#reviewRecommend" aria-expanded="true" aria-controls="description">
-                                    추천 리뷰를 확인해 보세요!
-                                </button>
-                            </h2>
-                            <div id="reviewRecommend" class="accordion-collapse collapse show">
-                                <div class="accordion-body">
-                                    <div class="product-description">
-                                        <h4>Product Overview</h4>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum at lacus congue, suscipit elit nec, tincidunt orci. Phasellus egestas nisi vitae lectus imperdiet venenatis. Suspendisse vulputate quam diam, et consectetur augue condimentum in. Aenean dapibus urna eget nisi pharetra, in iaculis nulla blandit. Praesent at consectetur sem, sed sollicitudin nibh. Ut interdum risus ac nulla placerat aliquet.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#targetRecommend" aria-expanded="true" aria-controls="description">
@@ -154,10 +176,60 @@
                                     강의 상세내용
                                 </button>
                             </h2>
+
                             <div id="description" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
+                                    <div class="product-description-wrapper" id="descWrapper">
+                                        <div class="product-description">
+                                            ${course.courseContent}
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-center">
+                                        <button class="show-more-btn" id="toggleDescBtn">더보기</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#courseSection" aria-expanded="true" aria-controls="courseSection">
+                                    강의 섹션 커리큘럼 안내
+                                </button>
+                            </h2>
+                            <div id="courseSection"  class="accordion-collapse collapse show">
+                                <div class="accordion-body">
                                     <div class="product-description">
-                                        ${course.courseContent}
+                                        <c:forEach var="s" items="${section}">
+
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#sectionCurriculum" aria-expanded="true" aria-controls="sectionCurriculum">
+                                                            ${s.sectionTitle}<br><span style="padding: 0 20px;font-size: medium;">${s.sectionContent}</span>
+                                                    </button>
+                                                </h2>
+
+                                                <div id="sectionCurriculum" class="accordion-collapse collapse show">
+                                                    <div class="accordion-body">
+                                                        <c:forEach var="c" items="${s.curriculums}">
+                                                            <div class="card m-1">
+                                                                <div class="card-body">
+                                                                    <div class="row align-items-center fw-bolder" style="color: #0d4f8c;height: 50px">
+                                                                        <div class="col-8" style="padding-left: 30px;">${c.currTitle}</div>
+                                                                        <div class="col-2 text-center">
+                                                                            <c:if test="${c.currPreview=='Y'}">
+                                                                                <button class="btn btn-primary" onclick="previewModal('${c.currVideoType}','${c.currVideoUrl}')">미리 보기</button>
+                                                                            </c:if>
+                                                                        </div>
+                                                                        <div class="col-2 text-center">${c.currPreview=="Y"?"<i class='bi bi-unlock-fill'></i>":"<i class='bi bi-lock-fill'></i>"}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </c:forEach>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </c:forEach>
+
                                     </div>
                                 </div>
                             </div>
@@ -176,7 +248,7 @@
                                             <div class="row">
                                                 <div class="col-lg-4">
                                                     <div class="overall-rating">
-                                                        <div class="rating-number">${reviewInfoMap.average}</div>
+                                                        <div class="rating-number">${reviewInfoMap.average=='NaN'?"0.0":reviewInfoMap.average}</div>
                                                         <c:set var="avgInt" value="${fn:substringBefore(reviewInfoMap.average, '.')}" />
                                                         <c:set var="avgDec" value="${fn:substringAfter(reviewInfoMap.average, '.')}" />
 
@@ -267,10 +339,61 @@
         </div>
     </section>
 </main>
+<div class="modal fade" id="videoPreviewModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="videoModalLabel">영상 미리보기</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body text-center" id="videoContainer">
+                <!-- 영상이 여기에 동적으로 삽입됩니다 -->
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     $(document).ready(function () {
         fn_paging(1);
+
+        const wrapper = document.getElementById('descWrapper');
+        const button = document.getElementById('toggleDescBtn');
+
+        button.addEventListener('click', function () {
+            wrapper.classList.toggle('expanded');
+            if (wrapper.classList.contains('expanded')) {
+                button.textContent = '접기';
+            } else {
+                button.textContent = '더보기';
+            }
+        });
+        setImage();
     })
+    async function setImage() {
+        const imageUrl = await getImageUrl("${course.courseThumbnail}");
+        document.getElementById('productImage').src = imageUrl;
+    }
+
+    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
+
+    function checkImageExists(imageUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = '${pageContext.request.contextPath}' + imageUrl;
+            img.onload = function () {
+                resolve(true);  // 이미지 있음
+            };
+            img.onerror = function () {
+                resolve(false); // 이미지 없음
+            };
+        });
+    }
+
+    // 비동기로 이미지 체크 후 URL 반환
+    async function getImageUrl(imageUrl) {
+        const exists = await checkImageExists(imageUrl);
+        return exists ? '${pageContext.request.contextPath}'+imageUrl : defaultImageUrl;
+    }
 
     function fn_paging(page) {
         $.ajax({
@@ -317,7 +440,24 @@
             }
         });
     }
+    function previewModal(type,url){
+        let container = document.getElementById('videoContainer');
+        container.innerHTML = ''; // 초기화
 
+        if (type === 'YOUTUBE') {
+            const videoId = getYouTubeId(url);
+            container.innerHTML = '<div class="ratio ratio-16x9"><iframe src="https://www.youtube.com/embed/'+videoId+'" frameborder="0" allowfullscreen></iframe></div>';
+        } else if (type === 'UPLOAD') {
+            container.innerHTML = '<video controls style="width: 100%; max-height: 500px;"><source src="${pageContext.request.contextPath}'+url+'" type="video/mp4">지원되지 않는 형식입니다.</video>';
+        }
+        const modal = new bootstrap.Modal(document.getElementById('videoPreviewModal'));
+        modal.show();
+    }
+    function getYouTubeId(url) {
+        const regExp = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+        const match = url.match(regExp);
+        return match && match[1] ? match[1] : '';
+    }
     function formatTimestamp(ms) {
         const date = new Date(ms);
         const pad = (n) => n.toString().padStart(2, '0');

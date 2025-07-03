@@ -41,8 +41,16 @@
     </select>
 
     <insert id="insertTempCourse" parameterType="course">
-        INSERT INTO COURSE (COURSE_SEQ, COURSE_TITLE, COURSE_CONTENT, COURSE_CATEGORY, COURSE_DIFFICULT, COURSE_PRICE, COURSE_DISCOUNT, COURSE_THUMBNAIL, COURSE_TARGET, COURSE_PREPARATION, COURSE_EXPOSE, COURSE_CREATE_TIME, COURSE_CONFIRM_TIME, MEMBER_NO, COURSE_TYPE)
-        VALUES (SEQ_COURSE.nextval, #{courseTitle},#{courseContent},#{courseCategory},#{courseDifficult},#{coursePrice},#{courseDiscount},#{courseThumbnail},#{courseTarget},#{coursePreparation},'N',NULL,SYSTIMESTAMP,#{memberNo}, 'ON')
+        INSERT INTO COURSE (COURSE_SEQ, COURSE_TITLE, COURSE_CONTENT,
+                            COURSE_CATEGORY, COURSE_DIFFICULT, COURSE_PRICE,
+                            COURSE_DISCOUNT, COURSE_THUMBNAIL, COURSE_TARGET,
+                            COURSE_PREPARATION, COURSE_EXPOSE, COURSE_CONFIRM_TIME,
+                            COURSE_CREATE_TIME, MEMBER_NO, COURSE_TYPE)
+        VALUES (SEQ_COURSE.nextval, #{courseTitle},#{courseContent},
+                #{courseCategory},#{courseDifficult},#{coursePrice},
+                #{courseDiscount},#{courseThumbnail},#{courseTarget},
+                #{coursePreparation},'N',NULL,
+                SYSTIMESTAMP,#{memberNo}, #{courseType})
         <selectKey keyProperty="courseSeq" order="AFTER" resultType="_long">
             SELECT SEQ_COURSE.currval FROM DUAl
         </selectKey>
@@ -53,6 +61,7 @@
         FROM SECTION S
         LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
         WHERE S.COURSE_SEQ = #{courseSeq}
+        ORDER BY S.SECTION_ORDER,C.CURR_ORDER
     </select>
 
     <insert id="insertSection" parameterType="section">

@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 public class Review {
     private int reviewSeq;
     private int memberSeq;
-    private int courseSeq;
+    private long courseSeq;
     private String reviewTitle;
     private String reviewContent;
     private int reviewRate;

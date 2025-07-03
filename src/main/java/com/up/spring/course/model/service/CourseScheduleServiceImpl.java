@@ -51,13 +51,13 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
             log.info("MyBatis 파라미터 맵: {}", params);
 
             List<CourseSchedule> schedules = courseScheduleDao.searchScheduleByDate(sqlSession, params);
-            log.info("✅ 날짜별 스케줄 조회 완료 - courseSeq: {}, date: {}, 총 {}개", courseSeq, date, schedules.size());
+            log.info("날짜별 스케줄 조회 완료 - courseSeq: {}, date: {}, 총 {}개", courseSeq, date, schedules.size());
 
             // 결과가 없을 때 추가 디버깅
             if (schedules.isEmpty()) {
                 log.warn("⚠️ 해당 날짜에 스케줄이 없습니다. 전체 스케줄을 조회해서 확인합니다.");
                 List<CourseSchedule> allSchedules = courseScheduleDao.searchScheduleByCourseSeq(sqlSession, courseSeq);
-                log.info("📊 해당 강의의 전체 스케줄 수: {}", allSchedules.size());
+                log.info("해당 강의의 전체 스케줄 수: {}", allSchedules.size());
 
                 if (!allSchedules.isEmpty()) {
                     log.info("📅 현재 데이터베이스에 있는 스케줄 날짜들:");
@@ -77,7 +77,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
             return schedules;
         } catch (Exception e) {
-            log.error("❌ 날짜별 스케줄 조회 중 오류 발생 - courseSeq: {}, date: {}", courseSeq, date, e);
+            log.error("날짜별 스케줄 조회 중 오류 발생 - courseSeq: {}, date: {}", courseSeq, date, e);
             throw e;
         }
     }
@@ -135,6 +135,20 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         } else{
             log.warn("취소 실패");
             return false;
+        }
+    }
+
+    @Override
+    public int insertSchedule(CourseSchedule schedule) {
+        try {
+            int result = courseScheduleDao.insertSchedule(sqlSession, schedule);
+            log.info("스케줄 등록 성공 - courseSeq: {}, date: {}, time: {}~{}", 
+                    schedule.getCourseSeq(), schedule.getCourseDate(), 
+                    schedule.getCourseStartTime(), schedule.getCourseEndTime());
+            return result;
+        } catch (Exception e) {
+            log.error("스케줄 등록 중 오류 발생 - courseSeq: {}", schedule.getCourseSeq(), e);
+            throw e;
         }
     }
 }

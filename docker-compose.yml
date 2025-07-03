@@ -1,6 +1,5 @@
-
 services:
-  # Kafka (KRaft mode)
+  # Kafka (KRaft mode) - 리소스 최적화
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     hostname: kafka
@@ -25,10 +24,20 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+      # JVM 메모리 최적화
+      KAFKA_HEAP_OPTS: "-Xmx1G -Xms512m"
     volumes:
       - kafka-data:/var/lib/kafka/data
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512m
+          cpus: '0.5'
 
-  # Kafka UI (옵션)
+  # Kafka UI (옵션) - 경량화
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -39,21 +48,39 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     depends_on:
       - kafka
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.5'
 
-  # Redis
+  # Redis - 메모리 최적화
   redis:
     image: redis:7-alpine
     container_name: redis
     ports:
       - "6379:6379"
-    command:  redis-server --appendonly yes --notify-keyspace-events Ex
-
-
+    command: >
+      redis-server 
+      --appendonly yes 
+      --notify-keyspace-events Ex
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
     volumes:
       - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+          cpus: '1.0'
+        reservations:
+          memory: 256m
+          cpus: '0.25'
 
-
-  # Redis Commander (Redis GUI - 옵션)
+  # Redis Commander (Redis GUI - 옵션) - 경량화
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: redis-commander
@@ -63,6 +90,11 @@ services:
       - REDIS_HOSTS=local:redis:6379
     depends_on:
       - redis
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.25'
 
 volumes:
   kafka-data:

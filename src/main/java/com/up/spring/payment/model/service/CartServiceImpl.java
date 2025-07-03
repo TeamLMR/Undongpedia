@@ -29,4 +29,9 @@ public class CartServiceImpl implements CartService{
     public int deleteCartByNo(int cartSeq) {
         return cartDao.deleteCartByNo(session, cartSeq);
     }
+
+    @Override
+    public int isCourseInCart(Cart cart) {
+        return cartDao.isCourseInCart(session, cart);
+    }
 }

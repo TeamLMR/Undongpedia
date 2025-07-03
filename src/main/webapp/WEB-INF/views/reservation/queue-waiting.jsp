@@ -102,6 +102,9 @@
 const courseSeq = '<c:out value="${courseSeq}" />';
 const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
 
+// 🔥 페이지 이동 중 플래그 추가
+let isMovingToReservationPage = false;
+
 // 🔥 실제 로그인 사용자 정보 사용
 let memberNo;
 const loginMemberNo = '${loginMember.memberNo}'; // 로그인 사용자의 memberNo
@@ -138,12 +141,17 @@ if (existingEntry && existingEntry === memberNo.toString()) {
     sessionStorage.setItem(queueKey, memberNo.toString());
 }
 
+// 🔥 전역 변수들
 let queueWebSocket = null;
 let heartbeatInterval = null;
+let queueStatusInterval = null;
+
+// 🔥 window 객체에도 추가 (다른 함수에서 접근 가능하도록)
+window.queueStatusInterval = null;
 
 // 페이지 로드시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 대기열 페이지 로드 - courseSeq:', courseSeq);
+            console.log('대기열 페이지 로드 - courseSeq:', courseSeq);
     
     // 먼저 대기열에 추가
     joinQueue();
@@ -152,8 +160,9 @@ document.addEventListener('DOMContentLoaded', function() {
     startHeartbeat();
     setupPageLeaveWarning();
     
-    // 대기열 상태 주기적으로 확인
-    setInterval(checkQueueStatus, 2000); // 2초마다 상태 확인
+    // 🔥 대기열 상태 주기적으로 확인 (전역 변수에 저장)
+    queueStatusInterval = window.queueStatusInterval = setInterval(checkQueueStatus, 2000); // 2초마다 상태 확인
+    console.log('⚡ 대기열 상태 확인 시작 (2초 간격)');
 });
 
 // 웹소켓 연결
@@ -224,6 +233,10 @@ function handleWebSocketMessage(data) {
             updateQueueUI(data.data || data);
             break;
             
+        case 'course_queue_success':
+            handleCourseQueueSuccess(data);
+            break;
+            
         case 'temp_reservation_success':
             handleTempReservationSuccess(data);
             break;
@@ -237,6 +250,53 @@ function handleWebSocketMessage(data) {
             // 기본적으로 queue_update로 처리
             updateQueueUI(data);
     }
+}
+
+/**
+ * 코스 대기열 성공 처리 (예약페이지 이동)
+ */
+function handleCourseQueueSuccess(data) {
+    // 🔥 이미 페이지 이동 중이면 처리하지 않음
+    if (isMovingToReservationPage) {
+        console.log('🚫 이미 예약페이지로 이동 중 - WebSocket 메시지 스킵');
+        return;
+    }
+    
+    console.log('🎯 코스 대기열 성공 - 예약페이지로 이동:', data);
+    
+    // 🔥 페이지 이동 플래그 설정
+    isMovingToReservationPage = true;
+    
+    // 🔥 대기열 상태 확인 중단
+    if (window.queueStatusInterval) {
+        clearInterval(window.queueStatusInterval);
+        window.queueStatusInterval = queueStatusInterval = null;
+        console.log('⏹️ 대기열 상태 확인 중단');
+    }
+    
+    // WebSocket과 하트비트 정리
+    if (queueWebSocket) {
+        queueWebSocket.onclose = null;
+        queueWebSocket.close();
+        queueWebSocket = null;
+    }
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+    }
+    
+    // 성공 메시지 표시
+    const statusMsg = document.getElementById('statusMessage');
+    if (statusMsg) {
+        statusMsg.className = 'alert alert-success';
+                            statusMsg.innerHTML = (data.message || '예약 페이지로 이동합니다...');
+    }
+    
+    // 1초 후 예약 페이지로 이동
+    setTimeout(function() {
+        console.log('📍 예약 페이지로 이동 (WebSocket)');
+        window.location.href = contextPath + '/reservation/' + courseSeq + '?from_queue=true';
+    }, 1000);
 }
 
 /**
@@ -317,41 +377,103 @@ function updateConnectionStatus(status) {
 
 // 대기열 UI 업데이트
 function updateQueueUI(queueData) {
-    console.log(' UI 업데이트 시작 - queueData:', queueData);
+    // 🔥 이미 페이지 이동 중이면 처리하지 않음
+    if (isMovingToReservationPage) {
+        console.log('🚫 이미 예약페이지로 이동 중 - UI 업데이트 스킵');
+        return;
+    }
+    
+    console.log('📋 UI 업데이트 시작 - queueData:', queueData);
     
     // 현재 순서
     const position = queueData.position || '-';
     document.getElementById('currentPosition').textContent = position;
-    console.log(' 현재 순서:', position);
+    console.log('📍 현재 순서:', position);
     
     // 총 대기인원
     const totalInQueue = queueData.totalInQueue || 0;
     document.getElementById('totalWaiting').textContent = totalInQueue + '명';
-    console.log(' 총 대기인원:', totalInQueue);
+    console.log('👥 총 대기인원:', totalInQueue);
     
     // 예상 대기시간 (estimateWaitTime로 수정)
     const estimatedMinutes = Math.ceil((queueData.estimateWaitTime || 0) / 60);
     document.getElementById('estimatedTime').textContent = estimatedMinutes + '분';
-    console.log('예상 대기시간:', estimatedMinutes + '분');
+                console.log('예상 대기시간:', estimatedMinutes + '분');
     
     // 🔥 진행률 계산 및 업데이트
     const progress = totalInQueue > 0 ? 
         ((totalInQueue - position + 1) / totalInQueue) * 100 : 0;
     document.getElementById('queueProgress').style.width = progress + '%';
-    console.log(' 진행률:', progress.toFixed(2) + '%');
+    console.log('📊 진행률:', progress.toFixed(2) + '%');
     
     // 상태 메시지 및 자동 이동
     const statusMsg = document.getElementById('statusMessage');
     if (position === 1) {
-        console.log(' 대기 순서가 되었습니다!');
-        statusMsg.className = 'alert alert-success';
-        statusMsg.innerHTML = '예약 페이지로 이동합니다...';
+        console.log('🎯 대기 순서가 되었습니다!');
         
-        // 🔥 2초 후 자동 이동
-        setTimeout(function() {
-            console.log(' 예약 페이지로 이동');
-            window.location.href = contextPath + '/reservation/' + courseSeq;
-        }, 2000);
+        // 🔥 페이지 이동 플래그 설정
+        isMovingToReservationPage = true;
+        
+        statusMsg.className = 'alert alert-success';
+                    statusMsg.innerHTML = '예약 페이지로 이동합니다...';
+        
+        // 🔥 대기열 상태 확인 중단
+        if (window.queueStatusInterval) {
+            clearInterval(window.queueStatusInterval);
+            window.queueStatusInterval = queueStatusInterval = null;
+            console.log('⏹️ 대기열 상태 확인 중단');
+        }
+        
+        // WebSocket 정리
+        if (queueWebSocket) {
+            queueWebSocket.onclose = null; // 재연결 방지
+            queueWebSocket.close();
+            queueWebSocket = null;
+        }
+        
+        // 하트비트 정리
+        if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+        }
+        
+        // 🔥 대기열 통과 토큰 생성 요청 후 예약 페이지로 이동
+        fetch(contextPath + '/reservation/create-queue-pass-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                courseSeq: courseSeq,
+                memberNo: memberNo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('🎫 대기열 통과 토큰 생성 응답:', data);
+            
+            // 대기열에서 제거
+            return fetch(contextPath + '/reservation/leave-course-queue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseSeq: courseSeq,
+                    memberNo: memberNo
+                })
+            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('🚪 코스 대기열 제거 완료:', data);
+            
+            // 예약 페이지로 이동 (from_queue 파라미터 추가)
+            console.log('📍 예약 페이지로 이동 (대기열 통과)');
+            window.location.href = contextPath + '/reservation/' + courseSeq + '?from_queue=true';
+        })
+        .catch(error => {
+            console.error('대기열 처리 실패:', error);
+            // 실패해도 예약 페이지로 이동 (사용자 편의)
+            console.log('📍 예약 페이지로 이동 (오류 발생해도 진행)');
+            window.location.href = contextPath + '/reservation/' + courseSeq + '?from_queue=true';
+        });
         
     } else {
         statusMsg.className = 'alert alert-info';
@@ -375,6 +497,12 @@ function startHeartbeat() {
 
 // 대기열 상태 확인
 function checkQueueStatus() {
+    // 🔥 이미 페이지 이동 중이면 상태 확인하지 않음
+    if (isMovingToReservationPage) {
+        console.log('🚫 페이지 이동 중 - 상태 확인 스킵');
+        return;
+    }
+    
     console.log('🔍 대기열 상태 확인 시작 - courseSeq:', courseSeq, 'memberNo:', memberNo);
     
     fetch(contextPath + '/reservation/queue-status/' + courseSeq + '?memberNo=' + memberNo)
@@ -383,19 +511,20 @@ function checkQueueStatus() {
             console.log('📦 대기열 상태 응답:', data);
             
             if (data.success && data.userPosition && data.userPosition.success && data.userPosition.data) {
-                console.log(' 대기열 정보 업데이트:', data.userPosition.data);
+                console.log('📋 대기열 정보 업데이트:', data.userPosition.data);
                 updateQueueUI(data.userPosition.data);
             } else {
-                console.log(' 대기열에 없음 또는 오류:', data);
-                // 대기열에 없으면 예약 페이지로 추가
+                console.log('대기열에 없음 또는 오류:', data);
+                // 대기열에 없으면 예약 페이지로 이동
                 if (!data.queueActive) {
-                    console.log(' 대기열 비활성화 상태 - 예약페이지로 이동');
+                    console.log('대기열 비활성화 상태 - 예약페이지로 이동');
+                    isMovingToReservationPage = true;
                     window.location.href = contextPath + '/reservation/' + courseSeq;
                 }
             }
         })
         .catch(error => {
-            console.error(' 대기열 상태 조회 실패:', error);
+            console.error('대기열 상태 조회 실패:', error);
         });
 }
 
@@ -437,14 +566,22 @@ function setupPageLeaveWarning() {
 
 // 정리 작업
 window.addEventListener('unload', function() {
+    console.log('🧹 페이지 정리 작업 시작');
+    
     if (queueWebSocket) {
         queueWebSocket.close();
+        console.log('🔌 WebSocket 연결 해제');
     }
     if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
+        console.log('💓 하트비트 중단');
+    }
+    if (queueStatusInterval) {
+        clearInterval(queueStatusInterval);
+        queueStatusInterval = window.queueStatusInterval = null;
+        console.log('⏹️ 상태 확인 중단');
     }
 });
-
 
 </script>
 

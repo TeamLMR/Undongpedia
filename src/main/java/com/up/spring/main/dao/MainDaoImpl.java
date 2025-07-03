@@ -30,4 +30,13 @@ public class MainDaoImpl implements MainDao {
     public List<EventCourse> getActiveEventCourses(SqlSession session) {
         return session.selectList("getActiveEventCourses");
     }
+    
+    @Override
+    public List<Course> selectFilteredCourses(SqlSession session, Map<String, Object> filters) {
+        int cPage = filters.get("cPage") == null ? 1 : Integer.parseInt(filters.get("cPage").toString());
+        int numPerPage = filters.get("numPerPage") == null ? 8 : Integer.parseInt(filters.get("numPerPage").toString());
+        RowBounds rowBounds = new RowBounds(((cPage-1)*numPerPage), numPerPage);
+        
+        return session.selectList("getFilteredCourses", filters, rowBounds);
+    }
 }

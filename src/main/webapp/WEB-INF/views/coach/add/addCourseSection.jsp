@@ -21,7 +21,8 @@
                         <c:if test="${not empty sectionList}">
                             <c:forEach var="section" items="${sectionList}">
                                 <div class="card shadow mb-4">
-                                    <input type="hidden" value="${section.sectionSeq}" id="sectionSeq${section.sectionSeq}">
+                                    <input type="hidden" value="${section.sectionSeq}"
+                                           id="sectionSeq${section.sectionSeq}">
                                     <div class="card-body">
                                         <div class="row no-gutters align-items-center mb-3">
                                             <div class="col pl-3 pr-3">
@@ -29,34 +30,32 @@
                                                 <div class="row no-gutters align-items-center">${section.sectionContent}</div>
                                             </div>
                                         </div>
-                                        <div class="row no-gutters align-items-center mb-3">
-                                            <c:if test="${not empty section.curriculums}">
-                                                <c:forEach var="cur" items="${section.curriculums}">
-                                                    <c:if test="${cur.currSeq!=null}">
-                                                        <c:set var="currOrder" value="${section.curriculums.size()}"/>
-                                                        <div class="col p-3">
-                                                            ${cur.currTitle}
+                                        <c:if test="${not empty section.curriculums}">
+                                            <c:forEach var="cur" items="${section.curriculums}">
+                                                <c:if test="${cur.currSeq!=null}">
+                                                    <c:set var="currOrder" value="${section.curriculums.size()}"/>
+                                                    <div class="row no-gutters align-items-center mb-3">
+                                                        <div class="col p-6">
+                                                                ${cur.currTitle}
                                                         </div>
                                                         <div class="col p-3">
                                                             <c:if test='${cur.currVideoType == "UPLOAD"}'>
                                                                 <video controls style="max-width: 100%; height: auto;">
-                                                                    <source src="${pageContext.request.contextPath}${cur.currVideoUrl}" type="video/mp4">
+                                                                    <source src="${pageContext.request.contextPath}${cur.currVideoUrl}"
+                                                                            type="video/mp4">
                                                                     브라우저가 비디오를 지원하지 않습니다.
                                                                 </video>
                                                             </c:if>
                                                         </div>
                                                         <div class="col p-3">${cur.currPreview}</div>
+                                                    </div>
 
-
-
-
-                                                    </c:if>
-                                                    <c:if test="${cur.currSeq==null}">
-                                                        <c:set var="currOrder" value="0"/>
-                                                    </c:if>
-                                                </c:forEach>
-                                            </c:if>
-                                        </div>
+                                                </c:if>
+                                                <c:if test="${cur.currSeq==null}">
+                                                    <c:set var="currOrder" value="0"/>
+                                                </c:if>
+                                            </c:forEach>
+                                        </c:if>
                                         <div class="row no-gutters align-items-center mb-3 addCurriculumBtn"
                                              style="border: lightgray dashed 1px;border-radius: 10px">
                                             <div class="col p-3">
@@ -129,10 +128,12 @@
             </div>
 
         </div>
-        <div class="modal fade" id="addCurriculumModal" tabindex="-1" role="dialog" aria-labelledby="addCurriculumModalLabel" aria-hidden="true">
+        <div class="modal fade" id="addCurriculumModal" tabindex="-1" role="dialog"
+             aria-labelledby="addCurriculumModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
-                    <form id="curriculumForm" action="${pageContext.request.contextPath}/coach/insertCurriculum" method="post"
+                    <form id="curriculumForm" action="${pageContext.request.contextPath}/coach/insertCurriculum"
+                          method="post"
                           enctype="multipart/form-data" onsubmit="return checkData()">
                         <input type="hidden" name="courseSeq" value="${tempCourseSeq}">
                         <div class="modal-header">
@@ -148,12 +149,14 @@
 
                             <div class="form-group">
                                 <label for="currSeq">커리큘럼 번호</label>
-                                <input type="text" class="form-control" id="currSeq" name="currSeq" placeholder="자동 생성" readonly>
+                                <input type="text" class="form-control" id="currSeq" name="currSeq" placeholder="자동 생성"
+                                       readonly>
                             </div>
 
                             <div class="form-group">
                                 <label for="currTitle">커리큘럼 제목</label>
-                                <input type="text" class="form-control" id="currTitle" name="currTitle" placeholder="예: 스쿼트 자세 배우기">
+                                <input type="text" class="form-control" id="currTitle" name="currTitle"
+                                       placeholder="예: 스쿼트 자세 배우기">
                             </div>
 
                             <div class="form-group">
@@ -166,25 +169,31 @@
                             <div class="form-group" id="videoUrlGroup">
                                 <label for="currVideoUrl">영상 URL</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="currVideoUrl" name="currVideoUrl" placeholder="예: https://youtube.com/...">
+                                    <input type="text" class="form-control" id="currVideoUrl" name="currVideoUrl"
+                                           placeholder="예: https://youtube.com/...">
                                     <div class="input-group-append">
-                                        <button type="button" class="btn btn-outline-primary" id="loadVideoBtn">연결하기</button>
+                                        <button type="button" class="btn btn-outline-primary" id="loadVideoBtn">연결하기
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="embed-responsive embed-responsive-16by9 mt-3 mb-3 d-none" id="videoUrlPreviewWrapper">
+                            <div class="embed-responsive embed-responsive-16by9 mt-3 mb-3 d-none"
+                                 id="videoUrlPreviewWrapper">
                                 <iframe id="videoUrlPreview" class="embed-responsive-item" allowfullscreen></iframe>
                             </div>
 
                             <div class="form-group d-none" id="videoFileGroup">
                                 <label>영상 파일 업로드</label>
-                                <label for="currVideoFile" class="form-control text-center" id="videoFileLabel" style="cursor: pointer;">
+                                <label for="currVideoFile" class="form-control text-center" id="videoFileLabel"
+                                       style="cursor: pointer;">
                                     업로드 영상 선택
                                 </label>
-                                <input type="file" class="form-control-file" id="currVideoFile" name="currVideoFile" accept="video/*" style="display: none">
+                                <input type="file" class="form-control-file" id="currVideoFile" name="currVideoFile"
+                                       accept="video/*" style="display: none">
                                 <div class="position-relative mt-2 d-none" id="videoPreviewWrapper">
-                                    <button type="button" class="btn btn-sm btn-danger position-absolute" style="top: 0; right: 0; z-index: 2;" id="removeVideoButton">
+                                    <button type="button" class="btn btn-sm btn-danger position-absolute"
+                                            style="top: 0; right: 0; z-index: 2;" id="removeVideoButton">
                                         &times;
                                     </button>
                                     <video id="videoPreview" controls style="height: 15vw; border-radius: 0.5rem;">
@@ -202,7 +211,7 @@
                                 </select>
                             </div>
 
-                                <input type="hidden" class="form-control" id="currOrder" name="currOrder">
+                            <input type="hidden" class="form-control" id="currOrder" name="currOrder">
 
                             <div class="form-group">
                                 <input type="hidden" class="form-control" id="sectionSeq" name="sectionSeq" readonly>
@@ -210,7 +219,8 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기</button>
+                            <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
+                            </button>
                             <button type="submit" class="btn btn-primary" id="cropButton">등록 완료</button>
                         </div>
                     </form>
@@ -224,7 +234,7 @@
             const modalBtn = $(".addCurriculumBtn")
             const modal = $("#addCurriculumModal")
 
-            modalBtn.on("click", function (e){
+            modalBtn.on("click", function (e) {
                 const sectionInput = $(e.target).find("input[name='sectionNo']").val();
                 const sectionListOrder = $(e.target).find("input[name='sectionListOrder']").val();
                 $("#sectionSeq").val(sectionInput);
@@ -254,7 +264,7 @@
             });
             $('#currVideoType').trigger('change');
 
-            $('.modalCloseAct').on('click',function (){
+            $('.modalCloseAct').on('click', function () {
                 $('#currSeq').val('');
                 $('#currTitle').val('');
                 $('#currVideoType').val('YOUTUBE');
@@ -346,10 +356,10 @@
                 // 유튜브 링크라면 임베드용으로 변환
                 if (url.includes('youtube.com/watch?v=')) {
                     const videoId = new URL(url).searchParams.get("v");
-                    embedUrl = "https://www.youtube.com/embed/"+videoId;
+                    embedUrl = "https://www.youtube.com/embed/" + videoId;
                 } else if (url.includes('youtu.be/')) {
                     const videoId = url.split('youtu.be/')[1].split('?')[0];
-                    embedUrl = "https://www.youtube.com/embed/"+videoId;
+                    embedUrl = "https://www.youtube.com/embed/" + videoId;
                 } else {
                     alert('지원하지 않는 URL 형식입니다.');
                     return;
@@ -363,7 +373,7 @@
                     .fadeIn('slow');
             });
 
-            const checkData = () =>{
+            const checkData = () => {
                 const title = document.getElementById("currTitle").value.trim();
                 const videoType = document.getElementById("currVideoType").value;
                 const videoUrl = document.getElementById("currVideoUrl").value.trim();

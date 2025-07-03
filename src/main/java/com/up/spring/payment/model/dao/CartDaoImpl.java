@@ -21,6 +21,11 @@ public class CartDaoImpl implements CartDao {
     }
 
     @Override
+    public int isCourseInCart(SqlSession session, Cart cart) {
+        return session.selectOne("isCourseInCart", cart);
+    }
+
+    @Override
     public int deleteCartByNo(SqlSession session, int cartSeq) {
         return session.delete("deleteCartByNo", cartSeq);
     }

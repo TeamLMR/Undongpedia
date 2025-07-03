@@ -2,8 +2,7 @@ package com.up.spring.course.model.service;
 
 
 import com.up.spring.course.model.dao.CourseDao;
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.Review;
+import com.up.spring.course.model.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
@@ -12,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -74,5 +75,40 @@ public class CourseServiceImpl implements CourseService {
             return 0;
         }
         return courseDao.insertReview(sqlSession,review);
+    }
+
+    @Override
+    public List<Course> searchCourseListByMemberNo(long memberNo) {
+        return courseDao.searchCourseListByMemberNo(sqlSession, memberNo);
+    }
+
+    @Override
+    public Curriculum getFirstCurriculum(long courseSeq) {
+        return courseDao.getFirstCurriculum(sqlSession,courseSeq);
+    }
+
+    @Override
+    public Curriculum getCurriculumBySeq(long currSeq) {
+        return courseDao.getCurriculumBySeq(sqlSession,currSeq);
+    }
+
+    @Override
+    public Progress getProgressBySeq(Map<String, Object> params) {
+        return courseDao.getProgressBySeq(sqlSession,params);
+    }
+
+    @Override
+    public int insertProgress(Progress progress) {
+        return courseDao.insertProgress(sqlSession,progress);
+    }
+
+    @Override
+    public int updateProgress(Progress progress) {
+        return courseDao.updateProgress(sqlSession,progress);
+    }
+
+    @Override
+    public  List<Map<String, Object>> getSectionCurrWithProgress(Map<String, Object> params) {
+        return courseDao.getSectionCurrWithProgress(sqlSession,params);
     }
 }

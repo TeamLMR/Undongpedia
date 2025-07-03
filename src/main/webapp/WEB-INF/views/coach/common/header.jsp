@@ -76,28 +76,28 @@
     <li class="nav-item">
       <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
          aria-expanded="true" aria-controls="collapseTwo">
-        <i class="fas fa-fw fa-folder"></i>
+        <i class="bi-book-half"></i>
         <span>코스</span>
       </a>
       <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
           <a class="collapse-item" href="${path}/coach/addCourse">코스 등록하기</a>
-          <a class="collapse-item" href="${path}/coach/courseManager">코스 관리</a>
-          <a class="collapse-item" href="${path}/coach/courseQna">코스 질문 관리</a>
-          <a class="collapse-item" href="${path}/coach/courseReview">수강평</a>
+          <a class="collapse-item" href="${path}/coach/addOfflineCourse">오프라인 코스 등록하기</a>
+          <a class="collapse-item" href="${path}/coach/coursemanager">코스 관리</a>
+          <a class="collapse-item" href="${path}/coach/courseqna">코스 질문 관리</a>
+          <a class="collapse-item" href="${path}/coach/coursereview">수강평</a>
         </div>
       </div>
     </li>
     <li class="nav-item">
       <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
          aria-expanded="true" aria-controls="collapseUtilities">
-        <i class="fas fa-fw fa-wrench"></i><span>수익</span>
+        <i class="bi-currency-dollar"></i></i><span>수익</span>
       </a>
       <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
            data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
-          <a class="collapse-item" href="utilities-color.html">수익 확인</a>
-          <a class="collapse-item" href="utilities-border.html">영수증 발급</a>
+          <a class="collapse-item" href="${path}/coach/payment">수익 확인</a>
         </div>
       </div>
     </li>
@@ -105,13 +105,12 @@
     <li class="nav-item">
       <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages"
          aria-expanded="true" aria-controls="collapsePages">
-        <i class="fas fa-fw fa-folder"></i>
+        <i class="bi-person"></i>
         <span>마이페이지</span>
       </a>
       <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
-          <a class="collapse-item" href="register.html">정보수정</a>
-          <a class="collapse-item" href="login.html">로그아웃</a>
+          <a class="collapse-item" href='${pageContext.request.contextPath}/logout.do'>로그아웃</a>
         </div>
       </div>
     </li>

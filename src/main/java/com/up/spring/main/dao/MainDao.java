@@ -12,4 +12,5 @@ public interface MainDao {
     List<Category> getCategorys(SqlSession session);
     List<Course> getCourseList(SqlSession session, Map<String, Object> params);
     List<EventCourse> getActiveEventCourses(SqlSession session);
+    List<Course> selectFilteredCourses(SqlSession session, Map<String, Object> filters);
 }

@@ -1,7 +1,6 @@
 package com.up.spring.course.model.dao;
 
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.Review;
+import com.up.spring.course.model.dto.*;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
@@ -10,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import java.util.List;
 
 @Repository
 public class CourseDaoImpl implements CourseDao {
@@ -45,5 +46,40 @@ public class CourseDaoImpl implements CourseDao {
     @Override
     public int insertReview(SqlSession sqlSession, Review review) {
         return sqlSession.insert("course.insertReview", review);
+    }
+
+    @Override
+    public List<Course> searchCourseListByMemberNo(SqlSession sqlSession, long memberNo) {
+        return sqlSession.selectList("course.searchCourseListByMemberNo", memberNo);
+    }
+
+    @Override
+    public Curriculum getFirstCurriculum(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.selectOne("course.getFirstCurriculum", courseSeq);
+    }
+
+    @Override
+    public Curriculum getCurriculumBySeq(SqlSession sqlSession, long currSeq) {
+        return sqlSession.selectOne("course.getCurriculumBySeq",currSeq);
+    }
+
+    @Override
+    public Progress getProgressBySeq(SqlSession sqlSession, Map<String, Object> params) {
+        return sqlSession.selectOne("course.getProgressBySeq", params);
+    }
+
+    @Override
+    public int insertProgress(SqlSession sqlSession, Progress progress) {
+        return sqlSession.insert("course.insertProgress", progress);
+    }
+
+    @Override
+    public int updateProgress(SqlSession sqlSession, Progress progress) {
+        return sqlSession.update("course.updateProgress", progress);
+    }
+
+    @Override
+    public List<Map<String, Object>> getSectionCurrWithProgress(SqlSession sqlSession, Map<String, Object> params) {
+        return sqlSession.selectList("course.getSectionCurrWithProgress", params);
     }
 }

@@ -1,10 +1,8 @@
 package com.up.spring.payment.controller;
 
 import com.up.spring.member.model.dto.Member;
-import com.up.spring.payment.model.dto.Cart;
-import com.up.spring.payment.model.dto.NaverProperty;
-import com.up.spring.payment.model.dto.OfflineCart;
-import com.up.spring.payment.model.dto.Orders;
+import com.up.spring.member.model.service.MemberService;
+import com.up.spring.payment.model.dto.*;
 import com.up.spring.payment.model.service.CartService;
 import com.up.spring.payment.model.service.OfflineCartService;
 import com.up.spring.payment.model.service.OrderService;
@@ -14,6 +12,7 @@ import com.up.spring.course.model.service.CourseService;
 import com.up.spring.course.model.service.CourseScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -27,21 +26,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Controller
 @Slf4j
 public class PaymentController {
-    private final CartService cartService;
     private final NaverProperty naverProperty;
+
+    private final CartService cartService;
     private final OrderService orderService;
     private final OfflineCartService offlineCartService;
     private final CourseService courseService;
     private final CourseScheduleService courseScheduleService;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     private List<String> getCartCourseNames(long memberNo){
         List<String> cartNames = new ArrayList<>();
@@ -159,6 +163,60 @@ public class PaymentController {
         return memberNo;
     }
 
+    @PostMapping("/cart/add")
+    public String addCart(@RequestParam("addCourseSeq") long courseSeq, Model model, RedirectAttributes redirectAttributes) {
+        String loc = "common/msg";
+        log.debug("courseSeq: {}", courseSeq);
+        long memberNo = returnMemberNo();
+        if  (memberNo != 0){
+            //구매한 이력이 있는지 체크
+            Orders orders = Orders.builder()
+                    .courseSeq(courseSeq)
+                    .memberNo(memberNo)
+                    .build();
+
+            int memberOrderCount = orderService.isCoursePaidByMember(orders);
+            //해당 클래스를 구매한 이력이 있다면
+            if (memberOrderCount > 0 ){
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "이미 구매한 상품은 장바구니에 넣을 수 없습니다.");
+                loc = "redirect:/";
+            //없다면 장바구니 내 중복 확인
+            } else {
+                //중복 확인
+                Cart cart = Cart.builder()
+                        .memberNo(memberNo)
+                        .courseSeq(courseSeq)
+                        .build();
+                int cartCount = cartService.isCourseInCart(cart);
+                //이미 장바구니 내에 클래스가 존재한다면
+                if (cartCount > 0){
+                    redirectAttributes.addAttribute("result", "fail");
+                    redirectAttributes.addAttribute("msg", "이미 장바구니에 존재합니다.");
+                    loc = "redirect:/";
+                    //없다면 insert
+                } else {
+                    int result = cartService.insertCart(cart);
+                    if(result == 1){
+                        redirectAttributes.addAttribute("result", "success");
+                        redirectAttributes.addAttribute("msg", "장바구니에 담았습니다.");
+                        loc = "redirect:/";
+                    } else {
+                        redirectAttributes.addAttribute("result", "fail");
+                        redirectAttributes.addAttribute("msg", "장바구니에 담지 못했습니다.");
+                        loc = "redirect:/";
+                    }
+                }
+            }
+        //그 외
+        } else {
+            model.addAttribute("msg", "로그인을 확인해주세요.");
+            model.addAttribute("loc", "/");
+        }
+
+        return loc;
+    }
+
     @PostMapping("/cart/remove")
     public String removeCart(@RequestParam("removeCartSeq") int removeCartSeq, Model model) {
         String loc = "common/msg";
@@ -210,35 +268,70 @@ public class PaymentController {
             loc = "payment/cart";
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
-            model.addAttribute("loc", "/common/msg");
-            loc = "common/msg";
+            model.addAttribute("loc", "/");
         }
         return loc;
     }
 
     @RequestMapping("/payment/orderinvoice")
-    public String orderInvoice(@RequestParam("id") int ordersSeq, Model model){
+    public String orderInvoice(@RequestParam("id") String paymentId, Model model){
         String loc = "common/msg";
-        Orders orders = orderService.selectOrderById(ordersSeq);
-        if (orders != null) {
-            model.addAttribute("orders", orders);
-            loc = "payment/orderInvoice";
+
+        long memberNo = returnMemberNo();
+        if (memberNo != 0) {
+            Map<String, Object> param = new HashMap<>();
+            param.put("memberNo", memberNo);
+            param.put("ordersPaymentId", paymentId);
+            List<OrdersInvoice> ordersList =  orderService.selectOrdersByPaymentIdAndMemberNo(param);
+            Map<String,Course> courseMap = new HashMap<>();
+
+
+            log.debug("ordersList: {}", ordersList);
+            if (ordersList != null) {
+                model.addAttribute("ordersList", ordersList);
+                loc = "payment/orderInvoice";
+            }
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
-            model.addAttribute("loc", "/common/msg");
+            model.addAttribute("loc", "/");
         }
+
         return loc;
     }
 
     @RequestMapping("/payment/cancel")
     public String paymentCancel(@RequestParam("id") int ordersSeq, Model model) {
         String loc = "common/msg";
-        int result = orderService.cancelOrderById(ordersSeq);
-        if (result == 1) {
-            loc = "redirect:/mypage/purchaseHistory";
+        
+        // 주문 취소 전에 주문 정보 조회 (좌석 복구를 위해)
+        Orders cancelOrder = orderService.selectOrderById(ordersSeq);
+        if (cancelOrder != null) {
+            String paymentId = cancelOrder.getDetail().getOrdersPaymentId();
+            int result = orderService.cancelOrdersByPaymentId(paymentId);
+            //result값이 1보다 커질 수 있음(삭제 칼럼 값)
+            log.debug("result: " + result);
+
+            if (result > 1) {
+                // 오프라인 예약인 경우 스케줄 좌석 복구
+                if (cancelOrder.getScheduleId() != null) {
+                    try {
+                        boolean seatRestoreResult = courseScheduleService.cancelSeat(cancelOrder.getScheduleId());
+                        if (seatRestoreResult) {
+                            log.info("주문 취소 시 좌석 복구 성공 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                            // 좌석 복구 성공 시 관련 캐시 무효화
+                            invalidateScheduleCache(cancelOrder.getCourseSeq(), cancelOrder.getScheduleId());
+                        } else {
+                            log.error("주문 취소 시 좌석 복구 실패 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId());
+                        }
+                    } catch (Exception e) {
+                        log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
+                    }
+                }
+                loc = "redirect:/mypage";
+            }
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
-            model.addAttribute("loc", "/common/msg");
+            model.addAttribute("loc", "/mypage");
         }
         return loc;
     }
@@ -266,7 +359,7 @@ public class PaymentController {
             }
         } else {
             model.addAttribute("msg", "잘못된 접근입니다");
-            model.addAttribute("loc", "/common/msg");
+            model.addAttribute("loc", "/cart");
         }
         return loc;
     }
@@ -312,11 +405,11 @@ public class PaymentController {
                 log.debug("res:{}", res);
 
                 if (res != null && res.get("code").equals("Success")) {
-                    //카트 리스트만큼 반복
+                    //온라인 카트 리스트만큼 반복
                     List<Cart> cartList = cartService.searchCartsByMemberNo(memberNo);
                     if (!cartList.isEmpty()) {
                         for (int i = 0; i < cartList.size(); i++) {
-                            int courseSeq = cartList.get(i).getCourseSeq();
+                            long courseSeq = cartList.get(i).getCourseSeq();
                             int resResult = orderService.insertOrderAndOrderDetails(res, memberNo, courseSeq);
                             //만약 실패하면 바로 메세지창으로 던짐
                             if (resResult != 1) {
@@ -324,24 +417,72 @@ public class PaymentController {
                                 break;
                             }
                         }
-                        //TODO:완료시 카트 삭제까지
-                        //아 이거 다시 반복 안시키고싶은디 그리고 이거 분리시켜야할것같
-                        if (isInsertSuccess) {
-                            for (int i = 0; i < cartList.size(); i++) {
-                                int cartSeq = cartList.get(i).getCartSeq();
-                                int deleteCartResult = cartService.deleteCartByNo(cartSeq);
-                                if (deleteCartResult != 1) {
+                    }
+                    
+                    //오프라인 카트 리스트 처리 (추가)
+                    List<OfflineCart> offlineCartList = offlineCartService.searchOfflineCartByMemberNo(memberNo);
+                    if (!offlineCartList.isEmpty() && isInsertSuccess) {
+                        for (int i = 0; i < offlineCartList.size(); i++) {
+                            OfflineCart offlineCart = offlineCartList.get(i);
+                            long courseSeq = offlineCart.getCartCourse().getCourseSeq();
+                            Long scheduleId = offlineCart.getCartCourseSchedule().getScheduleId();
+                            String tempReservationId = offlineCart.getTempReservationId();
+                            
+                            // 주문 저장
+                            int resResult = orderService.insertOfflineOrderAndOrderDetails(res, memberNo, courseSeq, scheduleId, tempReservationId);
+                            if (resResult != 1) {
+                                isInsertSuccess = false;
+                                break;
+                            }
+                            
+                            // 스케줄 좌석 차감 (결제 완료 시)
+                            try {
+                                boolean seatResult = courseScheduleService.reserveSeat(scheduleId);
+                                if (!seatResult) {
+                                    log.error("스케줄 좌석 차감 실패 - scheduleId: {}, tempReservationId: {}", scheduleId, tempReservationId);
+                                    // 좌석 차감 실패 시에도 주문은 유지 (수동 처리 가능)
+                                } else {
+                                    log.info("스케줄 좌석 차감 성공 - scheduleId: {}, tempReservationId: {}", scheduleId, tempReservationId);
+                                    // 좌석 차감 성공 시 관련 캐시 무효화
+                                    invalidateScheduleCache(courseSeq, scheduleId);
+                                }
+                            } catch (Exception e) {
+                                log.error("스케줄 좌석 차감 중 오류 발생 - scheduleId: {}, tempReservationId: {}", scheduleId, tempReservationId, e);
+                            }
+                        }
+                    }
+                    
+                    //TODO:완료시 카트 삭제까지
+                    //아 이거 다시 반복 안시키고싶은디 그리고 이거 분리시켜야할것같
+                    if (isInsertSuccess) {
+                        // 온라인 장바구니 삭제
+                        for (int i = 0; i < cartList.size(); i++) {
+                            int cartSeq = cartList.get(i).getCartSeq();
+                            int deleteCartResult = cartService.deleteCartByNo(cartSeq);
+                            if (deleteCartResult != 1) {
+                                isCartDeleteSuccess = false;
+                                break;
+                            }
+                        }
+                        
+                        // 오프라인 장바구니 삭제 (추가)
+                        if (isCartDeleteSuccess) {
+                            for (int i = 0; i < offlineCartList.size(); i++) {
+                                int cartSeq = offlineCartList.get(i).getCartSeq();
+                                int deleteOfflineCartResult = offlineCartService.deleteOfflineCartByNo(cartSeq);
+                                if (deleteOfflineCartResult != 1) {
                                     isCartDeleteSuccess = false;
                                     break;
                                 }
                             }
                         }
+                    }
 
-                        if (isInsertSuccess && isCartDeleteSuccess) {
-                            log.debug("isInsertSuccess:{}", isInsertSuccess);
-                            log.debug("isCartDeleteSuccess:{}", isCartDeleteSuccess);
-                            loc = "redirect:/mypage";
-                        }
+                    if (isInsertSuccess && isCartDeleteSuccess) {
+                        log.debug("isInsertSuccess:{}", isInsertSuccess);
+                        log.debug("isCartDeleteSuccess:{}", isCartDeleteSuccess);
+                        log.info("온라인 장바구니 {}개, 오프라인 장바구니 {}개 결제 완료", cartList.size(), offlineCartList.size());
+                        loc = "redirect:/mypage";
                     }
                 }
 
@@ -428,6 +569,49 @@ public class PaymentController {
             response.put("success", false);
             response.put("message", "서버 오류가 발생했습니다.");
             return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+
+    private void invalidateScheduleCache(long courseSeq, Long scheduleId) {
+        try {
+            // 단일 키 삭제 (성능 우선)
+            String[] directKeys = {
+                "course:available-dates:" + courseSeq,
+                "schedule:capacity:" + scheduleId
+            };
+            
+            for (String key : directKeys) {
+                Boolean deleted = redisTemplate.delete(key);
+                if (Boolean.TRUE.equals(deleted)) {
+                    log.debug("캐시 키 삭제: {}", key);
+                }
+            }
+            
+            // 패턴 매칭은 SCAN으로 안전하게 처리 (제한적)
+            String pattern = "course:timeslots:" + courseSeq + ":*";
+            org.springframework.data.redis.core.ScanOptions scanOptions = 
+                org.springframework.data.redis.core.ScanOptions.scanOptions()
+                    .match(pattern)
+                    .count(10) // 제한적으로만 처리
+                    .build();
+            
+            try (org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(scanOptions)) {
+                int deleteCount = 0;
+                while (cursor.hasNext() && deleteCount < 20) { // 최대 20개만 삭제
+                    String key = cursor.next();
+                    redisTemplate.delete(key);
+                    deleteCount++;
+                }
+                if (deleteCount > 0) {
+                    log.debug("캐시 패턴 삭제: {} ({}개 키)", pattern, deleteCount);
+                }
+            }
+            
+            log.debug("스케줄 캐시 무효화 완료 - courseSeq: {}, scheduleId: {}", courseSeq, scheduleId);
+            
+        } catch (Exception e) {
+            log.error("캐시 무효화 중 오류 발생 - courseSeq: {}, scheduleId: {}", courseSeq, scheduleId, e);
         }
     }
 }

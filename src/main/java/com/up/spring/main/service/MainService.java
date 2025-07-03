@@ -12,4 +12,5 @@ public interface MainService {
     List<Category> getCategories();
     List<Course> getCourseList(Map<String, Object> params);
     List<EventCourse> getActiveEventCourses();
+    List<Course> getFilteredCourses(Map<String, Object> filters);
 }

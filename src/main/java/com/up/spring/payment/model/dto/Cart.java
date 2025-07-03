@@ -16,6 +16,6 @@ public class Cart {
     private int cartSeq;
     private Timestamp cartTimestamp;
     private long memberNo;
-    private int courseSeq;
+    private long courseSeq;
     private Course cartCourse;
 }

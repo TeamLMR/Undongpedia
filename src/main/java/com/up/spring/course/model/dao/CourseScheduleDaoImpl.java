@@ -44,4 +44,9 @@ public class CourseScheduleDaoImpl implements CourseScheduleDao {
     public int decrementBookedSeats(SqlSession sqlSession, long scheduleId) {
         return sqlSession.update("courseSchedule.decrementBookedSeats", scheduleId);
     }
+
+    @Override
+    public int insertSchedule(SqlSession sqlSession, CourseSchedule schedule) {
+        return sqlSession.insert("courseSchedule.insertSchedule", schedule);
+    }
 }

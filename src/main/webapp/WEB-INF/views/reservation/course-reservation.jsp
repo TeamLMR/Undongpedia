@@ -38,8 +38,10 @@
               <!-- Course Thumbnail -->
               <div class="course-image-wrapper">
                 <div class="image-container">
-                  <img src="${empty course.courseThumbnail ? '/undongpedia/resources/images/dummy.webp' : course.courseThumbnail}" 
-                       alt="강의 이미지" class="img-fluid course-image">
+                  <img src="${empty course.courseThumbnail ? pageContext.request.contextPath.concat('/resources/images/dummy.webp') : pageContext.request.contextPath.concat(course.courseThumbnail)}" 
+                       alt="강의 이미지" class="img-fluid course-image"
+                       onerror="console.error('이미지 로드 실패:', this.src); this.src='${pageContext.request.contextPath}/resources/images/dummy.webp';"
+                       onload="console.log('이미지 로드 성공:', this.src);">
                 </div>
               </div>
               
@@ -1069,10 +1071,32 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                // 🔥 임시예약 ID가 있으면 장바구니로 이동 (WebSocket 처리와 일관성)
+                // 🔥 임시예약 ID가 있으면 장바구니에 추가 후 이동
                 if (result.data && result.data.tempReservationId) {
-                    alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
-                    window.location.href = '/undongpedia/cart';
+                    // 장바구니에 추가
+                    $.ajax({
+                        url: '/undongpedia/cart/add-offline',
+                        type: 'POST',
+                        data: {
+                            tempReservationId: result.data.tempReservationId,
+                            scheduleId: data.scheduleId,
+                            courseSeq: data.courseSeq
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
+                                window.location.href = '/undongpedia/cart';
+                            } else {
+                                alert('장바구니 추가 실패: ' + response.message);
+                                window.location.href = '/undongpedia/cart';
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('장바구니 추가 요청 실패:', error);
+                            alert('장바구니 추가 중 오류가 발생했습니다.');
+                            window.location.href = '/undongpedia/cart';
+                        }
+                    });
                 }
                 // 대기열이 필요한 경우
                 else if (result.queueRequired || result.message.includes('대기열')) {
@@ -1182,7 +1206,7 @@ window.leaveQueue = function() {
         // 5. 모달 닫기
         window.forceCloseQueueModal();
         
-        console.log('✅ 대기열 나가기 완료');
+                        console.log('대기열 나가기 완료');
     }
 };
 
@@ -1194,7 +1218,7 @@ window.leaveQueue = function() {
         const loginMemberNo = '${loginMember.memberNo}';
         if (loginMemberNo && loginMemberNo !== '' && loginMemberNo !== 'null') {
             window.currentMemberNo = parseInt(loginMemberNo);
-            console.log('✅ 로그인 사용자 - memberNo:', window.currentMemberNo);
+            console.log('로그인 사용자 - memberNo:', window.currentMemberNo);
         } else {
             // 비로그인 사용자 - 세션 스토리지에서 임시 ID 사용
             let tempMemberNo = sessionStorage.getItem('temp_member_no');
@@ -1232,7 +1256,7 @@ window.leaveQueue = function() {
         try {
             // courseSeq 값 검증
             if (!window.currentCourseSeq || window.currentCourseSeq === 'undefined' || window.currentCourseSeq === 'null') {
-                console.error('❌ currentCourseSeq 값이 유효하지 않습니다:', window.currentCourseSeq);
+                console.error('currentCourseSeq 값이 유효하지 않습니다:', window.currentCourseSeq);
                 updateModalConnectionStatus('disconnected');
                 return;
             }
@@ -1246,7 +1270,7 @@ window.leaveQueue = function() {
             window.queueWebSocket = new WebSocket(wsUrl);
             
             window.queueWebSocket.onopen = function() {
-                console.log('✅ 대기열 웹소켓 연결 성공');
+                console.log('대기열 웹소켓 연결 성공');
                 updateModalConnectionStatus('connected');
             };
             
@@ -1257,7 +1281,7 @@ window.leaveQueue = function() {
             };
             
             window.queueWebSocket.onclose = function(event) {
-                console.log('❌ 대기열 웹소켓 연결 종료 - 코드:', event.code, '이유:', event.reason);
+                console.log('대기열 웹소켓 연결 종료 - 코드:', event.code, '이유:', event.reason);
                 updateModalConnectionStatus('disconnected');
                 // 재연결 시도
                 setTimeout(connectQueueWebSocket, 3000);
@@ -1280,7 +1304,7 @@ window.leaveQueue = function() {
         
         switch(data.type) {
             case 'connected':
-                console.log('✅ WebSocket 연결 확인:', data.message);
+                                    console.log('WebSocket 연결 확인:', data.message);
                 break;
                 
             case 'queue_update':
@@ -1451,7 +1475,7 @@ window.leaveQueue = function() {
     function checkModalQueueStatus() {
         const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
         
-        // 💡 기존 API 사용하여 대기열 위치 확인
+                        // 기존 API 사용하여 대기열 위치 확인
         fetch(contextPath + '/reservation/book', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1606,7 +1630,7 @@ window.leaveQueue = function() {
             <div class="modal-footer justify-content-center">
                 <div class="text-center w-100 mb-3">
                     <small class="text-muted">
-                        💡 <strong>모달 닫는 방법:</strong><br>
+                        <strong>모달 닫는 방법:</strong><br>
                         • 아래 "대기열 나가기" 버튼<br>
                         • 우상단 ✕ 버튼<br>
                         • ESC키 (확인 후 닫기)
