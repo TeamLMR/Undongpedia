@@ -47,7 +47,7 @@
   <ul class="navbar-nav bg-gradient-secondary sidebar sidebar-dark accordion" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="${path}/coach/dashboard">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="${path}/admin/dashboard">
       <div class="sidebar-brand-icon col-4">
         <img src="${path}/resources/assets/img/icon-192x192.png" class="w-100" alt="">
       </div>
@@ -59,7 +59,7 @@
 
     <!-- Nav Item - Dashboard -->
     <li class="nav-item active">
-      <a class="nav-link" href="${path}/coach/dashboard">
+      <a class="nav-link" href="${path}/admin/dashboard">
         <i class="fas fa-fw fa-tachometer-alt"></i>
         <span>대쉬보드</span></a>
     </li>
