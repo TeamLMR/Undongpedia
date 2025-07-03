@@ -56,7 +56,7 @@
                                     <div class="row align-items-center text-center text-lg-start g-3">
                                         <!-- 텍스트 -->
                                         <div class="col-lg-6">
-                                            <p class="text-uppercase text-light small mb-2">🔥 [선착순 EVENT]</p>
+                                            <p class="text-uppercase text-light small mb-2"> [선착순 EVENT]</p>
                                             <h2 class="fw-bold display-6 mb-3 text-light">${event.courseTitle}</h2>
                                             <p class="text-secondary mb-4">${event.courseContent}</p>
 
