@@ -45,6 +45,13 @@
         user-service-ref="loginService"
     />
 
+    <security:session-management>
+        <security:concurrency-control
+                max-sessions="1"
+                expired-url="/sessionmax.do"
+                error-if-maximum-exceeded="false"/>
+        <!-- true는 로그인 불가 false는 이전 세션 만료 -->
+    </security:session-management>
 </security:http>
 
     <security:authentication-manager>

@@ -275,4 +275,33 @@ public class MemberController {
         }
     }
 
+    @RequestMapping("/login.do")
+    public String naverLoginCallback(@RequestParam(required = false) String code,
+                                     @RequestParam(required = false) String state,
+                                     @RequestParam(required = false) String email,
+                                     @RequestParam(required = false) String name,
+                                     @RequestParam(required = false) String nickname,
+                                     HttpSession session,
+                                     RedirectAttributes redirectAttr) {
+        // 실제 서비스에서는 code, state로 네이버 토큰 및 사용자 정보 요청 필요
+        // 여기서는 email, name, nickname이 파라미터로 넘어온다고 가정
+        if (email == null) {
+            // 네이버에서 사용자 정보를 못 받아온 경우
+            redirectAttr.addFlashAttribute("error", "네이버 로그인 정보가 올바르지 않습니다.");
+            return "redirect:/member/login";
+        }
+        Member member = memberService.searchById(email);
+        if (member != null) {
+            // 이미 회원이면 바로 로그인 처리 (세션 저장 등)
+            session.setAttribute("loginMember", member);
+            return "redirect:/";
+        } else {
+            // 회원이 아니면 회원가입 폼으로 네이버 정보 전달
+            redirectAttr.addFlashAttribute("naverEmail", email);
+            redirectAttr.addFlashAttribute("naverName", name);
+            redirectAttr.addFlashAttribute("naverNickname", nickname);
+            return "redirect:/member/signup";
+        }
+    }
+
 }
