@@ -8,9 +8,24 @@ import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class CoachDaoImpl implements CoachDao {
+    @Override
+    public int deleteCurrBySectionSeq(SqlSession sqlSession, long sectionSeq) {
+        return sqlSession.delete("coach.deleteCurrBySectionSeq", sectionSeq);
+    }
+
+    @Override
+    public int deleteSectionByCourseSeq(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.delete("coach.deleteSectionByCourseSeq", courseSeq);
+    }
+
+    @Override
+    public int deleteCourseByCourseSeq(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.delete("coach.deleteCourseByCourseSeq", courseSeq);
+    }
 
     @Override
     public List<Category> getCategoryAll(SqlSession sqlSession) {
@@ -34,5 +49,15 @@ public class CoachDaoImpl implements CoachDao {
     @Override
     public int insertCurriculum(SqlSession sqlSession, Curriculum curriculum) {
         return sqlSession.insert("coach.insertCurriculum",curriculum);
+    }
+
+    @Override
+    public List<Map<String, Object>> getDashboardInfo(SqlSession sqlSession, Long memberNo) {
+        return sqlSession.selectList("coach.getDashboardInfo",memberNo);
+    }
+
+    @Override
+    public List<Map<String, Object>> getMonthlyEarnings(SqlSession sqlSession, Long memberNo) {
+        return sqlSession.selectList("coach.getMonthlyEarnings",memberNo);
     }
 }

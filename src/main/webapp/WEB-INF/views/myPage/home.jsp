@@ -138,8 +138,12 @@
     function confirmWithdrawal() {
         if (confirm('정말로 회원탈퇴를 하시겠습니까?\n\n탈퇴 시 모든 학습 데이터가 삭제되며 복구할 수 없습니다.')) {
             if (confirm('마지막 확인입니다.\n회원탈퇴를 진행하시겠습니까?')) {
-                // 실제로는 서버로 탈퇴 요청
-                window.location.href = '/member/withdrawal';
+                // 폼을 생성하여 POST 요청으로 회원탈퇴 처리
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '${pageContext.request.contextPath}/member/withdraw';
+                document.body.appendChild(form);
+                form.submit();
             }
         }
     }

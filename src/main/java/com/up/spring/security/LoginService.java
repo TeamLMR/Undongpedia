@@ -21,6 +21,12 @@ public class LoginService implements UserDetailsService {
             log.debug(username);
         Member m = dao.searchById(session, username);
             log.debug("{}",m);
+        
+        // 탈퇴한 회원인지 확인
+        if (m != null && "WITHDRAW".equals(m.getMemberStatus())) {
+            throw new UsernameNotFoundException("탈퇴한 회원입니다.");
+        }
+        
         return m;
     }
 }

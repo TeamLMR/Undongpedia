@@ -277,26 +277,26 @@
                 },
                 body: 'email=' + encodeURIComponent(email)
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('verificationCodeSection').style.display = 'block';
-                        sendBtn.textContent = '인증번호 발송됨';
-                        startVerificationTimer(data.expireTime);
-                        alert('인증번호가 이메일로 발송되었습니다.');
-                        document.getElementById('verificationCode').focus();
-                    } else {
-                        sendBtn.disabled = false;
-                        sendBtn.textContent = '인증번호 보내기';
-                        alert(data.message || '인증번호 발송에 실패했습니다.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('verificationCodeSection').style.display = 'block';
+                    sendBtn.textContent = '인증번호 발송됨';
+                    startVerificationTimer(data.expireTime);
+                    alert('인증번호가 이메일로 발송되었습니다.');
+                    document.getElementById('verificationCode').focus();
+                } else {
                     sendBtn.disabled = false;
                     sendBtn.textContent = '인증번호 보내기';
-                    alert('서버 오류가 발생했습니다.');
-                });
+                    alert(data.message || '인증번호 발송에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                sendBtn.disabled = false;
+                sendBtn.textContent = '인증번호 보내기';
+                alert('서버 오류가 발생했습니다.');
+            });
         }
 
         // ===== 인증번호 확인 =====
@@ -324,31 +324,31 @@
                 },
                 body: 'email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code)
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        clearInterval(verificationTimer);
-                        document.getElementById('verificationCodeSection').style.display = 'none';
-                        document.getElementById('emailVerifiedAlert').style.display = 'block';
-                        emailInput.readOnly = true;
-                        document.getElementById('sendVerificationBtn').style.display = 'none';
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    clearInterval(verificationTimer);
+                    document.getElementById('verificationCodeSection').style.display = 'none';
+                    document.getElementById('emailVerifiedAlert').style.display = 'block';
+                    emailInput.readOnly = true;
+                    document.getElementById('sendVerificationBtn').style.display = 'none';
 
-                        emailVerified = true;
-                        alert('이메일 인증이 완료되었습니다!');
-                    } else {
-                        verifyBtn.disabled = false;
-                        verifyBtn.textContent = '확인';
-                        alert(data.message || '인증번호가 일치하지 않습니다.');
-                        codeInput.value = '';
-                        codeInput.focus();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+                    emailVerified = true;
+                    alert('이메일 인증이 완료되었습니다!');
+                } else {
                     verifyBtn.disabled = false;
                     verifyBtn.textContent = '확인';
-                    alert('서버 오류가 발생했습니다.');
-                });
+                    alert(data.message || '인증번호가 일치하지 않습니다.');
+                    codeInput.value = '';
+                    codeInput.focus();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = '확인';
+                alert('서버 오류가 발생했습니다.');
+            });
         }
 
         // ===== 타이머 시작 =====
@@ -399,7 +399,10 @@
                 document.getElementById('verificationCodeSection').style.display = 'none';
                 document.getElementById('emailVerifiedAlert').style.display = 'block';
                 document.getElementById('emailVerifiedText').textContent = '네이버 인증이 완료되었습니다.';
-                emailVerified = true; // 이메일 인증 완료 상태로 설정
+                emailVerified = true;
+            } else {
+                // 일반 회원가입인 경우 signType을 "GENERAL"로 설정
+                document.querySelector('input[name="memberSigntype"]').value = 'GENERAL';
             }
             
             if (naverName) {

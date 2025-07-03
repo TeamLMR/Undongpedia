@@ -357,7 +357,7 @@
                                                 </c:choose>
                                             </c:forEach>
                                         </span>
-
+/
                                     </div>
                                     <div class="badge bg-primary border d-flex align-items-center justify-content-between mt-3">
                                         <div class="text-light">

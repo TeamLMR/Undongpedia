@@ -22,4 +22,9 @@ public interface MemberDao {
      * 비밀번호 업데이트
      */
     int updatePassword(SqlSession session, Member member);
+
+    /**
+     * 회원탈퇴
+     */
+    int withdrawMember(SqlSession session, Long memberNo);
 }

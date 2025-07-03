@@ -64,4 +64,10 @@ public class MemberServiceImpl implements MemberService {
                 .build();
         memberDao.updatePassword(session, member);
     }
+
+    @Override
+    @Transactional
+    public int withdrawMember(Long memberNo) {
+        return memberDao.withdrawMember(session, memberNo);
+    }
 }

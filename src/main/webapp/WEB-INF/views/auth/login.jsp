@@ -26,6 +26,25 @@
 
 <main class="main">
 
+    <!-- Flash 메시지를 JavaScript alert로 표시 -->
+    <c:if test="${not empty error}">
+        <script>
+            alert('${error}');
+        </script>
+    </c:if>
+
+    <c:if test="${not empty message}">
+        <script>
+            alert('${message}');
+        </script>
+    </c:if>
+
+    <c:if test="${not empty msg}">
+        <script>
+            alert('${msg}');
+        </script>
+    </c:if>
+
     <!-- Page Title -->
     <div class="page-title light-background position-relative">
         <div class="container">

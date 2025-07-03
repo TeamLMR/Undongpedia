@@ -26,6 +26,7 @@ public class Member implements UserDetails {
     private String memberNickname;
     private String memberRole;
     private String memberSignType;
+    private String memberStatus;
     private Date memberEnrollDate;
 
     private final List<String> authorities = List.of("ADMIN","COACH","MEMBER");
