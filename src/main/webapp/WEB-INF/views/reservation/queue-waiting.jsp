@@ -559,14 +559,70 @@ function joinQueue() {
 // 페이지 이탈 경고
 function setupPageLeaveWarning() {
     window.addEventListener('beforeunload', function(e) {
+        // 🔥 페이지 이동 중이면 경고 표시하지 않음
+        if (isMovingToReservationPage) {
+            return;
+        }
+        
         e.preventDefault();
         e.returnValue = '페이지를 떠나면 대기열에서 제거됩니다.';
     });
 }
 
+// 🔥 대기열 이탈 함수
+function leaveQueueAndCleanup() {
+    console.log('🚪 대기열 이탈 처리 시작');
+    
+    // sessionStorage에서 대기열 키 제거 (다시 들어올 때를 위해)
+    sessionStorage.removeItem(queueKey);
+    
+    // 대기열에서 제거 API 호출
+    try {
+        if (navigator.sendBeacon) {
+            // sendBeacon 사용 (페이지 이탈 시에도 요청 보장)
+            const data = JSON.stringify({
+                courseSeq: courseSeq,
+                memberNo: memberNo
+            });
+            const blob = new Blob([data], { type: 'application/json' });
+            
+            // testUser 파라미터가 있으면 URL에 추가
+            const url = loginMemberNo ? 
+                contextPath + '/reservation/leave-course-queue' : 
+                contextPath + '/reservation/leave-course-queue?testUser=' + memberNo;
+            
+            navigator.sendBeacon(url, blob);
+            console.log('🔥 sendBeacon으로 대기열 이탈 요청 전송');
+        } else {
+            // sendBeacon 미지원 시 일반 fetch (동기적으로)
+            const xhr = new XMLHttpRequest();
+            
+            // testUser 파라미터가 있으면 URL에 추가
+            const url = loginMemberNo ? 
+                contextPath + '/reservation/leave-course-queue' : 
+                contextPath + '/reservation/leave-course-queue?testUser=' + memberNo;
+            
+            xhr.open('POST', url, false); // 동기 요청
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                courseSeq: courseSeq,
+                memberNo: memberNo
+            }));
+            console.log('🔥 XMLHttpRequest로 대기열 이탈 요청 전송');
+        }
+    } catch (error) {
+        console.error('🚨 대기열 이탈 요청 실패:', error);
+    }
+}
+
 // 정리 작업
 window.addEventListener('unload', function() {
     console.log('🧹 페이지 정리 작업 시작');
+    
+    // 🔥 페이지 이동 중이 아닐 때만 대기열에서 제거
+    if (!isMovingToReservationPage) {
+        leaveQueueAndCleanup();
+    }
     
     if (queueWebSocket) {
         queueWebSocket.close();
@@ -580,6 +636,36 @@ window.addEventListener('unload', function() {
         clearInterval(queueStatusInterval);
         queueStatusInterval = window.queueStatusInterval = null;
         console.log('⏹️ 상태 확인 중단');
+    }
+});
+
+// 🔥 페이지 가시성 변경 감지 (모바일 대응)
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden && !isMovingToReservationPage) {
+        console.log('📱 페이지가 백그라운드로 이동 - 대기열 이탈');
+        leaveQueueAndCleanup();
+        
+        // WebSocket과 타이머 정리
+        if (queueWebSocket) {
+            queueWebSocket.close();
+            queueWebSocket = null;
+        }
+        if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+        }
+        if (queueStatusInterval) {
+            clearInterval(queueStatusInterval);
+            queueStatusInterval = null;
+        }
+    } else if (!document.hidden && !isMovingToReservationPage) {
+        console.log('📱 페이지가 포그라운드로 복귀 - 대기열 재진입');
+        
+        // 대기열 재진입
+        joinQueue();
+        connectWebSocket();
+        startHeartbeat();
+        queueStatusInterval = setInterval(checkQueueStatus, 2000);
     }
 });
 

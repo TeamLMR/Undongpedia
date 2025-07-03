@@ -246,6 +246,21 @@ public class ReservationRedisService {
         log.info("스케줄 대기열 입장 - 강의{}, 스케줄{}, 사용자{}, 순서{}/{}",
             courseSeq, scheduleId, memberNo, position + 1, totalInQueue);
 
+        // 🔥 첫 번째 순서라면 즉시 임시예약 처리
+        if (position != null && position == 0) { // Redis rank는 0부터 시작
+            log.info("🎯 첫 번째 순서 즉시 처리 - 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+            // 비동기로 처리하여 응답 지연 방지
+            new Thread(() -> {
+                try {
+                    Thread.sleep(100); // 100ms 후 처리 (Redis 업데이트 완료 대기)
+                    processNextInScheduleQueue(courseSeq, scheduleId);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("첫 번째 순서 즉시 처리 중단", e);
+                }
+            }).start();
+        }
+
         // WebSocket으로 대기열 업데이트 전송
         broadcastQueueUpdate(courseSeq, scheduleId);
 
@@ -313,8 +328,113 @@ public class ReservationRedisService {
         Long removed = redisTemplate.opsForZSet().remove(queueKey, memberNo);
         if (removed != null && removed > 0) {
             log.info("스케줄 대기열 제거 - 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+            
+            // 🔥 즉시 다음 첫 번째 사용자 처리
+            processNextInScheduleQueue(courseSeq, scheduleId);
+            
             // 남은 사용자들에게 실시간 대기열 업데이트 전송
             broadcastQueueUpdate(courseSeq, scheduleId);
+        }
+    }
+    
+    // 🔥 스케줄 대기열의 다음 첫 번째 사용자를 즉시 처리
+    public void processNextInScheduleQueue(Long courseSeq, Long scheduleId) {
+        String queueKey = "queue:course:" + courseSeq + ":schedule:" + scheduleId;
+        
+        // 첫 번째 대기자 조회
+        Set<Object> firstMemberSet = redisTemplate.opsForZSet().range(queueKey, 0, 0);
+        if (firstMemberSet == null || firstMemberSet.isEmpty()) {
+            log.debug("스케줄 대기열이 비어있음 - 강의{}, 스케줄{}", courseSeq, scheduleId);
+            return;
+        }
+        
+        Object firstMemberObj = firstMemberSet.iterator().next();
+        int memberNo;
+        try {
+            if (firstMemberObj instanceof String) {
+                memberNo = Integer.parseInt((String) firstMemberObj);
+            } else if (firstMemberObj instanceof Number) {
+                memberNo = ((Number) firstMemberObj).intValue();
+            } else {
+                log.warn("유효하지 않은 memberNo 형식: {}", firstMemberObj);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            log.error("memberNo 변환 실패: {}", firstMemberObj, e);
+            return;
+        }
+        
+        log.info("🎯 즉시 임시예약 처리 시작 - 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+        
+        // 임시예약 데이터 생성
+        Map<String, Object> reservationData = new HashMap<>();
+        reservationData.put("courseSeq", courseSeq);
+        reservationData.put("scheduleId", scheduleId);
+        reservationData.put("memberNo", memberNo);
+        
+        // 임시예약 시도
+        Map<String, Object> tempResult = createTemporaryReservation(reservationData);
+        
+        if (tempResult.get("success") != null && (Boolean) tempResult.get("success")) {
+            // 🔥 임시예약 성공 - 대기열에서 제거
+            Long removed = redisTemplate.opsForZSet().remove(queueKey, firstMemberObj);
+            if (removed != null && removed > 0) {
+                log.info("✅ 즉시 임시예약 성공 - 대기열에서 제거: 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+                
+                // WebSocket으로 임시예약 성공 메시지 전송
+                if (tempResult.get("data") != null) {
+                    Map<String, Object> data = (Map<String, Object>) tempResult.get("data");
+                    String tempReservationId = (String) data.get("tempReservationId");
+                    
+                    queueWebSocketHandler.sendTempReservationSuccess(
+                        String.valueOf(courseSeq), 
+                        String.valueOf(memberNo), 
+                        tempReservationId, 
+                        scheduleId
+                    );
+                }
+                
+                // 🔥 재귀적으로 다음 사용자도 처리 (연쇄 처리)
+                processNextInScheduleQueue(courseSeq, scheduleId);
+            }
+        } else {
+            // 임시예약 실패 (좌석 마감 등)
+            log.warn("❌ 즉시 임시예약 실패 - 강의{}, 스케줄{}, 사용자{}, 이유: {}", 
+                courseSeq, scheduleId, memberNo, tempResult.get("message"));
+                
+            // 좌석 마감인 경우 전체 대기열 정리
+            if (tempResult.get("message") != null && 
+                tempResult.get("message").toString().contains("마감")) {
+                
+                // 해당 스케줄의 모든 대기자에게 마감 알림
+                notifyQueueClosed(courseSeq, scheduleId, "선택하신 시간대의 좌석이 모두 마감되었습니다.");
+                
+                // 대기열 정리
+                redisTemplate.delete(queueKey);
+                log.info("🚫 좌석 마감으로 스케줄 대기열 정리 - 강의{}, 스케줄{}", courseSeq, scheduleId);
+            }
+        }
+    }
+    
+    // 🔥 대기열 마감 알림
+    private void notifyQueueClosed(Long courseSeq, Long scheduleId, String message) {
+        String queueKey = "queue:course:" + courseSeq + ":schedule:" + scheduleId;
+        
+        // 모든 대기자에게 마감 알림
+        Set<Object> allMembers = redisTemplate.opsForZSet().range(queueKey, 0, -1);
+        if (allMembers != null && !allMembers.isEmpty()) {
+            for (Object memberObj : allMembers) {
+                String memberNo = String.valueOf(memberObj);
+                
+                Map<String, Object> closeMessage = new HashMap<>();
+                closeMessage.put("type", "queue_closed");
+                closeMessage.put("message", message);
+                closeMessage.put("scheduleId", scheduleId);
+                
+                queueWebSocketHandler.sendQueueUpdate(String.valueOf(courseSeq), memberNo, closeMessage);
+            }
+            
+            log.info("📢 대기열 마감 알림 전송 - 강의{}, 스케줄{}, 대상{}명", courseSeq, scheduleId, allMembers.size());
         }
     }
 
@@ -431,45 +551,50 @@ public class ReservationRedisService {
         return rank != null && rank == 0;
     }
 
-    // 예약 처리 (스케줄 레벨 대기열 사용)
+    // 예약 처리 (항상 스케줄 레벨 대기열 사용)
     public Map<String, Object> processReservationRequest(Map<String, Object> data) {
-        Long courseSeq = Long.valueOf(String.valueOf(data.get("courseSeq")));
-        Long scheduleId = Long.valueOf(String.valueOf(data.get("scheduleId")));
-        int memberNo = Integer.valueOf(String.valueOf(data.get("memberNo")));
+        Long courseSeq = toLong(data.get("courseSeq"));
+        Long scheduleId = toLong(data.get("scheduleId"));
+        Integer memberNoInt = toInt(data.get("memberNo"));
+        if (courseSeq == null || scheduleId == null || memberNoInt == null) {
+            return createResponse(false, "요청 파라미터가 올바르지 않습니다.");
+        }
+        int memberNo = memberNoInt;
 
         updateHeartBeat(courseSeq, memberNo);
         cleanUpInactiveMembers(courseSeq);
 
-        if (shouldActivateQueue(courseSeq)) {
-            // 스케줄 레벨 대기열 사용
-            String queueKey = "queue:course:" + courseSeq + ":schedule:" + scheduleId;
+        // 🔥 항상 스케줄 레벨 대기열 사용 (대기열 활성화 임계값 무시)
+        log.info("💡 예약 요청 - 항상 대기열 사용: 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+        
+        if (!isInScheduleQueue(courseSeq, scheduleId, memberNo)) {
+            // 🔥 모든 사용자 무조건 스케줄 대기열에 추가
+            Map<String, Object> result = addToScheduleQueue(courseSeq, scheduleId, memberNo);
+            result.put("queueRequired", true);
+            log.info("🎯 모든 사용자 대기열 추가: 강의{}, 스케줄{}, 사용자{}, 순서{}", 
+                courseSeq, scheduleId, memberNo, result.get("data") != null ? 
+                ((Map<String, Object>) result.get("data")).get("position") : "?");
+            return result;
             
-            if (!isInScheduleQueue(courseSeq, scheduleId, memberNo)) {
-                // 스케줄 대기열에 추가
-                return addToScheduleQueue(courseSeq, scheduleId, memberNo);
-                
-            } else if (isFirstInScheduleQueue(courseSeq, scheduleId, memberNo)) {
-                // 임시 예약 시도 (대기열에서 아직 제거하지 않음)
-                Map<String, Object> tempResult = createTemporaryReservation(data);
-                
-                // 성공한 경우에만 대기열에서 제거
-                if (tempResult.get("success") != null && (Boolean) tempResult.get("success")) {
-                    removeFromScheduleQueue(courseSeq, scheduleId, memberNo);
-                    log.info("임시예약 성공 - 대기열에서 제거: 사용자{}, 스케줄{}", memberNo, scheduleId);
-                } else {
-                    // 실패한 경우 대기열 위치 유지
-                    log.warn("임시예약 실패 - 대기열 유지: 사용자{}, 스케줄{}, 이유: {}", 
-                        memberNo, scheduleId, tempResult.get("message"));
-                }
-                
-                return tempResult;
-            } else {
-                // 대기열 위치 조회
-                return getScheduleQueuePosition(courseSeq, scheduleId, memberNo);
-            }
         } else {
-            // 대기열 비활성화시 바로 임시 예약
-            return createTemporaryReservation(data);
+            // 🔥 이미 대기열에 있으면 위치만 조회 (바로 임시예약 시도하지 않음)
+            Map<String, Object> result = getScheduleQueuePosition(courseSeq, scheduleId, memberNo);
+            result.put("queueRequired", true);
+            
+            if (result.get("data") != null) {
+                Map<String, Object> queueData = (Map<String, Object>) result.get("data");
+                Integer position = (Integer) queueData.get("position");
+                log.info("📋 대기열 위치 조회: 강의{}, 스케줄{}, 사용자{}, 순서{}", 
+                    courseSeq, scheduleId, memberNo, position);
+                
+                if (position != null && position == 1) {
+                    // 첫 번째 순서지만 스케줄러가 처리할 때까지 대기
+                    result.put("message", "곧 차례입니다. 잠시만 기다려주세요.");
+                    log.info("⏳ 첫 번째 순서 - 스케줄러 처리 대기: 사용자{}, 스케줄{}", memberNo, scheduleId);
+                }
+            }
+            
+            return result;
         }
     }
 
@@ -487,9 +612,13 @@ public class ReservationRedisService {
     }
 
     public Map<String, Object> createTemporaryReservation(Map<String, Object> data) {
-        Long scheduleId = Long.valueOf(String.valueOf(data.get("scheduleId")));
-        int memberNo = Integer.valueOf(String.valueOf(data.get("memberNo")));
-        Long courseSeq = Long.valueOf(String.valueOf(data.get("courseSeq")));
+        Long scheduleId = toLong(data.get("scheduleId"));
+        Integer memberNoInt = toInt(data.get("memberNo"));
+        Long courseSeq = toLong(data.get("courseSeq"));
+        if (scheduleId == null || memberNoInt == null || courseSeq == null) {
+            return createResponse(false, "요청 파라미터가 올바르지 않습니다.");
+        }
+        int memberNo = memberNoInt;
 
         String lockKey = "lock:schedule:" + scheduleId;
         RLock lock = redissonClient.getFairLock(lockKey);
@@ -505,10 +634,10 @@ public class ReservationRedisService {
                     Map<String, Object> existingReservation = (Map<String, Object>) redisTemplate.opsForValue().get(existingTempKey);
                     
                     if (existingReservation != null) {
-                        Integer existingMemberNo = Integer.valueOf(String.valueOf(existingReservation.get("memberNo")));
+                        int existingMemberNo = ((Number) existingReservation.get("memberNo")).intValue();
                         
                         // 본인의 기존 예약이면 그대로 반환
-                        if (existingMemberNo.equals(memberNo)) {
+                        if (existingMemberNo == memberNo) {
                             log.info("기존 임시예약 재사용 - 사용자{}, 예약ID{}", memberNo, existingReservationId);
                             
                             Map<String, Object> responseData = new HashMap<>();
@@ -540,7 +669,13 @@ public class ReservationRedisService {
 
                 Integer availableSeats = scheduleCacheService.getAvailableSeats(scheduleId);
                 if (availableSeats <= 0) {
-                    return createResponse(false, "좌석이 마감되었습니다.");
+                    log.warn("🚫 좌석 마감 - 예약 실패: 강의{}, 스케줄{}, 사용자{}, 잔여좌석: {}", 
+                        courseSeq, scheduleId, memberNo, availableSeats);
+                    
+                    // 좌석 마감 시 대기열에서 제거 (더 이상 기다릴 필요 없음)
+                    removeFromScheduleQueue(courseSeq, scheduleId, memberNo);
+                    
+                    return createResponse(false, "죄송합니다. 선택하신 시간대의 좌석이 모두 마감되었습니다.");
                 }
                 String tempReservationId="TEMP_"+System.currentTimeMillis()+"_"+memberNo;
 
@@ -597,7 +732,10 @@ public class ReservationRedisService {
                 lock.unlock();
             }
         }
-        return createResponse(false,"예약이 실패했습니다.");
+        
+        // 락 획득 실패 시 실패 응답 (이미 대기열에 있는 상태)
+        log.warn("⚠️ 락 획득 실패 - 예약 실패: 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
+        return createResponse(false, "예약 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     }
 
     private void publishEvent(String eventType, Map<String, Object> data) {
@@ -742,6 +880,32 @@ public class ReservationRedisService {
         
         if (cleanedCount > 0) {
             log.debug("대기열 활성화 캐시 정리 완료: {}개 제거", cleanedCount);
+        }
+    }
+
+    private Long toLong(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Number) {
+            return ((Number) obj).longValue();
+        }
+        try {
+            return Long.valueOf(obj.toString());
+        } catch (NumberFormatException e) {
+            log.warn("Long 변환 실패: {}", obj, e);
+            return null;
+        }
+    }
+
+    private Integer toInt(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        }
+        try {
+            return Integer.valueOf(obj.toString());
+        } catch (NumberFormatException e) {
+            log.warn("Integer 변환 실패: {}", obj, e);
+            return null;
         }
     }
 }
