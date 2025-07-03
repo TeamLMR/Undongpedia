@@ -247,6 +247,15 @@
             <button class="btn btn-outline-secondary">
                 <i class="bi bi-sliders"></i> 모두
             </button>
+            
+            <!-- 검색어 표시 -->
+            <div id="searchKeywordDisplay" class="d-none">
+                <span class="badge bg-primary fs-6 px-3 py-2">
+                    <i class="bi bi-search me-1"></i>
+                    "<span id="currentSearchKeyword"></span>"
+                    <button type="button" class="btn-close btn-close-white ms-2" onclick="resetSearch()" aria-label="검색 취소"></button>
+                </span>
+            </div>
 
             <!-- 드롭다운: 온라인/오프라인 -->
             <div class="dropdown">
@@ -305,6 +314,12 @@
     <!-- Best Sellers Section -->
     <section id="best-sellers" class="best-sellers section py-5">
         <div class="container-fluid px-3 px-lg-5">
+            <div class="row justify-content-center mb-4">
+                <div class="col-12 text-center">
+                    <h2 class="section-title fw-bold">강의 목록</h2>
+                    <p class="text-muted">다양한 운동 강의를 만나보세요</p>
+                </div>
+            </div>
             <div class="row py-4 g-4" id="courseList">
                 <!-- 강의 카드 -->
                 <c:if test="${not empty courseList}">
@@ -406,7 +421,7 @@
             }
 
             isLoading = true;
-
+            
             $.ajax({
                 url: '${pageContext.request.contextPath}/main/filterCourses',
                 type: 'GET',
@@ -598,6 +613,10 @@
                 updateSectionTitle(searchKeyword); // 제목 업데이트
                 loadFilteredCourses(true); // 기존 함수 활용!
                 showSearchStatus(searchKeyword); // 검색 상태 표시
+                showSearchKeywordInFilter(searchKeyword); // 필터에 검색어 표시
+                
+                // 헤더의 검색창에 검색어 유지
+                $('input[name="keyword"]').val(searchKeyword);
             }
             
             // 모든 필터 초기화 버튼
@@ -613,6 +632,7 @@
                 loadFilteredCourses();
                 resetSectionTitle(); // 제목 원복
                 $('#searchStatus').remove(); // 검색 상태 제거
+                hideSearchKeywordInFilter(); // 검색어 표시 숨기기
             });
 
             // 온라인/오프라인 필터
@@ -661,17 +681,23 @@
         
         // 검색 관련 함수들
         function updateSectionTitle(keyword) {
-            const titleElement = $('h2:first, .section-title:first');
+            const titleElement = $('.section-title');
             if (titleElement.length) {
                 titleElement.html('<i class="bi bi-search me-2"></i>"' + keyword + '" 검색 결과');
             }
+            
+            // 검색 시 히어로 섹션 숨기기
+            $('#hero').hide();
         }
         
         function resetSectionTitle() {
-            const titleElement = $('h2:first, .section-title:first');
+            const titleElement = $('.section-title');
             if (titleElement.length) {
                 titleElement.text('강의 목록');
             }
+            
+            // 전체보기 시 히어로 섹션 다시 표시
+            $('#hero').show();
         }
         
         function showSearchStatus(keyword) {
@@ -680,11 +706,11 @@
             
             // 새 검색 상태 추가
             const statusHtml = 
-                '<div id="searchStatus" class="container mt-3 mb-4">' +
+                '<div id="searchStatus" class="container-fluid px-3 px-lg-5 mt-3 mb-4">' +
                 '<div class="alert alert-info d-flex justify-content-between align-items-center">' +
                 '<div>' +
                 '<i class="bi bi-info-circle me-2"></i>' +
-                '<strong>"' + keyword + '"</strong> 검색 중...' +
+                '<strong>"' + keyword + '"</strong> 검색 결과를 표시하고 있습니다.' +
                 '</div>' +
                 '<button type="button" class="btn btn-outline-primary btn-sm" onclick="resetSearch()">' +
                 '<i class="bi bi-arrow-clockwise me-1"></i>전체보기' +
@@ -693,12 +719,21 @@
                 '</div>';
             
             // 강의 목록 위에 추가
-            $('#courseList').parent().before(statusHtml);
+            $('.section-title').parent().parent().after(statusHtml);
         }
         
         function resetSearch() {
             // URL에서 검색 파라미터 제거하고 페이지 새로고침
             window.location.href = '${pageContext.request.contextPath}/';
+        }
+        
+        function showSearchKeywordInFilter(keyword) {
+            $('#currentSearchKeyword').text(keyword);
+            $('#searchKeywordDisplay').removeClass('d-none');
+        }
+        
+        function hideSearchKeywordInFilter() {
+            $('#searchKeywordDisplay').addClass('d-none');
         }
     </script>
 </main>

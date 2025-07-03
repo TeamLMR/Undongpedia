@@ -99,15 +99,11 @@ public class MainController {
         filters.put("priceType", priceType);
         filters.put("sortBy", sortBy);
         filters.put("cPage", cPage);
-        filters.put("keyword",keyword);
+        filters.put("keyword", keyword);
         filters.put("numPerPage", numPerPage);
         
         List<Course> result = mainService.getFilteredCourses(filters);
-
-        if (!result.isEmpty()) {
-            Course firstCourse = result.get(0);
-
-        }
+        
         return result;
     }
 
