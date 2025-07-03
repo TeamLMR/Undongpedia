@@ -59,7 +59,13 @@
                                             수강생 평점
                                         </div>
                                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                            <i class="bi bi-star-fill" style="color: gold"></i> <fmt:formatNumber value="${rateAverage}" type="number" maxFractionDigits="2"/>
+                                            <i class="bi bi-star-fill" style="color: gold"></i>
+                                            <c:if test="${not empty rateAverage}" >
+                                                <fmt:formatNumber value="${rateAverage}" type="number" maxFractionDigits="2"/>
+                                            </c:if>
+                                            <c:if test="${empty rateAverage}" >
+                                                0.0
+                                            </c:if>
                                         </div>
                                     </div>
                                     <div class="col-auto">
@@ -103,8 +109,14 @@
                                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                             코스 총 수익
                                         </div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₩<fmt:formatNumber
-                                                value="${totalIncome}" type="number" groupingUsed="true"/></div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">₩
+                                            <c:if test="${not empty totalIncome}" >
+                                                <fmt:formatNumber value="${totalIncome}" type="number" maxFractionDigits="2"/>
+                                            </c:if>
+                                            <c:if test="${empty totalIncome}" >
+                                                0
+                                            </c:if>
+                                        </div>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-comments fa-2x text-gray-300"></i>
