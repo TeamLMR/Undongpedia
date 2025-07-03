@@ -83,11 +83,20 @@
                                             </c:forEach>
                                         </span>
                                     </div>
-
-                                    <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${course.courseSeq}"
-                                       class="btn btn-light btn-lg px-5 py-3 fw-bold">
-                                            <span class="fw-bold fs-4 text-primary">수강 신청 하기</span>
-                                    </a>
+                                    <c:choose>
+                                        <c:when test="${isPaid == true}">
+                                            <a href="${pageContext.request.contextPath}/course/viewer?courseSeq=${course.courseSeq}"
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold">
+                                                <span class="fw-bold fs-4 text-primary">📺 강의 시청!</span>
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${course.courseSeq}"
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold">
+                                                <span class="fw-bold fs-4 text-primary">수강 신청 하기</span>
+                                            </a>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
 
                                 <!-- 이미지 -->
@@ -187,11 +196,11 @@
                                     강의 섹션 커리큘럼 안내
                                 </button>
                             </h2>
-
                             <div id="courseSection"  class="accordion-collapse collapse show">
                                 <div class="accordion-body">
                                     <div class="product-description">
                                         <c:forEach var="s" items="${section}">
+
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
                                                     <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#sectionCurriculum" aria-expanded="true" aria-controls="sectionCurriculum">

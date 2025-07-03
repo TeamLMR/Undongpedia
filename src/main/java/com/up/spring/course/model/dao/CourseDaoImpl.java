@@ -1,9 +1,6 @@
 package com.up.spring.course.model.dao;
 
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.Curriculum;
-import com.up.spring.course.model.dto.Progress;
-import com.up.spring.course.model.dto.Review;
+import com.up.spring.course.model.dto.*;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
@@ -79,5 +76,10 @@ public class CourseDaoImpl implements CourseDao {
     @Override
     public int updateProgress(SqlSession sqlSession, Progress progress) {
         return sqlSession.update("course.updateProgress", progress);
+    }
+
+    @Override
+    public List<Map<String, Object>> getSectionCurrWithProgress(SqlSession sqlSession, Map<String, Object> params) {
+        return sqlSession.selectList("course.getSectionCurrWithProgress", params);
     }
 }

@@ -2,10 +2,7 @@ package com.up.spring.course.model.service;
 
 
 import com.up.spring.course.model.dao.CourseDao;
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.Curriculum;
-import com.up.spring.course.model.dto.Progress;
-import com.up.spring.course.model.dto.Review;
+import com.up.spring.course.model.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
@@ -108,5 +105,10 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public int updateProgress(Progress progress) {
         return courseDao.updateProgress(sqlSession,progress);
+    }
+
+    @Override
+    public  List<Map<String, Object>> getSectionCurrWithProgress(Map<String, Object> params) {
+        return courseDao.getSectionCurrWithProgress(sqlSession,params);
     }
 }
