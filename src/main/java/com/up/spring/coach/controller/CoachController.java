@@ -1,6 +1,7 @@
 package com.up.spring.coach.controller;
 
 import com.up.spring.common.model.dto.Category;
+import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.coach.model.service.CoachService;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.CourseSchedule;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import oracle.jdbc.proxy.annotation.Post;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -465,5 +467,22 @@ public class CoachController {
             // 다음 스케줄 날짜로 이동 (매주는 7일, 격주는 14일 후)
             currentDate = currentDate.plusDays(interval);
         }
+    }
+
+    // 코치 신청 페이지 이동
+    @GetMapping("/apply")
+    public String coachApplyPage() {
+        return "myPage/setting/coachApply";
+    }
+
+    // 코치 신청 처리
+    @PostMapping("/apply")
+    @ResponseBody
+    public ResponseEntity<String> submitCoachApply(@RequestBody CoachApply coachApply) {
+        // 기본 상태를 D(대기)로 설정
+        coachApply.setCoaYn("D");
+        coachApply.setMemberNo(returnMemberNo());
+        coachService.insertCoachApply(coachApply);
+        return ResponseEntity.ok("Success");
     }
 }

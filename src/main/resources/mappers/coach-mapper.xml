@@ -34,6 +34,11 @@
         <result column="COA_INTRO" property="coaIntro"/>
         <result column="COA_YN" property="coaYn"/>
         <result column="MEMBER_NO" property="memberNo"/>
+        <result column="APPLY_DATE" property="applyDate"/>
+        <result column="APPROVE_DATE" property="approveDate"/>
+        <result column="MEMBER_NAME" property="memberName"/>
+        <result column="MEMBER_ID" property="memberId"/>
+        <result column="MEMBER_NICKNAME" property="memberNickname"/>
     </resultMap>
 
     <select id="getCategoryAll" resultMap="categoryMap">
@@ -80,8 +85,18 @@
     </update>
 
     <insert id="insertCoachApply" parameterType="coachApply">
-        INSERT INTO COACH_APPLY VALUES (SEQ_COACH_APPLY.nextval,#{coaBank}, #{coaBankNum}, #{coaBankName}, #{coaIntro}, #{coaYn}, #{memberNo})
+        INSERT INTO COACH_APPLY (
+            COA_SEQ, COA_BANK, COA_BANK_NUM, COA_BANK_NAME,
+            COA_INTRO, COA_YN, MEMBER_NO, APPLY_DATE
+        ) VALUES (
+            SEQ_COACH_APPLY.NEXTVAL, #{coaBank}, #{coaBankNum}, #{coaBankName},
+            #{coaIntro}, 'D', #{memberNo}, SYSDATE
+        )
     </insert>
+
+    <update id="approveCoachApply" parameterType="coachApply">
+        UPDATE COACH_APPLY SET COA_YN=#{coaYn}, APPROVE_DATE=SYSDATE
+    </update>
 
     <select id="getDashboardInfo" parameterType="_long" resultType="map">
         SELECT 'confirmedCourse' as dashKey, count(*) as dashValue FROM COURSE WHERE MEMBER_NO = #{memberNo} AND COURSE_CONFIRM_TIME IS NOT NULL
@@ -123,4 +138,57 @@
     <delete id="deleteCourseByCourseSeq" parameterType="_long">
         DELETE FROM COURSE WHERE COURSE_SEQ = #{courseSeq}
     </delete>
+
+    <!-- 코치 신청 목록 조회 -->
+    <select id="selectCoachApplyList" parameterType="map" resultMap="coachApplyMap">
+        SELECT 
+            CA.*,
+            M.MEMBER_NAME,
+            M.MEMBER_ID,
+            M.MEMBER_NICKNAME
+        FROM COACH_APPLY CA
+        JOIN MEMBER M ON CA.MEMBER_NO = M.MEMBER_NO
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND CA.COA_YN = #{status}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            AND (M.MEMBER_NAME LIKE '%' || #{searchKeyword} || '%'
+            OR M.MEMBER_ID LIKE '%' || #{searchKeyword} || '%')
+        </if>
+        <if test="applyDate != null and applyDate != ''">
+            AND TO_CHAR(CA.APPLY_DATE, 'YYYY-MM-DD') = #{applyDate}
+        </if>
+        ORDER BY CA.APPLY_DATE DESC
+    </select>
+
+    <!-- 상태별 코치 신청 카운트 -->
+    <select id="selectCoachApplyCount" resultType="map">
+        SELECT
+            COUNT(CASE WHEN COA_YN = 'D' THEN 1 END) as pendingCount,
+            COUNT(CASE WHEN COA_YN = 'Y' THEN 1 END) as approvedCount,
+            COUNT(CASE WHEN COA_YN = 'N' THEN 1 END) as rejectedCount,
+            COUNT(*) as totalCount
+        FROM COACH_APPLY
+    </select>
+
+    <!-- 코치 신청 상세 정보 조회 -->
+    <select id="selectCoachApplyDetail" parameterType="_long" resultMap="coachApplyMap">
+        SELECT 
+            CA.*,
+            M.MEMBER_NAME,
+            M.MEMBER_ID,
+            M.MEMBER_NICKNAME
+        FROM COACH_APPLY CA
+        JOIN MEMBER M ON CA.MEMBER_NO = M.MEMBER_NO
+        WHERE CA.COA_SEQ = #{coaSeq}
+    </select>
+
+    <!-- 코치 신청 상태 업데이트 -->
+    <update id="updateCoachApplyStatus" parameterType="map">
+        UPDATE COACH_APPLY
+        SET COA_YN = #{status},
+            APPROVE_DATE = SYSDATE
+        WHERE COA_SEQ = #{coaSeq}
+    </update>
 </mapper>

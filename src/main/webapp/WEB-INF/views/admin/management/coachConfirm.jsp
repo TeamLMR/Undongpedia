@@ -117,9 +117,9 @@
                                     <label for="statusFilter" class="form-label">상태</label>
                                     <select class="form-control" id="statusFilter">
                                         <option value="">전체</option>
-                                        <option value="N" selected>승인 대기</option>
+                                        <option value="D" selected>승인 대기</option>
                                         <option value="Y">승인 완료</option>
-                                        <option value="R">승인 거절</option>
+                                        <option value="N">승인 거절</option>
                                     </select>
                                 </div>
 
@@ -213,7 +213,6 @@
                             </div>
                             <div class="col-md-6">
                                 <p><strong>이메일:</strong> <span id="detailEmail">-</span></p>
-<%--                                member.memberId가져오기 되나?--%>
                             </div>
                         </div>
                     </div>
@@ -249,7 +248,7 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <p id="detailCoaIntro">-</p>
+                        <p id="detailCoaIntro" class="mb-0">-</p>
                     </div>
                 </div>
 
@@ -301,249 +300,198 @@
 </div>
 
 <script>
-    // CSRF 토큰
-    const csrfHeader = '${csrf.headerName}';
-    const csrfToken = '${csrf.token}';
+// Context Path를 JSP 표현식으로 가져오기
+const contextPath = '${pageContext.request.contextPath}';
 
-    // 전역 변수
-    let currentPage = 1;
-    let currentCoachSeq = null;
+// 전역 변수
+let currentPage = 1;
+let currentCoachSeq = null;
 
-    // 페이지 로드 시 초기화
-    $(document).ready(function() {
-        // AJAX 설정에 CSRF 토큰 추가
-        $.ajaxSetup({
-            beforeSend: function(xhr) {
-                xhr.setRequestHeader(csrfHeader, csrfToken);
-            }
-        });
+// 페이지 로드 시 초기화
+$(document).ready(function() {
+    console.log("현재 Context Path:", contextPath); // 디버깅용
+    loadCoachApplyList();
+    updateStatistics();
 
-        loadCoachApplyList();
-        updateStatistics();
-
-        // Enter 키 이벤트
-        $('#searchInput').on('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyFilters();
-            }
-        });
-
-        // 모달 이벤트
-        $('#detailModal').on('show.bs.modal', function(e) {
-            const button = $(e.relatedTarget);
-            const coachSeq = button.data('seq');
-            loadCoachDetail(coachSeq);
-        });
-
-        // 승인 상태 라디오 버튼 변경 시
-        $('input[name="approvalStatus"]').on('change', function() {
-            $('#saveBtn').show();
-        });
+    // Enter 키 이벤트
+    $('#searchInput').on('keypress', function(e) {
+        if (e.key === 'Enter') {
+            applyFilters();
+        }
     });
 
-    // 코치 신청 목록 로드
-    function loadCoachApplyList() {
-        const status = $('#statusFilter').val();
-        const search = $('#searchInput').val();
-        const date = $('#dateRange').val();
+    // 모달 이벤트
+    $('#detailModal').on('show.bs.modal', function(e) {
+        const button = $(e.relatedTarget);
+        const coachSeq = button.data('seq');
+        loadCoachDetail(coachSeq);
+    });
 
-        // 로딩 표시
-        showLoading();
+    // 승인 상태 라디오 버튼 변경 시
+    $('input[name="approvalStatus"]').on('change', function() {
+        $('#saveBtn').show();
+    });
+});
 
-        $.ajax({
-            url: '${pageContext.request.contextPath}/admin/coach/list',
-            type: 'GET',
-            data: {
-                status: status,
-                search: search,
-                date: date,
-                page: currentPage
-            },
-            success: function(data) {
-                renderCoachList(data.list);
-                renderPagination(data.totalPages);
-                hideLoading();
-            },
-            error: function() {
-                alert('데이터를 불러오는데 실패했습니다.');
-                hideLoading();
-            }
-        });
+// 코치 신청 목록 로드
+function loadCoachApplyList() {
+    const status = $('#statusFilter').val();
+    const searchKeyword = $('#searchInput').val();
+    const applyDate = $('#dateRange').val();
+
+    console.log("API 호출 URL:", contextPath + '/admin/coach/apply/list'); // 디버깅용
+
+    $.ajax({
+        url: contextPath + '/admin/coach/apply/list',
+        method: 'GET',
+        data: {
+            status: status,
+            searchKeyword: searchKeyword,
+            applyDate: applyDate
+        },
+        success: function(response) {
+            console.log('API 응답:', response);
+            updateCounts(response.counts);
+            updateList(response.applyList);
+        },
+        error: function(xhr, status, error) {
+            console.error('데이터 로드 실패:', error);
+            console.error('상태 코드:', xhr.status);
+            console.error('에러 메시지:', xhr.responseText);
+            alert('데이터를 불러오는데 실패했습니다.');
+        }
+    });
+}
+
+// 코치 목록 렌더링
+function renderCoachList(list) {
+    const tbody = $('#coachApplyList');
+    tbody.empty();
+
+    if (!list || list.length === 0) {
+        $('#emptyState').show();
+        $('#dataTable').hide();
+        return;
     }
 
-    // 코치 목록 렌더링
-    function renderCoachList(list) {
-        const tbody = $('#coachApplyList');
-        tbody.empty();
+    $('#emptyState').hide();
+    $('#emptyState').hide();
+    $('#dataTable').show();
 
-        if (!list || list.length === 0) {
-            $('#emptyState').show();
-            $('#dataTable').hide();
-            return;
-        }
+    list.forEach(function(coach) {
+        const statusClass = coach.coaYn === 'N' ? 'warning' :
+            coach.coaYn === 'Y' ? 'success' : 'danger';
+        const statusText = coach.coaYn === 'N' ? '승인 대기' :
+            coach.coaYn === 'Y' ? '승인 완료' : '승인 거절';
 
-        $('#emptyState').hide();
-        $('#emptyState').hide();
-        $('#dataTable').show();
+        // DTO 기준으로 필드명 수정 (실제 조인된 데이터는 서버에서 처리되어야 함)
+        const memberName = coach.memberName || '알 수 없음';
+        const memberId = coach.memberId || '알 수 없음';
+        const applyDate = coach.applyDate || new Date().toISOString();
+        const processDate = coach.processDate || null;
 
-        list.forEach(function(coach) {
-            const statusClass = coach.coaYn === 'N' ? 'warning' :
-                coach.coaYn === 'Y' ? 'success' : 'danger';
-            const statusText = coach.coaYn === 'N' ? '승인 대기' :
-                coach.coaYn === 'Y' ? '승인 완료' : '승인 거절';
-
-            // DTO 기준으로 필드명 수정 (실제 조인된 데이터는 서버에서 처리되어야 함)
-            const memberName = coach.memberName || '알 수 없음';
-            const memberId = coach.memberId || '알 수 없음';
-            const applyDate = coach.applyDate || new Date().toISOString();
-            const processDate = coach.processDate || null;
-
-            const row = '<tr>' +
-                '<td>' +
-                '<div class="d-flex align-items-center">' +
-                '<div class="mr-3">' +
-                '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">' +
-                memberName.charAt(0) +
-                '</div>' +
-                '</div>' +
-                '<div>' +
-                '<h6 class="mb-0">' + memberName + '</h6>' +
-                '<small class="text-muted">' + memberId + '</small>' +
-                '</div>' +
-                '</div>' +
-                '</td>' +
-                '<td>' + formatDate(applyDate) + '</td>' +
-                '<td>' +
-                '<div>' + (coach.coaBank || '-') + '</div>' +
-                '<small class="text-muted">' + maskAccountNumber(coach.coaBankNum) + '</small>' +
-                '</td>' +
-                '<td>' +
-                '<span class="badge badge-' + statusClass + '">' + statusText + '</span>' +
-                '</td>' +
-                '<td>' + (processDate ? formatDate(processDate) : '-') + '</td>' +
-                '<td>' +
-                '<button class="btn btn-sm btn-primary mr-1" data-toggle="modal" ' +
-                'data-target="#detailModal" data-seq="' + coach.coaSeq + '">' +
-                '<i class="fas fa-eye"></i>' +
+        const row = '<tr>' +
+            '<td>' +
+            '<div class="d-flex align-items-center">' +
+            '<div class="mr-3">' +
+            '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">' +
+            memberName.charAt(0) +
+            '</div>' +
+            '</div>' +
+            '<div>' +
+            '<h6 class="mb-0">' + memberName + '</h6>' +
+            '<small class="text-muted">' + memberId + '</small>' +
+            '</div>' +
+            '</div>' +
+            '</td>' +
+            '<td>' + formatDate(applyDate) + '</td>' +
+            '<td>' +
+            '<div>' + (coach.coaBank || '-') + '</div>' +
+            '<small class="text-muted">' + maskAccountNumber(coach.coaBankNum) + '</small>' +
+            '</td>' +
+            '<td>' +
+            '<span class="badge badge-' + statusClass + '">' + statusText + '</span>' +
+            '</td>' +
+            '<td>' + (processDate ? formatDate(processDate) : '-') + '</td>' +
+            '<td>' +
+            '<button class="btn btn-sm btn-primary mr-1" data-toggle="modal" ' +
+            'data-target="#detailModal" data-seq="' + coach.coaSeq + '">' +
+            '<i class="fas fa-eye"></i>' +
+            '</button>' +
+            (coach.coaYn === 'N' ?
+                '<button class="btn btn-sm btn-success mr-1" onclick="quickApprove(' + coach.coaSeq + ')" title="승인">' +
+                '<i class="fas fa-check"></i>' +
                 '</button>' +
-                (coach.coaYn === 'N' ?
-                    '<button class="btn btn-sm btn-success mr-1" onclick="quickApprove(' + coach.coaSeq + ')" title="승인">' +
-                    '<i class="fas fa-check"></i>' +
-                    '</button>' +
-                    '<button class="btn btn-sm btn-danger" onclick="quickReject(' + coach.coaSeq + ')" title="거절">' +
-                    '<i class="fas fa-times"></i>' +
-                    '</button>'
-                    : '') +
-                '</td>' +
-                '</tr>';
-            tbody.append(row);
-        });
-    }
+                '<button class="btn btn-sm btn-danger" onclick="quickReject(' + coach.coaSeq + ')" title="거절">' +
+                '<i class="fas fa-times"></i>' +
+                '</button>'
+                : '') +
+            '</td>' +
+            '</tr>';
+        tbody.append(row);
+    });
+}
 
-    // 코치 상세정보 로드
-    function loadCoachDetail(coachSeq) {
-        currentCoachSeq = coachSeq;
+// 코치 상세정보 로드
+function loadCoachDetail(coachSeq) {
+    currentCoachSeq = coachSeq;
 
-        $.ajax({
-            url: '${pageContext.request.contextPath}/admin/coach/detail',
-            type: 'GET',
-            data: { coachSeq: coachSeq },
-            success: function(data) {
-                // DTO 기준으로 필드명 수정
-                $('#detailMemberNo').text(data.memberNo || '-');
-                $('#detailName').text(data.memberName || '-');
-                $('#detailNickname').text(data.memberNickname || '-');
-                $('#detailEmail').text(data.memberId || '-');
-                $('#detailJoinDate').text(formatDate(data.memberEnrollDate) || '-');
+    $.ajax({
+        url: contextPath + `/admin/coach/apply/\${coachSeq}`,
+        method: 'GET',
+        success: function(apply) {
+            // DTO 기준으로 필드명 수정
+            $('#detailMemberNo').text(apply.memberNo || '-');
+            $('#detailName').text(apply.memberName || '-');
+            $('#detailNickname').text(apply.memberNickname || '-');
+            $('#detailEmail').text(apply.memberId || '-');
+            $('#detailJoinDate').text(formatDate(apply.memberEnrollDate) || '-');
 
-                // 계좌 정보 (DTO 필드명 그대로 사용)
-                $('#detailCoaBankName').text(data.coaBankName || '-');
-                $('#detailCoaBank').text(data.coaBank || '-');
-                $('#detailCoaBankNum').text(data.coaBankNum || '-');
+            // 계좌 정보 (DTO 필드명 그대로 사용)
+            $('#detailCoaBankName').text(apply.coaBankName || '-');
+            $('#detailCoaBank').text(apply.coaBank || '-');
+            $('#detailCoaBankNum').text(apply.coaBankNum || '-');
 
-                // 소개 (DTO 필드명 그대로 사용)
-                $('#detailCoaIntro').text(data.coaIntro || '소개글이 없습니다.');
+            // 소개 (DTO 필드명 그대로 사용)
+            $('#detailCoaIntro').text(apply.coaIntro || '소개글이 없습니다.');
 
-                // 승인 섹션 표시 여부
-                if (data.coaYn === 'N') {
-                    $('#approvalSection').show();
-                    $('#saveBtn').hide();
-                    $('input[name="approvalStatus"]').prop('checked', false);
-                    $('#adminComment').val('');
-                } else {
-                    $('#approvalSection').hide();
-                    $('#saveBtn').hide();
-                }
-            },
-            error: function() {
-                alert('상세정보를 불러오는데 실패했습니다.');
+            // 승인 섹션 표시 여부
+            if (apply.coaYn === 'N') {
+                $('#approvalSection').show();
+                $('#saveBtn').hide();
+                $('input[name="approvalStatus"]').prop('checked', false);
+                $('#adminComment').val('');
+            } else {
+                $('#approvalSection').hide();
+                $('#saveBtn').hide();
             }
-        });
+        },
+        error: function() {
+            alert('상세정보를 불러오는데 실패했습니다.');
+        }
+    });
+}
+
+// 승인 처리 저장
+function saveApproval() {
+    const status = $('input[name="approvalStatus"]:checked').val();
+    const comment = $('#adminComment').val();
+
+    if (!status) {
+        alert('승인 또는 거절을 선택해주세요.');
+        return;
     }
 
-    // 승인 처리 저장
-    function saveApproval() {
-        const status = $('input[name="approvalStatus"]:checked').val();
-        const comment = $('#adminComment').val();
-
-        if (!status) {
-            alert('승인 또는 거절을 선택해주세요.');
-            return;
-        }
-
-        if (confirm(status === 'Y' ? '승인하시겠습니까?' : '거절하시겠습니까?')) {
-            showLoading();
-
-            $.ajax({
-                url: '${pageContext.request.contextPath}/admin/coach/process',
-                type: 'POST',
-                data: {
-                    coachSeq: currentCoachSeq,
-                    status: status,
-                    comment: comment
-                },
-                success: function() {
-                    alert(status === 'Y' ? '승인되었습니다.' : '거절되었습니다.');
-                    $('#detailModal').modal('hide');
-                    loadCoachApplyList();
-                    updateStatistics();
-                    hideLoading();
-                },
-                error: function() {
-                    alert('처리 중 오류가 발생했습니다.');
-                    hideLoading();
-                }
-            });
-        }
-    }
-
-    // 빠른 승인
-    function quickApprove(coachSeq) {
-        if (confirm('승인하시겠습니까?')) {
-            processCoach(coachSeq, 'Y');
-        }
-    }
-
-    // 빠른 거절
-    function quickReject(coachSeq) {
-        if (confirm('거절하시겠습니까?')) {
-            processCoach(coachSeq, 'R');
-        }
-    }
-
-    // 코치 처리
-    function processCoach(coachSeq, status) {
+    if (confirm(status === 'Y' ? '승인하시겠습니까?' : '거절하시겠습니까?')) {
         showLoading();
 
         $.ajax({
-            url: '${pageContext.request.contextPath}/admin/coach/process',
+            url: contextPath + `/admin/coach/apply/\${currentCoachSeq}/status`,
             type: 'POST',
-            data: {
-                coachSeq: coachSeq,
-                status: status
-            },
+            data: { status: status, comment: comment },
             success: function() {
                 alert(status === 'Y' ? '승인되었습니다.' : '거절되었습니다.');
+                $('#detailModal').modal('hide');
                 loadCoachApplyList();
                 updateStatistics();
                 hideLoading();
@@ -554,81 +502,140 @@
             }
         });
     }
+}
 
-    // 통계 업데이트
-    function updateStatistics() {
-        $.ajax({
-            url: '${pageContext.request.contextPath}/admin/coach/statistics',
-            type: 'GET',
-            success: function(data) {
-                $('#pendingCount').text(data.pending || 0);
-                $('#approvedCount').text(data.approved || 0);
-                $('#rejectedCount').text(data.rejected || 0);
-                $('#totalCount').text(data.total || 0);
-            }
-        });
+// 빠른 승인
+function quickApprove(coachSeq) {
+    if (confirm('승인하시겠습니까?')) {
+        processCoach(coachSeq, 'Y');
     }
+}
 
-    // 페이지네이션 렌더링
-    function renderPagination(totalPages) {
-        const pagination = $('#pagination');
-        pagination.empty();
+// 빠른 거절
+function quickReject(coachSeq) {
+    if (confirm('거절하시겠습니까?')) {
+        processCoach(coachSeq, 'R');
+    }
+}
 
-        if (totalPages <= 1) return;
+// 코치 처리
+function processCoach(coachSeq, status) {
+    showLoading();
 
-        // 이전 버튼
-        pagination.append(
-            '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
-            '<a class="page-link" href="#" onclick="changePage(' + (currentPage - 1) + ')">이전</a>' +
-            '</li>'
-        );
-
-        // 페이지 번호
-        for (let i = 1; i <= totalPages; i++) {
-            pagination.append(
-                '<li class="page-item ' + (currentPage === i ? 'active' : '') + '">' +
-                '<a class="page-link" href="#" onclick="changePage(' + i + ')">' + i + '</a>' +
-                '</li>'
-            );
+    $.ajax({
+        url: contextPath + `/admin/coach/apply/\${coachSeq}/status`,
+        type: 'POST',
+        data: { status: status },
+        success: function() {
+            alert(status === 'Y' ? '승인되었습니다.' : '거절되었습니다.');
+            loadCoachApplyList();
+            updateStatistics();
+            hideLoading();
+        },
+        error: function() {
+            alert('처리 중 오류가 발생했습니다.');
+            hideLoading();
         }
+    });
+}
 
-        // 다음 버튼
+// 통계 업데이트
+function updateStatistics() {
+    $.ajax({
+        url: contextPath + '/admin/coach/statistics',
+        type: 'GET',
+        success: function(data) {
+            $('#pendingCount').text(data.pending || 0);
+            $('#approvedCount').text(data.approved || 0);
+            $('#rejectedCount').text(data.rejected || 0);
+            $('#totalCount').text(data.total || 0);
+        }
+    });
+}
+
+// 페이지네이션 렌더링
+function renderPagination(totalPages) {
+    const pagination = $('#pagination');
+    pagination.empty();
+
+    if (totalPages <= 1) return;
+
+    // 이전 버튼
+    pagination.append(
+        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
+        '<a class="page-link" href="#" onclick="changePage(' + (currentPage - 1) + ')">이전</a>' +
+        '</li>'
+    );
+
+    // 페이지 번호
+    for (let i = 1; i <= totalPages; i++) {
         pagination.append(
-            '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
-            '<a class="page-link" href="#" onclick="changePage(' + (currentPage + 1) + ')">다음</a>' +
+            '<li class="page-item ' + (currentPage === i ? 'active' : '') + '">' +
+            '<a class="page-link" href="#" onclick="changePage(' + i + ')">' + i + '</a>' +
             '</li>'
         );
     }
 
-    // 페이지 변경
-    function changePage(page) {
-        currentPage = page;
-        loadCoachApplyList();
-    }
+    // 다음 버튼
+    pagination.append(
+        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
+        '<a class="page-link" href="#" onclick="changePage(' + (currentPage + 1) + ')">다음</a>' +
+        '</li>'
+    );
+}
 
-    // 필터 적용
-    function applyFilters() {
-        currentPage = 1;
-        loadCoachApplyList();
-    }
+// 페이지 변경
+function changePage(page) {
+    currentPage = page;
+    loadCoachApplyList();
+}
 
-    // 날짜 포맷
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR');
-    }
+// 필터 적용
+function applyFilters() {
+    currentPage = 1;
+    loadCoachApplyList();
+}
 
+// 날짜 포맷
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR');
+}
 
-<%--    // 로딩 표시--%>
-<%--    function showLoading() {--%>
-<%--        $('#loadingModal').modal('show');--%>
-<%--    }--%>
+// 로딩 표시
+function showLoading() {
+    $('#loadingModal').modal('show');
+}
 
-<%--    // 로딩 숨기기--%>
-<%--    function hideLoading() {--%>
-<%--        $('#loadingModal').modal('hide');--%>
-<%--    }--%>
-<%--</script>--%>
+// 로딩 숨기기
+function hideLoading() {
+    $('#loadingModal').modal('hide');
+}
+
+// 상세 정보 표시
+function showDetail(coaSeq) {
+    $.ajax({
+        url: contextPath + `/admin/coach/apply/\${coaSeq}`,
+        method: 'GET',
+        success: function(response) {
+            $('#detailMemberNo').text(response.memberNo);
+            $('#detailName').text(response.memberName);
+            $('#detailNickname').text(response.memberNickname);
+            $('#detailEmail').text(response.memberId);
+            $('#detailCoaBankName').text(response.coaBankName);
+            $('#detailCoaBank').text(response.coaBank);
+            $('#detailCoaBankNum').text(response.coaBankNum);
+            $('#detailModal').modal('show');
+        },
+        error: function(xhr, status, error) {
+            console.error('상세 정보 로드 실패:', error);
+            console.error('상태 코드:', xhr.status);
+            console.error('에러 메시지:', xhr.responseText);
+            alert('상세 정보를 불러오는데 실패했습니다.');
+        }
+    });
+}
+</script>
 
 <jsp:include page="/WEB-INF/views/admin/common/footer.jsp"/>
