@@ -20,4 +20,9 @@ public interface MemberService {
      * 비밀번호 업데이트
      */
     void updatePassword(Long memberNo, String encodedPassword);
+
+    /**
+     * 회원탈퇴
+     */
+    int withdrawMember(Long memberNo);
 }

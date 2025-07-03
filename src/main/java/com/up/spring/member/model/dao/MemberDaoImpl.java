@@ -53,4 +53,9 @@ public class MemberDaoImpl implements MemberDao {
     public int updatePassword(SqlSession session, Member member) {
         return session.update("member.updatePassword", member);
     }
+
+    @Override
+    public int withdrawMember(SqlSession session, Long memberNo) {
+        return session.update("member.withdrawMember", memberNo);
+    }
 }

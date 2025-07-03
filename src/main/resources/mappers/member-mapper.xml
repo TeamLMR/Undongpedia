@@ -10,6 +10,7 @@
         <result column="MEMBER_NICKNAME" property="memberNickname"/>
         <result column="MEMBER_ROLE" property="memberRole"/>
         <result column="MEMBER_SIGN_TYPE" property="memberSignType"/>
+        <result column="MEMBER_STATUS" property="memberStatus"/>
         <result column="MEMBER_ENROLL_DATE" property="memberEnrollDate"/>
     </resultMap>
 <select id="searchById" resultMap="memberResultMap">
@@ -25,6 +26,7 @@
             MEMBER_NICKNAME,
             MEMBER_ROLE,
             MEMBER_SIGNTYPE,
+            MEMBER_STATUS,
             MEMBER_ENROLLDATE
         )
         VALUES (
@@ -35,6 +37,7 @@
                 #{memberNickname},
                 DEFAULT,
                 #{memberSignType},
+                'ACTIVE',
                 SYSDATE
                )
     </insert>
@@ -54,6 +57,12 @@
     <update id="updatePassword" parameterType="member">
         UPDATE member
         SET member_password = #{memberPassword}
+        WHERE member_no = #{memberNo}
+    </update>
+
+    <update id="withdrawMember" parameterType="long">
+        UPDATE member
+        SET member_status = 'WITHDRAW'
         WHERE member_no = #{memberNo}
     </update>
 
