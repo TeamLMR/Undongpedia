@@ -1,9 +1,6 @@
 package com.up.spring.course.model.dao;
 
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.Curriculum;
-import com.up.spring.course.model.dto.Progress;
-import com.up.spring.course.model.dto.Review;
+import com.up.spring.course.model.dto.*;
 import org.apache.ibatis.session.SqlSession;
 
 import java.util.List;
@@ -22,4 +19,5 @@ public interface CourseDao {
     Progress getProgressBySeq(SqlSession sqlSession, Map<String,Object> params);
     int insertProgress(SqlSession sqlSession, Progress progress);
     int updateProgress(SqlSession sqlSession, Progress progress);
+    List<Map<String, Object>> getSectionCurrWithProgress(SqlSession sqlSession, Map<String,Object> params);
 }

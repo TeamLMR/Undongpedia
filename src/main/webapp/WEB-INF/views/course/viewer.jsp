@@ -10,19 +10,7 @@
         padding: 10px;
         margin: auto;
     }
-    .progress-bar-wrapper {
-        background-color: #e0e0e0;
-        height: 20px;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-top: 10px;
-    }
-    .progress-bar {
-        height: 100%;
-        background-color: #007bff;
-        width: 0%;
-        transition: width 0.3s;
-    }
+
     .youtube-wrapper {
         position: relative;
         width: 100%;
@@ -42,13 +30,13 @@
 <main class="main">
     <div class="row">
         <div class="col-9">
-            <div class="video-container">
+            <div class="video-container about-2">
                 <c:forEach var="sec" items="${section}">
-                    <c:if test="${sec.sectionSeq == curr.sectionSeq}">
-                        <c:set var="sectionTitle"  value="${sec.sectionTitle}"/>
+                    <c:if test="${sec.SECTION_SEQ == curr.sectionSeq}">
+                        <c:set var="sectionTitle"  value="${sec.SECTION_TITLE}"/>
                     </c:if>
                 </c:forEach>
-                <div>${sectionTitle} - ${curr.currTitle}</div>
+                <div class="about-title">${sectionTitle} - ${curr.currTitle}</div>
                 <c:choose>
                     <c:when test="${curr.currVideoType == 'UPLOAD'}">
                         <video id="lectureVideo" width="100%" controls data-lecture-seq="${curr.currSeq}">
@@ -68,35 +56,49 @@
         <div id="product-details" class="product-details section col-3">
             <div class="container aos-init aos-animate" data-aos="fade-up" data-aos-delay="100">
                 <div class="row aos-init aos-animate" data-aos="fade-up">
-                    <div class="col-12">
-                        <div class="progress-bar-wrapper">
-                            <div id="progress-bar" class="progress-bar"></div>
-                        </div>
+                    <div class="col-11" style="max-height: 700px;overflow: scroll;">
                         <div class="accordion">
                             <!-- Description Accordion -->
-                            <c:forEach var="s" items="${section}">
-                                <div class="accordion-item">
-                                    <div class="accordion-header">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#sectionCurriculum${s.sectionSeq}" aria-expanded="true" aria-controls="sectionCurriculum${s.sectionSeq}">
-                                            <span style="padding: 0 20px;font-size: medium;">${s.sectionTitle}</span>
-                                        </button>
-                                    </div>
-                                    <div id="sectionCurriculum${s.sectionSeq}" class="accordion-collapse collapse show">
+                            <c:set var="prevSectionSeq" value="-1" />
+                            <c:forEach var="item" items="${section}">
+                            <c:if test="${prevSectionSeq != item.SECTION_SEQ}">
+                                <c:if test="${prevSectionSeq != -1}"></div></div></div></c:if>
+                                    <div class="accordion-item">
+                                        <div class="accordion-header">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                    data-bs-target="#sectionCurriculum${item.SECTION_SEQ}" aria-expanded="true"
+                                                    aria-controls="sectionCurriculum${item.SECTION_SEQ}">
+                                                <span style="padding: 0 20px;font-size: medium;">${item.SECTION_TITLE}</span>
+                                            </button>
+                                        </div>
+                                    <div id="sectionCurriculum${item.SECTION_SEQ}" class="accordion-collapse collapse show">
                                         <div class="accordion-body">
-                                            <c:forEach var="c" items="${s.curriculums}">
-                                                <a class="card m-1" href="${pageContext.request.contextPath}/course/viewer?courseSeq=${course.courseSeq}&currSeq=${c.currSeq}">
-                                                    <div class="card-body">
-                                                        <div class="row align-items-center fw-bolder" style="color: #0d4f8c;">
-                                                            <div class="col-12" style="padding-left: 30px;">${c.currTitle}</div>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            </c:forEach>
+                            </c:if>
+                                <a class="card m-1" href="${pageContext.request.contextPath}/course/viewer?courseSeq=${item.COURSE_SEQ}&currSeq=${item.CURR_SEQ}">
+                                    <div class="card-body">
+                                        <div class="row align-items-center fw-bolder" style="color: #0d4f8c;">
+                                            <div class="col-8" style="padding-left: 30px;">${item.CURR_TITLE}</div>
+                                            <div class="col-4 text-end">
+                                                <c:choose>
+                                                    <c:when test="${item.PRG_PLAY_TIME != null}">
+                                                        <!-- 진도율 계산 -->
+                                                        <c:set var="percentage" value="${(item.PRG_PLAY_TIME * 100) / item.PRG_TOTAL_TIME}" />
+                                                        <span class="badge bg-primary">진도율: <fmt:formatNumber value="${percentage}" pattern="##.#"/>%</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="badge bg-secondary">진도 없음</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </c:forEach>
+                                </a>
 
+                                <!-- 섹션 시퀀스 갱신 -->
+                                <c:set var="prevSectionSeq" value="${item.SECTION_SEQ}" />
+                            </c:forEach>
+                            <!-- 마지막 섹션 닫기 -->
+                            <c:if test="${not empty sectionList}"></div></div></div></c:if>
                         </div>
                     </div>
                 </div>
@@ -110,7 +112,6 @@
     <c:when test="${curr.currVideoType == 'UPLOAD'}">
         <script>
             const video = document.getElementById('lectureVideo');
-            const progressBar = document.getElementById('progress-bar');
             const currSeq = video.dataset.lectureSeq;
             const memberNo = '${loginMember.memberNo}';
             const courseSeq = '${course.courseSeq}';
@@ -134,7 +135,6 @@
                     }),
                     success: function () {
                         const percentage = (currentTime / duration) * 100;
-                        progressBar.style.width = percentage + '%';
                         console.log("진도율 저장됨: " + percentage.toFixed(1) + "%");
                     },
                     error: function () {
@@ -226,7 +226,6 @@
                     ytSaveInterval = setInterval(() => {
                         const currentTime = Math.floor(player.getCurrentTime());
                         const percentage = (currentTime / ytDuration) * 100;
-                        $("#progress-bar").css("width", percentage + "%");
 
                         $.ajax({
                             url: '${pageContext.request.contextPath}/course/saveProgress',

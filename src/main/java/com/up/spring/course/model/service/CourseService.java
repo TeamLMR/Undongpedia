@@ -1,9 +1,6 @@
 package com.up.spring.course.model.service;
 
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.Curriculum;
-import com.up.spring.course.model.dto.Progress;
-import com.up.spring.course.model.dto.Review;
+import com.up.spring.course.model.dto.*;
 
 import java.util.List;
 import java.util.Map;
@@ -20,4 +17,6 @@ public interface CourseService {
     Progress getProgressBySeq(Map<String,Object> params);
     int insertProgress(Progress progress);
     int updateProgress(Progress progress);
+    List<Map<String, Object>> getSectionCurrWithProgress(Map<String, Object> params);
+
 }

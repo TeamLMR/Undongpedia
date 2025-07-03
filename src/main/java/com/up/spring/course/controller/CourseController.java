@@ -5,6 +5,9 @@ import com.up.spring.common.PageFactory;
 import com.up.spring.course.model.dto.*;
 import com.up.spring.course.model.service.CourseService;
 import com.up.spring.member.model.dto.Member;
+import com.up.spring.member.model.service.MemberService;
+import com.up.spring.payment.model.dto.Orders;
+import com.up.spring.payment.model.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +30,8 @@ public class CourseController {
     private CourseService courseService;
     @Autowired
     private CoachService coachService;
+    @Autowired
+    private OrderService orderService;
 
     @RequestMapping("/course/list")
     public String list() {
@@ -35,6 +40,10 @@ public class CourseController {
 
     @RequestMapping("/course/detail")
     public String detail(Long courseSeq ,Model model) {
+        model.addAttribute("isPaid", false);
+
+        Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         if(courseSeq == null) {
             model.addAttribute("msg", "잘못된 요청입니다.");
             model.addAttribute("loc", "/");
@@ -45,6 +54,14 @@ public class CourseController {
             model.addAttribute("msg", "잘못된 요청입니다.");
             model.addAttribute("loc", "/");
             return "common/msg";
+        }
+        if(m.getMemberNo() != null){
+            Orders o = new Orders();
+            o.setCourseSeq(courseSeq);
+            o.setMemberNo(m.getMemberNo());
+            if(orderService.isCoursePaidByMember(o) > 0){
+                model.addAttribute("isPaid", true);
+            }
         }
         List<Section> s = coachService.getSectionList(courseSeq);
         Map<String,Object> r = courseService.getReviewInfo(courseSeq);
@@ -94,21 +111,44 @@ public class CourseController {
 
     @RequestMapping("/course/viewer")
     public String viewer(Long courseSeq,Long currSeq, Model model) {
+        if(courseSeq == null) {
+            model.addAttribute("msg", "잘못된 접근입니다.");
+            model.addAttribute("loc", "/");
+            return "common/msg";
+        }
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        List<Section> s = coachService.getSectionList(courseSeq);
-        Course c = courseService.searchById(courseSeq);
-        Curriculum curriculum = new Curriculum();
-        if(currSeq == null) {
-            curriculum = courseService.getFirstCurriculum(courseSeq);
-        }else{
-            curriculum = courseService.getCurriculumBySeq(currSeq);
+        if(m == null) {
+            model.addAttribute("msg", "잘못된 접근입니다.");
+            model.addAttribute("loc", "/");
+            return "common/msg";
         }
+        Orders o = new Orders();
+        o.setCourseSeq(courseSeq);
+        o.setMemberNo(m.getMemberNo());
 
-        model.addAttribute("course", c);
-        model.addAttribute("section", s);
-        model.addAttribute("curr", curriculum);
-        return "course/viewer";
+        if(orderService.isCoursePaidByMember(o) > 0){
+//            List<Section> s = coachService.getSectionList(courseSeq);
+            Map<String, Object> params = Map.of("memberSeq",m.getMemberNo(),"courseSeq",courseSeq);
+            List<Map<String, Object>> s = courseService.getSectionCurrWithProgress(params);
+            log.debug(s.toString());
+            Course c = courseService.searchById(courseSeq);
+            Curriculum curriculum = new Curriculum();
+            if(currSeq == null) {
+                curriculum = courseService.getFirstCurriculum(courseSeq);
+            }else{
+                curriculum = courseService.getCurriculumBySeq(currSeq);
+            }
+
+            model.addAttribute("course", c);
+            model.addAttribute("section", s);
+            model.addAttribute("curr", curriculum);
+            return "course/viewer";
+        }else{
+            model.addAttribute("msg", "잘못된 접근입니다.");
+            model.addAttribute("loc", "/");
+            return "common/msg";
+        }
     }
 
     @RequestMapping("/course/getProgress")

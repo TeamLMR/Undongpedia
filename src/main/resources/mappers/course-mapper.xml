@@ -147,4 +147,14 @@
            PRG_UPDATE_TIME = SYSTIMESTAMP
         WHERE PRG_SEQ = ${prgSeq}
     </update>
+
+    <select id="getSectionCurrWithProgress" parameterType="map" resultType="map">
+        SELECT S.*, C.*, P.*
+        FROM SECTION S
+                 LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
+                 LEFT JOIN COURSE_PROGRESS P ON C.CURR_SEQ = P.CURR_SEQ AND P.MEMBER_SEQ = #{memberSeq}
+        WHERE S.COURSE_SEQ = #{courseSeq}
+        ORDER BY S.SECTION_ORDER, C.CURR_ORDER
+    </select>
+
 </mapper>
