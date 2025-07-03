@@ -88,7 +88,7 @@
                                     session.setAttribute("state", state);
                                 %>
 
-                                <a href="<%=apiURL%>" class="btn naver-login-btn d-flex align-items-center justify-content-center">
+                                <a href="<%=apiURL%>" class="btn naver-login-btn d-flex align-items-center justify-content-center" onclick="console.log('네이버 로그인 버튼 클릭: <%=apiURL%>')">
                                     <img height="30" width="30" src="<c:url value="/resources/images/naver.png"/>"/>
                                     네이버로 로그인
                                 </a>
@@ -127,74 +127,6 @@
     }
 </style>
 
-<script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.2.js" charset="utf-8"></script>
-<script>
-    var ambassador_token = '';
-    var currentUrl = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-    <%if(ambassadorToken!=null){%>
-    ambassador_token = '<%=ambassadorToken%>';
-    <%}%>
 
-    var naverLogin = new naver.LoginWithNaverId({
-        clientId: "CBUQIgHQrx9kpSArabUl", //내 애플리케이션 정보에 cliendId를 입력해줍니다.
-        callbackUrl: "${path}/login.do", // 내 애플리케이션 API설정의 Callback URL 을 입력해줍니다.
-        isPopup: true,
-        callbackHandle: true
-    });
-
-    naverLogin.init();
-
-    naverLogin.getLoginStatus(function (status) {
-        if (status) {
-            var email = naverLogin.user.getEmail(); // 필수로 설정할것을 받아와 아래처럼 조건문을 줍니다.
-            var nickname = naverLogin.user.getNickname(); // 필수로 설정할것을 받아와 아래처럼 조건문을 줍니다.
-            var name = naverLogin.user.getName(); // 필수로 설정할것을 받아와 아래처럼 조건문을 줍니다.
-
-            if (email == undefined || email == null) {
-                alert("이메일은 필수정보입니다. 정보제공을 동의해주세요.");
-                naverLogin.reprompt();
-                return false;
-            }
-            if (nickname == undefined || nickname == null) {
-                alert("닉네임은 필수정보입니다. 정보제공을 동의해주세요.");
-                naverLogin.reprompt();
-                return false;
-            }
-            if (name == undefined || name == null) {
-                alert("이름은 필수정보입니다. 정보제공을 동의해주세요.");
-                naverLogin.reprompt();
-                return false;
-            }
-
-            let params = {email: email, name: name, nickname: nickname, enif: ambassador_token}
-            registerAmbassadorChild(params)
-
-            window.location.href = "${path}/login.do?email=" + email + "&name=" + name + "&nickname=" + nickname + "&sns=naver";
-        } else {
-            console.log("callback 처리에 실패하였습니다.");
-        }
-    });
-
-    var naverPopUp;
-
-    function openPopUp() {
-        naverPopUp = window.open("https://nid.naver.com/nidlogin.logout", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,width=1,height=1");
-    }
-
-    function closePopUp() {
-        naverPopUp.close();
-    }
-
-    function naverLogout() {
-        openPopUp();
-        setTimeout(function () {
-            closePopUp();
-        }, 1000);
-        deleteAllCookies();
-        localStorage.clear();
-        sessionStorage.clear();
-    }
-
-</script>
 
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>

@@ -34,7 +34,7 @@
                 #{memberName},
                 #{memberNickname},
                 DEFAULT,
-                DEFAULT,
+                #{memberSignType},
                 SYSDATE
                )
     </insert>
