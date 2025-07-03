@@ -588,6 +588,18 @@
 
         // 페이지 로드 시 필터 이벤트 설정
         $(document).ready(function () {
+            // URL 파라미터에서 검색어 확인
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchKeyword = urlParams.get('search');
+            
+            if (searchKeyword) {
+                // 검색어가 있으면 필터에 추가해서 검색 실행
+                currentFilters.keyword = searchKeyword;
+                updateSectionTitle(searchKeyword); // 제목 업데이트
+                loadFilteredCourses(true); // 기존 함수 활용!
+                showSearchStatus(searchKeyword); // 검색 상태 표시
+            }
+            
             // 모든 필터 초기화 버튼
             $('.btn-outline-secondary').first().click(function () {
                 currentFilters = {
@@ -596,8 +608,11 @@
                     priceType: 'all',
                     sortBy: 'latest'
                 };
+                delete currentFilters.keyword; // 검색어 제거
                 updateFilterUI();
                 loadFilteredCourses();
+                resetSectionTitle(); // 제목 원복
+                $('#searchStatus').remove(); // 검색 상태 제거
             });
 
             // 온라인/오프라인 필터
@@ -643,6 +658,48 @@
                 loadFilteredCourses(false); // resetPage = false로 호출
             }
         });
+        
+        // 검색 관련 함수들
+        function updateSectionTitle(keyword) {
+            const titleElement = $('h2:first, .section-title:first');
+            if (titleElement.length) {
+                titleElement.html('<i class="bi bi-search me-2"></i>"' + keyword + '" 검색 결과');
+            }
+        }
+        
+        function resetSectionTitle() {
+            const titleElement = $('h2:first, .section-title:first');
+            if (titleElement.length) {
+                titleElement.text('강의 목록');
+            }
+        }
+        
+        function showSearchStatus(keyword) {
+            // 기존 검색 상태 제거
+            $('#searchStatus').remove();
+            
+            // 새 검색 상태 추가
+            const statusHtml = 
+                '<div id="searchStatus" class="container mt-3 mb-4">' +
+                '<div class="alert alert-info d-flex justify-content-between align-items-center">' +
+                '<div>' +
+                '<i class="bi bi-info-circle me-2"></i>' +
+                '<strong>"' + keyword + '"</strong> 검색 중...' +
+                '</div>' +
+                '<button type="button" class="btn btn-outline-primary btn-sm" onclick="resetSearch()">' +
+                '<i class="bi bi-arrow-clockwise me-1"></i>전체보기' +
+                '</button>' +
+                '</div>' +
+                '</div>';
+            
+            // 강의 목록 위에 추가
+            $('#courseList').parent().before(statusHtml);
+        }
+        
+        function resetSearch() {
+            // URL에서 검색 파라미터 제거하고 페이지 새로고침
+            window.location.href = '${pageContext.request.contextPath}/';
+        }
     </script>
 </main>
 

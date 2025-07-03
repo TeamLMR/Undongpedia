@@ -169,7 +169,7 @@
             let params = {email: email, name: name, nickname: nickname, enif: ambassador_token}
             registerAmbassadorChild(params)
 
-            window.location.href = "${path}/member/loginCheckSns?email=" + email + "&name=" + name + "&nickname=" + nickname + "&sns=naver";
+            window.location.href = "${path}/login.do?email=" + email + "&name=" + name + "&nickname=" + nickname + "&sns=naver";
         } else {
             console.log("callback 처리에 실패하였습니다.");
         }

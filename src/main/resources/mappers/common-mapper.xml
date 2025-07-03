@@ -149,7 +149,12 @@
         LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ 
             AND R.REVIEW_DELETE_TIME IS NULL
         WHERE 1=1
-        
+
+        <if test="keyword != null and keyword != ''">
+            AND (C.COURSE_TITLE LIKE CONCAT('%', #{keyword}, '%')
+            OR C.COURSE_CONTENT LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+
         <!-- 온라인/오프라인 필터 -->
         <if test="courseType != null and courseType != 'all'">
             AND C.COURSE_TYPE = #{courseType}

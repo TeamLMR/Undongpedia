@@ -86,6 +86,7 @@ public class MainController {
             @RequestParam(defaultValue = "all") String difficulty, 
             @RequestParam(defaultValue = "all") String priceType,
             @RequestParam(defaultValue = "latest") String sortBy,
+            @RequestParam(defaultValue="") String keyword,
             @RequestParam(defaultValue = "1") int page
     ) {
 
@@ -98,6 +99,7 @@ public class MainController {
         filters.put("priceType", priceType);
         filters.put("sortBy", sortBy);
         filters.put("cPage", cPage);
+        filters.put("keyword",keyword);
         filters.put("numPerPage", numPerPage);
         
         List<Course> result = mainService.getFilteredCourses(filters);
@@ -108,4 +110,6 @@ public class MainController {
         }
         return result;
     }
+
+
 }

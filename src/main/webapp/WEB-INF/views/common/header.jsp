@@ -67,9 +67,9 @@
     </nav>
 
     <!-- 검색 -->
-    <form class="d-lg-block flex-grow-1 mx-4 ">
+    <form class="d-lg-block flex-grow-1 mx-4" id="searchForm">
       <div class="input-group">
-        <input type="text" class="form-control" placeholder="운동을 검색해보세요!">
+        <input type="text" name="keyword" class="form-control" placeholder="운동을 검색해보세요!">
         <button class="btn btn-primary" type="submit">
           <i class="bi bi-search"></i>
         </button>
@@ -105,17 +105,35 @@
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggleCategoryBtn");
-    const categoryBar = document.getElementById("categoryBar");
-    const icon = toggleBtn.querySelector("i");
-
-    toggleBtn.addEventListener("click", function () {
-      const isVisible = categoryBar.style.display === "block";
-      categoryBar.style.display = isVisible ? "none" : "block";
-      icon.classList.toggle("bi-chevron-down", isVisible);
-      icon.classList.toggle("bi-chevron-up", !isVisible);
+  $(document).ready(function() {
+    // 기존 카테고리 토글 코드
+    $("#toggleCategoryBtn").click(function() {
+      const categoryBar = $("#categoryBar");
+      const icon = $(this).find("i");
+      const isVisible = categoryBar.is(":visible");
+      
+      if (isVisible) {
+        categoryBar.hide();
+        icon.removeClass("bi-chevron-up").addClass("bi-chevron-down");
+      } else {
+        categoryBar.show();
+        icon.removeClass("bi-chevron-down").addClass("bi-chevron-up");
+      }
     });
+    
+         // 검색 폼 처리 - 메인 페이지로 리다이렉트
+     $("#searchForm").submit(function(e) {
+       e.preventDefault(); // 기본 form 제출 방지
+       
+       const keyword = $(this).find('input[name="keyword"]').val().trim();
+       if (!keyword) {
+         alert('검색어를 입력해주세요!');
+         return;
+       }
+       
+       // 무조건 메인 페이지로 이동하면서 검색어 전달
+       window.location.href = '${pageContext.request.contextPath}/?search=' + encodeURIComponent(keyword);
+     });
   });
 </script>
 
