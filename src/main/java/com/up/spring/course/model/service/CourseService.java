@@ -18,5 +18,6 @@ public interface CourseService {
     int insertProgress(Progress progress);
     int updateProgress(Progress progress);
     List<Map<String, Object>> getSectionCurrWithProgress(Map<String, Object> params);
+    List<Map<String, Object>> getMyLearningCourse(long memberNo);
 
 }
