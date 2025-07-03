@@ -91,10 +91,10 @@
                                             </a>
                                         </c:when>
                                         <c:otherwise>
-                                            <a href="${pageContext.request.contextPath}/course/reservation?courseSeq=${course.courseSeq}"
-                                               class="btn btn-light btn-lg px-5 py-3 fw-bold">
-                                                <span class="fw-bold fs-4 text-primary">수강 신청 하기</span>
-                                            </a>
+                                            <button id="${course.courseSeq}" type="button"
+                                               class="btn btn-light btn-lg px-5 py-3 fw-bold cart-btn">
+                                                <span class="fw-bold fs-4 text-primary">장바구니 담기</span>
+                                            </button>
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
@@ -299,36 +299,38 @@
                                         <div class="reviews-list" id="reviews-list">
 
                                         </div>
-
-                                        <div class="review-form-container mt-5">
-                                            <h4>리뷰 남기기</h4>
-                                            <form class="review-form" action="${pageContext.request.contextPath}/course/insertReview" method="post">
-                                                <div class="rating-select mb-4">
-                                                    <label class="form-label">평점</label>
-                                                    <div class="star-rating">
-                                                        <input type="radio" id="star5" name="reviewRate" value="5"><label for="star5" title="5 stars"><i class="bi bi-star-fill"></i></label>
-                                                        <input type="radio" id="star4" name="reviewRate" value="4"><label for="star4" title="4 stars"><i class="bi bi-star-fill"></i></label>
-                                                        <input type="radio" id="star3" name="reviewRate" value="3"><label for="star3" title="3 stars"><i class="bi bi-star-fill"></i></label>
-                                                        <input type="radio" id="star2" name="reviewRate" value="2"><label for="star2" title="2 stars"><i class="bi bi-star-fill"></i></label>
-                                                        <input type="radio" id="star1" name="reviewRate" value="1"><label for="star1" title="1 star"><i class="bi bi-star-fill"></i></label>
+                                        <c:if test="${isPaid == true}">
+                                            <div class="review-form-container mt-5">
+                                                <h4>리뷰 남기기</h4>
+                                                <form class="review-form" action="${pageContext.request.contextPath}/course/insertReview" method="post" onsubmit="return checkReviewForm()">
+                                                    <div class="rating-select mb-4">
+                                                        <label class="form-label">평점</label>
+                                                        <div class="star-rating">
+                                                            <input type="radio" id="star5" name="reviewRate" value="5"><label for="star5" title="5 stars"><i class="bi bi-star-fill"></i></label>
+                                                            <input type="radio" id="star4" name="reviewRate" value="4"><label for="star4" title="4 stars"><i class="bi bi-star-fill"></i></label>
+                                                            <input type="radio" id="star3" name="reviewRate" value="3"><label for="star3" title="3 stars"><i class="bi bi-star-fill"></i></label>
+                                                            <input type="radio" id="star2" name="reviewRate" value="2"><label for="star2" title="2 stars"><i class="bi bi-star-fill"></i></label>
+                                                            <input type="radio" id="star1" name="reviewRate" value="1"><label for="star1" title="1 star"><i class="bi bi-star-fill"></i></label>
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                <div class="mb-3">
-                                                    <label for="review-title" class="form-label">리뷰 제목</label>
-                                                    <input type="text" class="form-control" id="review-title" name="reviewTitle" required="">
-                                                </div>
+                                                    <div class="mb-3">
+                                                        <label for="review-title" class="form-label">리뷰 제목</label>
+                                                        <input type="text" class="form-control" id="review-title" name="reviewTitle" required="">
+                                                    </div>
 
-                                                <div class="mb-4">
-                                                    <label for="review-content" class="form-label">리뷰 내용</label>
-                                                    <textarea class="form-control" id="review-content" name="reviewContent" rows="4" required=""></textarea>
-                                                </div>
-                                                <div class="text-end">
-                                                    <input type="hidden" name="courseSeq" value="${course.courseSeq}">
-                                                    <button type="submit" class="btn btn-primary" >작성하기</button>
-                                                </div>
-                                            </form>
-                                        </div>
+                                                    <div class="mb-4">
+                                                        <label for="review-content" class="form-label">리뷰 내용</label>
+                                                        <textarea class="form-control" id="review-content" name="reviewContent" rows="4" required=""></textarea>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <input type="hidden" name="courseSeq" value="${course.courseSeq}">
+                                                        <button type="submit" class="btn btn-primary" >작성하기</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+
+                                        </c:if>
                                     </div>
                                 </div>
                             </div>
@@ -352,6 +354,54 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">장바구니</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+
+            <div class="modal-body">
+                장바구니에 담으시겠습니까?
+            </div>
+
+            <div class="modal-footer">
+                <form action="${pageContext.request.contextPath}/cart/add" method="post">
+                    <input type="hidden" value="" id="courseSeqCart" name="addCourseSeq">
+                    <input type="hidden" value="redirect:/course/detail?courseSeq=${course.courseSeq}" name="addCourseDetailLoc">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">아니오</button>
+                    <button type="submit" class="btn btn-primary" id="confirmCartBtn">네</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultModalLabel">알림</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+
+            <div class="modal-body" id="resultModalMessage">
+                <!--메세지 -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">확인</button>
+            </div>
+
+        </div>
+    </div>
+</div>
 <script>
     $(document).ready(function () {
         fn_paging(1);
@@ -368,6 +418,7 @@
             }
         });
         setImage();
+        bindCourseEvents();
     })
     async function setImage() {
         const imageUrl = await getImageUrl("${course.courseThumbnail}");
@@ -412,6 +463,11 @@
                             stars += '<i class="bi bi-star"></i>'
                         }
                     }
+                    let removeBtn = '';
+                    if(r['memberSeq'] === ${loginMember.memberNo}){
+                        removeBtn = '<button class="btn btn-outline-danger" onclick="deleteReview('+r['reviewSeq']+','+r['memberSeq']+')"><i class="bi bi-trash"></i></button>'
+                    }
+
                     let review = '<div class="review-item">' +
                         '<div class="review-header">' +
                         '<div class="reviewer-info">' +
@@ -424,10 +480,14 @@
                         '<div class="review-rating">' + stars + '</div>' +
                         '</div>' +
                         '<h5 class="review-title">'+r['reviewTitle']+'</h5>' +
-                        '<div class="review-content">' +
+                        '<div class="review-content row justify-content-between" style="align-items: flex-end;">' +
+                        '<div class="col-11">' +
                         '<p>'+r['reviewContent']+'</p>' +
                         '</div>' +
-                        '</div>';
+                        '<div class="col-1 d-flex justify-content-end">' +
+                        removeBtn +
+                        '</div>' +
+                        '</div>' +
                         '</div>';
                     $("#reviews-list").append(review);
                 });
@@ -472,5 +532,84 @@
 
         return year+"-"+month+"-"+day+" "+hours+":"+minutes+":"+seconds;
     }
+
+    function bindCourseEvents() {
+        $('.cart-btn').off('click').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const selectedCourseId = $(this).attr("id");
+            $('#courseSeqCart').val(selectedCourseId);
+            $('#cartModal').modal('show');
+        });
+    }
+
+    function checkReviewForm() {
+        // 1. 평점 선택 여부 확인
+        const reviewRateChecked = document.querySelector('input[name="reviewRate"]:checked');
+        if (!reviewRateChecked) {
+            alert("평점을 선택해주세요.");
+            return false;
+        }
+
+        // 2. 리뷰 제목 확인
+        const title = document.getElementById("review-title").value.trim();
+        if (title === "") {
+            alert("리뷰 제목을 입력해주세요.");
+            document.getElementById("review-title").focus();
+            return false;
+        }
+
+        // 3. 리뷰 내용 확인
+        const content = document.getElementById("review-content").value.trim();
+        if (content === "") {
+            alert("리뷰 내용을 입력해주세요.");
+            document.getElementById("review-content").focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    function deleteReview(reviewSeq, memberSeq){
+        $.ajax({
+            url:"${pageContext.request.contextPath}/course/deletereview",
+            type:"post",
+            data: {
+                reviewSeq: reviewSeq,
+                memberSeq: memberSeq
+            },
+            success: function(response) {
+                if (response===1) {
+                    alert('댓글이 삭제되었습니다.');
+                    window.location.reload();
+                } else {
+                    alert('댓글 삭제 실패!');
+                    window.location.reload();
+                }
+            },
+
+        })
+    }
+
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const result = urlParams.get('result');
+            const msg = urlParams.get('msg');
+            if (result && msg) {
+                if (result === 'success') {
+                    $('#resultModal .modal-body').text(msg);
+                    $('#resultModal').modal('show');
+                } else if (result === 'fail') {
+                    $('#resultModal .modal-body').text(msg);
+                    $('#resultModal').modal('show');
+                }
+            }
+        }
+    });
 </script>
 <jsp:include page="/WEB-INF/views/common/footer.jsp"/>

@@ -4,6 +4,8 @@ import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
 import com.up.spring.course.model.dto.Section;
+import com.up.spring.coach.model.dto.CoachApply;
+import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
+@RequiredArgsConstructor
 public class CoachDaoImpl implements CoachDao {
+    private final SqlSession sqlSession;
+
     @Override
     public int updateTempCourse(SqlSession sqlSession, Course course) {
         return sqlSession.update("coach.updateTempCourse", course);
@@ -64,5 +69,30 @@ public class CoachDaoImpl implements CoachDao {
     @Override
     public List<Map<String, Object>> getMonthlyEarnings(SqlSession sqlSession, Long memberNo) {
         return sqlSession.selectList("coach.getMonthlyEarnings",memberNo);
+    }
+
+    @Override
+    public List<CoachApply> selectCoachApplyList(SqlSession session, Map<String, Object> params) {
+        return session.selectList("coach.selectCoachApplyList", params);
+    }
+
+    @Override
+    public Map<String, Integer> selectCoachApplyCount(SqlSession session) {
+        return session.selectOne("coach.selectCoachApplyCount");
+    }
+
+    @Override
+    public CoachApply selectCoachApplyDetail(SqlSession session, Long coaSeq) {
+        return session.selectOne("coach.selectCoachApplyDetail", coaSeq);
+    }
+
+    @Override
+    public int updateCoachApplyStatus(SqlSession session, Map<String, Object> params) {
+        return session.update("coach.updateCoachApplyStatus", params);
+    }
+
+    @Override
+    public int insertCoachApply(SqlSession session, CoachApply coachApply) {
+        return session.insert("coach.insertCoachApply", coachApply);
     }
 }

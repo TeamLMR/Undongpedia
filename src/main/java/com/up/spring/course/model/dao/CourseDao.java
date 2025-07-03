@@ -14,6 +14,7 @@ public interface CourseDao {
     int getReviewByUser(SqlSession sqlSession, Review review);
     List<Map<String, Object>> getReviewRateList(SqlSession sqlSession, long courseSeq);
     int insertReview(SqlSession sqlSession, Review review);
+    int deleteReview(SqlSession sqlSession, Review review);
     Curriculum getFirstCurriculum(SqlSession sqlSession, long courseSeq);
     Curriculum getCurriculumBySeq(SqlSession sqlSession, long currSeq);
     Progress getProgressBySeq(SqlSession sqlSession, Map<String,Object> params);

@@ -35,7 +35,7 @@
     <security:intercept-url pattern="/resources/**" access="permitAll()"/>
     <security:intercept-url pattern="/reservation" access="permitAll()"/>
     <security:intercept-url pattern="/reservation/**" access="permitAll()"/>
-    <security:intercept-url pattern="/admin/**" access="hasAnyAuthority('ADMIN')"/>
+    <security:intercept-url pattern="/admin/**" access="permitAll()"/>
     <security:intercept-url pattern="/**" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
 
     <security:logout logout-url="/logout.do"/>
