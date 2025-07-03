@@ -2,10 +2,7 @@ package com.up.spring.payment.controller;
 
 import com.up.spring.member.model.dto.Member;
 import com.up.spring.member.model.service.MemberService;
-import com.up.spring.payment.model.dto.Cart;
-import com.up.spring.payment.model.dto.NaverProperty;
-import com.up.spring.payment.model.dto.OfflineCart;
-import com.up.spring.payment.model.dto.Orders;
+import com.up.spring.payment.model.dto.*;
 import com.up.spring.payment.model.service.CartService;
 import com.up.spring.payment.model.service.OfflineCartService;
 import com.up.spring.payment.model.service.OrderService;
@@ -35,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Controller
@@ -276,16 +274,28 @@ public class PaymentController {
     }
 
     @RequestMapping("/payment/orderinvoice")
-    public String orderInvoice(@RequestParam("id") int ordersSeq, Model model){
+    public String orderInvoice(@RequestParam("id") String paymentId, Model model){
         String loc = "common/msg";
-        Orders orders = orderService.selectOrderById(ordersSeq);
-        if (orders != null) {
-            model.addAttribute("orders", orders);
-            loc = "payment/orderInvoice";
+
+        long memberNo = returnMemberNo();
+        if (memberNo != 0) {
+            Map<String, Object> param = new HashMap<>();
+            param.put("memberNo", memberNo);
+            param.put("ordersPaymentId", paymentId);
+            List<OrdersInvoice> ordersList =  orderService.selectOrdersByPaymentIdAndMemberNo(param);
+            Map<String,Course> courseMap = new HashMap<>();
+
+
+            log.debug("ordersList: {}", ordersList);
+            if (ordersList != null) {
+                model.addAttribute("ordersList", ordersList);
+                loc = "payment/orderInvoice";
+            }
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
-            model.addAttribute("loc", "/mypage");
+            model.addAttribute("loc", "/");
         }
+
         return loc;
     }
 

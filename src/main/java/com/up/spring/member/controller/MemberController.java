@@ -65,7 +65,6 @@ public class MemberController {
         long memberNo = returnMemberNo();
         if  (memberNo != 0) {
             List<Orders> ordersList =  orderService.selectOrdersByMember(memberNo);
-            //order 내역이 없을때
             if (ordersList != null && !ordersList.isEmpty()){
                 Map<String, List<Orders>> groupOrdersMap = ordersList.stream()
                         .collect(Collectors.groupingBy(o -> o.getDetail().getOrdersPaymentId()));
