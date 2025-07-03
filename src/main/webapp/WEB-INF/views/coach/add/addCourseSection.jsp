@@ -127,7 +127,24 @@
                     </div>
                 </div>
             </div>
-
+        </div>
+        <!-- 제출 버튼 -->
+        <div class="mb-4 container-fluid">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col">
+                        <div class="form-group">
+                            <%--TODO: 임시..--%>
+                            <form action="${pageContext.request.contextPath}/coach/coursemanager" method="POST" class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-lg btn-outline-primary">임시 저장</button>
+                                <button type="submit" class="btn btn-lg btn-primary">
+                                    <i class="fas fa-check"></i> 코스 등록
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="modal fade" id="addCurriculumModal" tabindex="-1" role="dialog" aria-labelledby="addCurriculumModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -216,6 +233,7 @@
                     </form>
                 </div>
             </div>
+
         </div>
 
 
