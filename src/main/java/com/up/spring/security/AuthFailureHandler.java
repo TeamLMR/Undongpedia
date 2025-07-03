@@ -6,6 +6,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 
@@ -22,17 +23,19 @@ public class AuthFailureHandler implements AuthenticationFailureHandler {
         log.debug("에러 {}{}",exception,exception.getMessage());
         String msg="";
         if(exception instanceof BadCredentialsException){
-
+            msg="아이디 또는 비밀번호가 올바르지 않습니다.";
         }else if(exception instanceof DisabledException){
 
         }else if(exception instanceof LockedException){
 
         }else if(exception instanceof AccountExpiredException){
 
+        }else if(exception instanceof UsernameNotFoundException){
+            msg=exception.getMessage();
         }else if(exception instanceof SessionAuthenticationException){
             msg="중복 로그인이 있습니다.";
         }
         request.setAttribute("msg", msg);
-        request.getRequestDispatcher("/loginpage").forward(request, response);
+        request.getRequestDispatcher("/").forward(request, response);
     }
 }

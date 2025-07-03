@@ -28,6 +28,7 @@
     <security:intercept-url pattern="/signup" access="permitAll()"/>
     <security:intercept-url pattern="/savemember" access="permitAll()"/>
     <security:intercept-url pattern="/mypage/savemember" access="permitAll()"/>
+    <security:intercept-url pattern="/member/withdraw" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
     <security:intercept-url pattern="/email" access="permitAll()"/>
     <security:intercept-url pattern="/email/**" access="permitAll()"/>
     <security:intercept-url pattern="/main/**" access="permitAll()"/>

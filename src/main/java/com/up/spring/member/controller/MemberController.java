@@ -134,7 +134,14 @@ public class MemberController {
         // 네이버 로그인인 경우 signType 설정
         if ("NAVER".equals(memberSigntype)) {
             member.setMemberSignType("NAVER");
+            log.debug("네이버 회원가입으로 설정됨");
+        } else {
+            // 일반 회원가입인 경우 GENERAL로 설정
+            member.setMemberSignType("GENERAL");
+            log.debug("일반 회원가입으로 설정됨");
         }
+        
+        log.debug("최종 memberSignType: {}", member.getMemberSignType());
         
         int result=memberService.saveMember(member);
         if(result > 0){
@@ -361,6 +368,12 @@ public class MemberController {
             // 3. 회원 존재 여부 확인
             Member member = memberService.searchById(email);
             if (member != null) {
+                // 탈퇴한 회원인지 확인
+                if ("WITHDRAW".equals(member.getMemberStatus())) {
+                    redirectAttr.addFlashAttribute("error", "탈퇴한 회원입니다.");
+                    return "redirect:/";
+                }
+                
                 // 이미 회원이면 Spring Security 인증 처리
                 // Spring Security의 Authentication 객체를 생성하여 로그인 처리
                 org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth = 
@@ -498,6 +511,33 @@ public class MemberController {
             log.error("네이버 사용자 정보 요청 중 오류", e);
         }
         return null;
+    }
+
+    @PostMapping("/member/withdraw")
+    public String withdrawMember(HttpSession session, RedirectAttributes redirectAttr) {
+        try {
+            Member loginMember = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (loginMember == null) {
+                redirectAttr.addFlashAttribute("error", "로그인이 필요한 서비스입니다.");
+                return "redirect:/";
+            }
+
+            int result = memberService.withdrawMember(loginMember.getMemberNo());
+            if (result > 0) {
+                // 로그아웃 처리
+                SecurityContextHolder.clearContext();
+                session.invalidate();
+                redirectAttr.addFlashAttribute("message", "회원탈퇴가 완료되었습니다.");
+                return "redirect:/";
+            } else {
+                redirectAttr.addFlashAttribute("error", "회원탈퇴 처리에 실패했습니다.");
+                return "redirect:/mypage";
+            }
+        } catch (Exception e) {
+            log.error("회원탈퇴 처리 중 오류 발생", e);
+            redirectAttr.addFlashAttribute("error", "회원탈퇴 처리 중 오류가 발생했습니다.");
+            return "redirect:/mypage";
+        }
     }
 
 }
