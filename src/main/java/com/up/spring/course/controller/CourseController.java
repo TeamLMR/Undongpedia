@@ -131,7 +131,6 @@ public class CourseController {
 //            List<Section> s = coachService.getSectionList(courseSeq);
             Map<String, Object> params = Map.of("memberSeq",m.getMemberNo(),"courseSeq",courseSeq);
             List<Map<String, Object>> s = courseService.getSectionCurrWithProgress(params);
-            log.debug(s.toString());
             Course c = courseService.searchById(courseSeq);
             Curriculum curriculum = new Curriculum();
             if(currSeq == null) {

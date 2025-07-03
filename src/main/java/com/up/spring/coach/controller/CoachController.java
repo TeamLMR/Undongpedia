@@ -11,6 +11,7 @@ import com.up.spring.course.model.service.CourseScheduleService;
 import com.up.spring.member.model.dto.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import oracle.jdbc.proxy.annotation.Post;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -48,6 +49,18 @@ public class CoachController {
             memberNo = m.getMemberNo();
         }
         return memberNo;
+    }
+    @PostMapping("/deletecourse")
+    public String deleteCourse(@RequestParam("delCourseSeq")long delCourseSeq, Model model){
+        log.debug("deleteCourse: " + delCourseSeq);
+
+        return "coach/deleteCourse";
+    }
+
+    @PostMapping("/modifycourse")
+    public String modifyCourse(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model){
+        log.debug("modifyCourseSeq: " + modifyCourseSeq);
+        return "coach/modifyCourse";
     }
 
     @RequestMapping("/dashboard")

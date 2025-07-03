@@ -82,4 +82,9 @@ public class CourseDaoImpl implements CourseDao {
     public List<Map<String, Object>> getSectionCurrWithProgress(SqlSession sqlSession, Map<String, Object> params) {
         return sqlSession.selectList("course.getSectionCurrWithProgress", params);
     }
+
+    @Override
+    public List<Map<String, Object>> getMyLearningCourse(SqlSession sqlSession, long memberNo) {
+        return sqlSession.selectList("course.getMyLearningCourse", memberNo);
+    }
 }

@@ -12,9 +12,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
   <meta name="author" content="">
-  <!-- Favicons -->
-  <link href="${path}/resources/assets/img/favicon.png" rel="icon">
-  <link href="${path}/resources/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
   <title>코치 관리 페이지</title>
 
@@ -29,7 +26,7 @@
   <!-- Bootstrap core JavaScript-->
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/jquery/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/admin/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <link href="${pageContext.request.contextPath}/resources/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="${path}/resources/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
 
   <!-- Core plugin JavaScript-->
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/jquery-easing/jquery.easing.min.js"></script>
@@ -47,14 +44,14 @@
 <div id="wrapper">
 
   <!-- Sidebar -->
-  <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+  <ul class="navbar-nav bg-gradient-secondary sidebar sidebar-dark accordion" id="accordionSidebar">
 
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="${path}/coach/dashboard">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="${path}/admin/dashboard">
       <div class="sidebar-brand-icon col-4">
         <img src="${path}/resources/assets/img/icon-192x192.png" class="w-100" alt="">
       </div>
-      <div class="sidebar-brand-text col-8 mx-3">운동백과<br>관리페이지</div>
+      <div class="sidebar-brand-text col-8 mx-3">운동백과<br>ADMIN</div>
     </a>
 
     <!-- Divider -->
@@ -62,7 +59,7 @@
 
     <!-- Nav Item - Dashboard -->
     <li class="nav-item active">
-      <a class="nav-link" href="${path}/coach/dashboard">
+      <a class="nav-link" href="${path}/admin/dashboard">
         <i class="fas fa-fw fa-tachometer-alt"></i>
         <span>대쉬보드</span></a>
     </li>
@@ -80,44 +77,26 @@
       <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
          aria-expanded="true" aria-controls="collapseTwo">
         <i class="bi-book-half"></i>
-        <span>코스</span>
+        <span>코치 관리</span>
       </a>
       <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
-          <a class="collapse-item" href="${path}/coach/addCourse">코스 등록하기</a>
-          <a class="collapse-item" href="${path}/coach/addOfflineCourse">오프라인 코스 등록하기</a>
-          <a class="collapse-item" href="${path}/coach/coursemanager">코스 관리</a>
-          <a class="collapse-item" href="${path}/coach/courseqna">코스 질문 관리</a>
-          <a class="collapse-item" href="${path}/coach/coursereview">수강평</a>
+          <a class="collapse-item" href="${path}/admin/coachConfirm">코치 가입승인</a>
         </div>
       </div>
     </li>
     <li class="nav-item">
       <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
          aria-expanded="true" aria-controls="collapseUtilities">
-        <i class="bi-currency-dollar"></i></i><span>수익</span>
+        <i class="bi-currency-dollar"></i></i><span>코스 관리</span>
       </a>
       <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
            data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded">
-          <a class="collapse-item" href="${path}/coach/payment">수익 확인</a>
+          <a class="collapse-item" href="${path}/admin/courseConfirm">코스 등록승인</a>
         </div>
       </div>
     </li>
-
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages"
-         aria-expanded="true" aria-controls="collapsePages">
-        <i class="bi-person"></i>
-        <span>마이페이지</span>
-      </a>
-      <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          <a class="collapse-item" href='${pageContext.request.contextPath}/logout.do'>로그아웃</a>
-        </div>
-      </div>
-    </li>
-
   </ul>
 
 

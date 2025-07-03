@@ -157,4 +157,16 @@
         ORDER BY S.SECTION_ORDER, C.CURR_ORDER
     </select>
 
+    <select id="getMyLearningCourse" parameterType="_long" resultType="map">
+        SELECT T.*, (SELECT COUNT(*) FROM COURSE_PROGRESS P WHERE P.COURSE_SEQ = T.COURSE_SEQ AND P.MEMBER_SEQ = #{memberNo}) AS PROGRESS
+        FROM (
+                 SELECT C.COURSE_SEQ,C.COURSE_TITLE,C.COURSE_THUMBNAIL,C.COURSE_TYPE,C.COURSE_CATEGORY,COUNT(C2.CURR_SEQ) AS CURR_COUNT
+                 FROM ORDERS O
+                          LEFT JOIN COURSE C ON C.COURSE_SEQ = O.COURSE_SEQ
+                          LEFT JOIN SECTION S on C.COURSE_SEQ = S.COURSE_SEQ
+                          LEFT JOIN CURRICULUM C2 on S.SECTION_SEQ = C2.SECTION_SEQ
+                 WHERE O.MEMBER_NO = #{memberNo}
+                   AND ORDERS_STATUS = 'PAID'
+                 GROUP BY C.COURSE_SEQ,C.COURSE_TITLE,C.COURSE_THUMBNAIL,C.COURSE_TYPE,C.COURSE_CATEGORY) T
+    </select>
 </mapper>
