@@ -20,7 +20,7 @@
                 </div>
                 <div class="row">
                     <div class="col-xl-12 col-lg-12">
-                        <form action="${pageContext.request.contextPath}/coach/modifycourse-end" method="post" onsubmit="return courseFormCheck()">
+                        <form action="${pageContext.request.contextPath}/coach/modifycourse-end" method="post" id="modifyForm" onsubmit="return courseFormCheck()">
                             <input type="hidden" name="modifyCourseSeq" id="modifyCourseSeq" value="${course.courseSeq}">
                             <input type="hidden" name="memberNo" id="memberNo" value="${loginMember.memberNo}">
                             <div class="card shadow mb-4">
@@ -150,7 +150,7 @@
                                                     <div class="form-group">
                                                         <label id="thumbLabel" for="inputImage" class="col-3 thumbnail-upload-label form-control form-control-user"
                                                                style="height: 10vw; display: flex; justify-content: center;align-items: center;">
-                                                            <img src="${pageContext.request.contextPath}${course.courseThumbnail}" alt="코스 이미지" class="h-100"/>
+                                                            <img id="courseImg" src="${pageContext.request.contextPath}${course.courseThumbnail}" alt="코스 이미지" class="h-100"/>
                                                         </label>
                                                         <input class="form-control form-control-user" type="file" id="inputImage" accept="image/*" style="display: none"/>
                                                         <input type="hidden" name="courseThumbnail" id="courseThumbnail"/>
@@ -220,8 +220,8 @@
                                             <div class="row no-gutters align-items-center">
                                                 <div class="col">
                                                     <div class="form-group d-flex justify-content-between">
-                                                        <button type="submit" id="saveAfterExit" class="btn btn-lg btn-outline-primary">저장하고 나가기</button>
-                                                        <button type="submit" id="saveAfterNext" class="btn btn-lg btn-primary">다음 입력 단계</button>
+                                                        <button type="button" id="saveAfterExit" class="btn btn-lg btn-outline-primary" onclick="selectButton(event);">저장하고 나가기</button>
+                                                        <button type="button" id="saveAfterNext" class="btn btn-lg btn-primary" onclick="selectButton(event);">다음 입력 단계</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -332,10 +332,7 @@
                 const category = document.getElementById('courseCategory').value;
                 const price = document.getElementById('coursePrice').value;
                 const discount = document.getElementById('courseDiscount').value;
-                const croppedImage = document.getElementById('croppedImageBase64').value;
 
-                const selectedCourseId = $(this).attr("id");
-                console(selectedCourseId);
                 if (!title) {
                     alert("코스 제목을 입력해주세요.");
                     document.getElementById('courseTitle').focus();
@@ -366,13 +363,28 @@
                     return false;
                 }
 
-                if (!croppedImage) {
-                    alert("썸네일을 등록해주세요.");
-                    return false;
-                }
 
-                return false;
+                return true;
             };
+        </script>
+
+        <script>
+            const selectButton = (event) => {
+                event.preventDefault(); // 폼 전송 막고
+                // 이미 존재한다면 제거 (중복 방지)
+                $('#modifyForm').find('input[name="submitType"]').remove();
+
+                // 클릭한 버튼의 id를 추출
+                const clickedButtonId = event.target.id;
+
+                // 새로운 hidden input 생성
+                const hiddenInput = '<input type="hidden" name="submitType" value="'+clickedButtonId+'">';
+
+                // 폼에 삽입
+                $('#modifyForm').append(hiddenInput);
+
+                $('#modifyForm').submit();
+            }
         </script>
 
         <!-- End of Main Content -->

@@ -20,4 +20,5 @@ public interface CoachService {
     int deleteSectionByCourseSeq (long courseSeq);
     int deleteCourseByCourseSeq (long courseSeq);
     Map<String,Integer> deleteCourseCascade(long delCourseSeq);
+    int updateTempCourse(Course course);
 }

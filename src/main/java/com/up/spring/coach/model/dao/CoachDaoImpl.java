@@ -13,6 +13,11 @@ import java.util.Map;
 @Repository
 public class CoachDaoImpl implements CoachDao {
     @Override
+    public int updateTempCourse(SqlSession sqlSession, Course course) {
+        return sqlSession.update("coach.updateTempCourse", course);
+    }
+
+    @Override
     public int deleteCurrBySectionSeq(SqlSession sqlSession, long sectionSeq) {
         return sqlSession.delete("coach.deleteCurrBySectionSeq", sectionSeq);
     }

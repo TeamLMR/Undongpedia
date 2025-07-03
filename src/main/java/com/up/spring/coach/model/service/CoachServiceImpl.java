@@ -24,6 +24,11 @@ public class CoachServiceImpl implements CoachService {
     private CoachDao coachDao;
 
     @Override
+    public int updateTempCourse(Course course) {
+        return coachDao.updateTempCourse(sqlSession, course);
+    }
+
+    @Override
     public int deleteCurrBySectionSeq(long sectionSeq) {
         return coachDao.deleteCurrBySectionSeq(sqlSession, sectionSeq);
     }

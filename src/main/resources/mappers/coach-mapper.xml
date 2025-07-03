@@ -56,6 +56,20 @@
         </selectKey>
     </insert>
 
+    <update id="updateTempCourse" parameterType="course">
+        UPDATE COURSE
+        SET COURSE_TITLE = #{courseTitle},
+            COURSE_CONTENT = #{courseContent},
+            COURSE_CATEGORY = #{courseCategory},
+            COURSE_DIFFICULT = #{courseDifficult},
+            COURSE_PRICE = #{coursePrice},
+            COURSE_DISCOUNT = #{courseDiscount},
+            COURSE_THUMBNAIL = #{courseThumbnail},
+            COURSE_TARGET = #{courseTarget},
+            COURSE_PREPARATION = #{coursePreparation}
+        WHERE COURSE_SEQ = #{courseSeq}
+    </update>
+
     <select id="getSectionList" parameterType="_long" resultMap="sectionMap">
         SELECT *
         FROM SECTION S

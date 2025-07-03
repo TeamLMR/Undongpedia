@@ -20,4 +20,5 @@ public interface CoachDao {
     int deleteCurrBySectionSeq (SqlSession sqlSession, long sectionSeq);
     int deleteSectionByCourseSeq (SqlSession sqlSession, long courseSeq);
     int deleteCourseByCourseSeq (SqlSession sqlSession, long courseSeq);
+    int updateTempCourse(SqlSession sqlSession, Course course);
 }
