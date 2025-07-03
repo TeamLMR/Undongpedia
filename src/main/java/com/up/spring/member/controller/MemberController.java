@@ -2,6 +2,7 @@ package com.up.spring.member.controller;
 
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.common.EmailService;
+import com.up.spring.course.model.service.CourseService;
 import com.up.spring.email.model.dto.PasswordUpdateValidationResult;
 import com.up.spring.email.model.service.PasswordUpdateService;
 import com.up.spring.member.model.dto.Member;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -21,12 +23,19 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.servlet.http.HttpSession;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @Slf4j
@@ -37,6 +46,14 @@ public class MemberController {
     private final BCryptPasswordEncoder passwordEncoder;
     private final PasswordUpdateService passwordUpdateService;
     private final EmailService emailService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${x.naver.client.id}")
+    private String naverClientId;
+
+    @Value("${x.naver.client.secret}")
+    private String naverClientSecret;
+    private final CourseService courseService;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -75,7 +92,10 @@ public class MemberController {
     }
 
     @RequestMapping("/mypage/learning")
-    public String course(){
+    public String course(Model model){
+        long memberNo = returnMemberNo();
+        List<Map<String, Object>> myCourse = courseService.getMyLearningCourse(memberNo);
+        model.addAttribute("myCourse", myCourse);
         return "myPage/management/learning";
     }
 
@@ -92,16 +112,51 @@ public class MemberController {
     }
 
     @PostMapping("/mypage/savemember")
-    public String savemember(@ModelAttribute("member") Member member) {
+    public String savemember(@ModelAttribute("member") Member member,
+                            @RequestParam(required = false) String memberSigntype,
+                            @RequestParam(required = false) String memberIdHidden,
+                            @RequestParam(required = false) String memberNameHidden,
+                            @RequestParam(required = false) String memberNicknameHidden,
+                            HttpSession session) {
+
+        log.debug("회원가입 요청 - memberId: {}, memberName: {}, memberNickname: {}, memberSigntype: {}",
+                 member.getMemberId(), member.getMemberName(), member.getMemberNickname(), memberSigntype);
+
+        // hidden 필드 값이 있으면 사용
+        if (memberIdHidden != null && !memberIdHidden.isEmpty()) {
+            member.setMemberId(memberIdHidden);
+        }
+        if (memberNameHidden != null && !memberNameHidden.isEmpty()) {
+            member.setMemberName(memberNameHidden);
+        }
+        if (memberNicknameHidden != null && !memberNicknameHidden.isEmpty()) {
+            member.setMemberNickname(memberNicknameHidden);
+        }
 
         String password = member.getMemberPassword();
         member.setMemberPassword(passwordEncoder.encode(password));
+
+        // 네이버 로그인인 경우 signType 설정
+        if ("NAVER".equals(memberSigntype)) {
+            member.setMemberSignType("NAVER");
+        }
+
         int result=memberService.saveMember(member);
         if(result > 0){
             try {
                 emailService.sendWelcomeEmail(member.getMemberId(), member.getMemberName());
             } catch (Exception e) {
                 log.error("웰컴 이메일 발송 실패", e);
+            }
+
+            // 회원가입 완료 후 자동 로그인 처리
+            Member savedMember = memberService.searchById(member.getMemberId());
+            if (savedMember != null) {
+                UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                        savedMember, null, savedMember.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
             }
         }
         return "redirect:/";
@@ -273,6 +328,181 @@ public class MemberController {
             redirectAttr.addFlashAttribute("error", "처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             return "redirect:/member/forgot-password";
         }
+    }
+
+    @RequestMapping("/login.do")
+    public String naverLoginCallback(@RequestParam(required = false) String code,
+                                     @RequestParam(required = false) String state,
+                                     HttpSession session,
+                                     RedirectAttributes redirectAttr) {
+        log.debug("네이버 로그인 콜백 - code: {}, state: {}", code, state);
+
+        if (code == null || state == null) {
+            redirectAttr.addFlashAttribute("error", "네이버 로그인 정보가 올바르지 않습니다.");
+            return "redirect:/";
+        }
+
+        try {
+            // 1. code로 access_token 요청
+            String accessToken = getNaverAccessToken(code, state);
+            if (accessToken == null) {
+                redirectAttr.addFlashAttribute("error", "네이버 인증에 실패했습니다.");
+                return "redirect:/";
+            }
+
+            // 2. access_token으로 사용자 정보 요청
+            Map<String, String> userInfo = getNaverUserInfo(accessToken);
+            if (userInfo == null) {
+                redirectAttr.addFlashAttribute("error", "네이버 사용자 정보를 가져올 수 없습니다.");
+                return "redirect:/";
+            }
+
+            String email = userInfo.get("email");
+            String name = userInfo.get("name");
+            String nickname = userInfo.get("nickname");
+
+            log.debug("네이버 사용자 정보 - email: {}, name: {}, nickname: {}", email, name, nickname);
+
+            // 3. 회원 존재 여부 확인
+            Member member = memberService.searchById(email);
+            if (member != null) {
+                // 이미 회원이면 Spring Security 인증 처리
+                // Spring Security의 Authentication 객체를 생성하여 로그인 처리
+                org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        member, null, member.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+                return "redirect:/";
+            } else {
+                // 회원이 아니면 회원가입 폼으로 네이버 정보 전달
+                redirectAttr.addFlashAttribute("naverEmail", email);
+                redirectAttr.addFlashAttribute("naverName", name);
+                redirectAttr.addFlashAttribute("naverNickname", nickname);
+
+                return "redirect:/signup";
+            }
+
+        } catch (Exception e) {
+            log.error("네이버 로그인 처리 중 오류 발생", e);
+            redirectAttr.addFlashAttribute("error", "네이버 로그인 처리 중 오류가 발생했습니다.");
+            return "redirect:/";
+        }
+    }
+
+    private String getNaverAccessToken(String code, String state) {
+        try {
+            String clientId = "CBUQIgHQrx9kpSArabUl"; // 로그인 페이지에서 사용하는 클라이언트 ID
+            String clientSecret = "gz5M0ZC0FN"; // 네이버 API 설정 파일의 시크릿 사용
+            String redirectURI = URLEncoder.encode("http://localhost:9090/undongpedia/login.do", "UTF-8");
+
+            String tokenURL = "https://nid.naver.com/oauth2.0/token";
+            String params = "grant_type=authorization_code" +
+                    "&client_id=" + clientId +
+                    "&client_secret=" + clientSecret +
+                    "&redirect_uri=" + redirectURI +
+                    "&code=" + code +
+                    "&state=" + state;
+
+            log.debug("네이버 access_token 요청 URL: {}", tokenURL);
+            log.debug("네이버 access_token 요청 파라미터: {}", params);
+
+            URL url = new URL(tokenURL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.getOutputStream().write(params.getBytes("UTF-8"));
+
+            int responseCode = conn.getResponseCode();
+            log.debug("네이버 access_token 응답 코드: {}", responseCode);
+
+            if (responseCode == 200) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    response.append(line);
+                }
+                br.close();
+
+                log.debug("네이버 access_token 응답: {}", response.toString());
+
+                Map<String, Object> jsonResponse = objectMapper.readValue(response.toString(), Map.class);
+                String accessToken = (String) jsonResponse.get("access_token");
+                log.debug("네이버 access_token: {}", accessToken);
+                return accessToken;
+            } else {
+                // 오류 응답 읽기
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                StringBuilder errorResponse = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    errorResponse.append(line);
+                }
+                br.close();
+                log.error("네이버 access_token 오류 응답: {}", errorResponse.toString());
+            }
+        } catch (Exception e) {
+            log.error("네이버 access_token 요청 중 오류", e);
+        }
+        return null;
+    }
+
+    private Map<String, String> getNaverUserInfo(String accessToken) {
+        try {
+            String apiURL = "https://openapi.naver.com/v1/nid/me";
+            URL url = new URL(apiURL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+
+            log.debug("네이버 사용자 정보 요청 URL: {}", apiURL);
+            log.debug("네이버 사용자 정보 요청 헤더: Authorization: Bearer {}", accessToken);
+
+            int responseCode = conn.getResponseCode();
+            log.debug("네이버 사용자 정보 응답 코드: {}", responseCode);
+
+            if (responseCode == 200) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    response.append(line);
+                }
+                br.close();
+
+                log.debug("네이버 사용자 정보 응답: {}", response.toString());
+
+                Map<String, Object> jsonResponse = objectMapper.readValue(response.toString(), Map.class);
+                if ("00".equals(jsonResponse.get("resultcode"))) {
+                    Map<String, Object> responseObj = (Map<String, Object>) jsonResponse.get("response");
+                    Map<String, String> userInfo = new HashMap<>();
+                    userInfo.put("email", (String) responseObj.get("email"));
+                    userInfo.put("name", (String) responseObj.get("name"));
+                    userInfo.put("nickname", (String) responseObj.get("nickname"));
+
+                    log.debug("네이버 사용자 정보 파싱 결과 - email: {}, name: {}, nickname: {}",
+                             userInfo.get("email"), userInfo.get("name"), userInfo.get("nickname"));
+
+                    return userInfo;
+                } else {
+                    log.error("네이버 사용자 정보 요청 실패 - resultcode: {}", jsonResponse.get("resultcode"));
+                }
+            } else {
+                // 오류 응답 읽기
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                StringBuilder errorResponse = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    errorResponse.append(line);
+                }
+                br.close();
+                log.error("네이버 사용자 정보 오류 응답: {}", errorResponse.toString());
+            }
+        } catch (Exception e) {
+            log.error("네이버 사용자 정보 요청 중 오류", e);
+        }
+        return null;
     }
 
 }

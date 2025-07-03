@@ -32,6 +32,7 @@
                                     <div class="form-group">
                                         <label for="firstName">이름</label>
                                         <input type="text" class="form-control" name="memberName" id="firstName" required minlength="2" placeholder="2글자 이상 한글, 영어만 입력">
+                                        <input type="hidden" name="memberNameHidden" id="firstNameHidden">
                                         <div class="invalid-feedback" id="firstNameError"></div>
                                         <div class="valid-feedback" id="firstNameSuccess"></div>
                                     </div>
@@ -41,6 +42,7 @@
                                     <div class="form-group">
                                         <label for="lastName">닉네임</label>
                                         <input type="text" class="form-control" name="memberNickname" id="lastName" required minlength="2" placeholder="">
+                                        <input type="hidden" name="memberNicknameHidden" id="lastNameHidden">
                                         <div class="invalid-feedback" id="lastNameError"></div>
                                         <div class="valid-feedback" id="lastNameSuccess"></div>
                                     </div>
@@ -55,6 +57,8 @@
                                     <button class="btn btn-outline-secondary" type="button" id="sendVerificationBtn">인증번호 보내기</button>
                                 </div>
                                 <div class="invalid-feedback" id="emailError"></div>
+                                <input type="hidden" name="memberIdHidden" id="emailHidden">
+                                <input type="hidden" name="memberSigntype"/>
                             </div>
 
                             <!-- 인증번호 입력창 (초기에는 숨김) -->
@@ -68,10 +72,10 @@
                                 <div class="invalid-feedback" id="codeError"></div>
                             </div>
 
-                            <!-- 이메일 인증 완료 표시 (초기에는 숨김) -->
-                            <div class="alert alert-success" id="emailVerifiedAlert" style="display: none;">
-                                <i class="bi bi-check-circle-fill me-2"></i>이메일 인증이 완료되었습니다.
-                            </div>
+                                        <!-- 이메일 인증 완료 표시 (초기에는 숨김) -->
+            <div class="alert alert-success" id="emailVerifiedAlert" style="display: none;">
+                <i class="bi bi-check-circle-fill me-2"></i><span id="emailVerifiedText">이메일 인증이 완료되었습니다.</span>
+            </div>
 
                             <div class="form-group mb-3">
                                 <label for="password">비밀번호</label>
@@ -375,6 +379,42 @@
         // ===== 페이지 로드 시 실행 =====
         document.addEventListener('DOMContentLoaded', function() {
             const nameRegex = /^[가-힣a-zA-Z]{2,}$/;
+            
+            // 네이버 로그인 정보가 있으면 폼에 자동으로 채우기
+            const naverEmail = '${naverEmail}';
+            const naverName = '${naverName}';
+            const naverNickname = '${naverNickname}';
+            
+            if (naverEmail) {
+                document.getElementById('email').value = naverEmail;
+                document.getElementById('email').readOnly = true;
+                document.getElementById('email').style.backgroundColor = '#f8f9fa';
+                document.getElementById('emailHidden').value = naverEmail;
+                
+                // 네이버 로그인인 경우 signType을 "NAVER"로 설정
+                document.querySelector('input[name="memberSigntype"]').value = 'NAVER';
+                
+                // 네이버 로그인인 경우 이메일 인증 섹션 숨기기
+                document.getElementById('sendVerificationBtn').style.display = 'none';
+                document.getElementById('verificationCodeSection').style.display = 'none';
+                document.getElementById('emailVerifiedAlert').style.display = 'block';
+                document.getElementById('emailVerifiedText').textContent = '네이버 인증이 완료되었습니다.';
+                emailVerified = true; // 이메일 인증 완료 상태로 설정
+            }
+            
+            if (naverName) {
+                document.getElementById('firstName').value = naverName;
+                document.getElementById('firstName').readOnly = true;
+                document.getElementById('firstName').style.backgroundColor = '#f8f9fa';
+                document.getElementById('firstNameHidden').value = naverName;
+            }
+            
+            if (naverNickname) {
+                document.getElementById('lastName').value = naverNickname;
+                document.getElementById('lastName').readOnly = true;
+                document.getElementById('lastName').style.backgroundColor = '#f8f9fa';
+                document.getElementById('lastNameHidden').value = naverNickname;
+            }
 
             // 닉네임 플레이스홀더 설정
             const nicknameInput = document.getElementById('lastName');
@@ -507,12 +547,14 @@
                 const confirmPassword = document.getElementById('confirmPassword').value;
                 console.log("ㅎㅇ");
 
-                // if (!emailVerified) {
-                //     e.preventDefault();
-                //     alert('이메일 인증을 완료해주세요.');
-                //     document.getElementById('email').focus();
-                //     return false;
-                // }
+                // 네이버 로그인이 아닌 경우에만 이메일 인증 체크
+                const memberSigntype = document.querySelector('input[name="memberSigntype"]').value;
+                if (memberSigntype !== 'NAVER' && !emailVerified) {
+                    e.preventDefault();
+                    alert('이메일 인증을 완료해주세요.');
+                    document.getElementById('email').focus();
+                    return false;
+                }
 
                 if (!firstName || firstName.length < 2) {
                     e.preventDefault();
