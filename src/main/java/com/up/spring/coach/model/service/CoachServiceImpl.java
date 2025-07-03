@@ -95,4 +95,14 @@ public class CoachServiceImpl implements CoachService {
     public int insertCurriculum(Curriculum curriculum) {
         return coachDao.insertCurriculum(sqlSession, curriculum);
     }
+
+    @Override
+    public List<Map<String, Object>> getDashboardInfo(Long memberNo) {
+        return coachDao.getDashboardInfo(sqlSession,memberNo);
+    }
+
+    @Override
+    public List<Map<String, Object>> getMonthlyEarnings(Long memberNo) {
+        return coachDao.getMonthlyEarnings(sqlSession,memberNo);
+    }
 }

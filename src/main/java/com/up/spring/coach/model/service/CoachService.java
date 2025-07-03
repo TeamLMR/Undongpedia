@@ -14,6 +14,8 @@ public interface CoachService {
     List<Section> getSectionList (Long courseSeq);
     int insertSection (Section section);
     int insertCurriculum (Curriculum curriculum);
+    List<Map<String, Object>> getDashboardInfo (Long memberNo);
+    List<Map<String, Object>> getMonthlyEarnings (Long memberNo);
     int deleteCurrBySectionSeq (long sectionSeq);
     int deleteSectionByCourseSeq (long courseSeq);
     int deleteCourseByCourseSeq (long courseSeq);

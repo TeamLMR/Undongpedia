@@ -140,7 +140,26 @@ public class CoachController {
 
 
     @RequestMapping("/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(Model model)
+    {
+        List<Map<String, Object>> dashboardInfo = coachService.getDashboardInfo(returnMemberNo());
+        for(Map<String, Object> map : dashboardInfo){
+            String key = (String) map.get("DASHKEY");
+            Object value = map.get("DASHVALUE");
+            model.addAttribute(key, value);
+        }
+
+        List<Map<String, Object>> salesList = coachService.getMonthlyEarnings(returnMemberNo()); // 위 SQL 실행
+
+        int[] monthlyTotals = new int[12]; // 0 ~ 11 : Jan ~ Dec
+
+        for (Map<String, Object> row : salesList) {
+            int monthIndex = Integer.parseInt((String) row.get("MONTH")) - 1;
+            int total = ((Number) row.get("TOTAL")).intValue();
+            monthlyTotals[monthIndex] = total;
+        }
+
+        model.addAttribute("monthlyTotals", Arrays.toString(monthlyTotals));
         return "/coach/dashboard";
     }
 

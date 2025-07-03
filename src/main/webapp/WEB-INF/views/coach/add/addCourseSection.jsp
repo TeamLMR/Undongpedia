@@ -18,6 +18,7 @@
                 </div>
                 <div class="row">
                     <div class="col-xl-12 col-lg-12">
+                        <c:set var="sectionOrder" value="0"/>
                         <c:if test="${not empty sectionList}">
                             <c:forEach var="section" items="${sectionList}">
                                 <div class="card shadow mb-4">
@@ -66,10 +67,10 @@
                                         </div>
                                     </div>
                                 </div>
+                                <c:set var="sectionOrder" value="${sectionOrder+1}"/>
                             </c:forEach>
                         </c:if>
                         <c:if test="${empty sectionList}">
-                            <input type="hidden" class="sectionListOrder" value="0">
                             <div class="card shadow mb-4">
                                 <div class="card-body">
                                     섹션이 없습니다. 아래에서 추가해주세요.
@@ -228,7 +229,7 @@
                                 </select>
                             </div>
 
-                            <input type="hidden" class="form-control" id="currOrder" name="currOrder">
+                            <input type="text" class="form-control" id="currOrder" name="currOrder">
 
                             <div class="form-group">
                                 <input type="hidden" class="form-control" id="sectionSeq" name="sectionSeq" readonly>
@@ -302,7 +303,7 @@
             const addSection = () => {
                 const title = $("#addSectionTitle").val();
                 const content = $("#addSectionContent").val();
-                const order = $(".sectionListOrder").val();
+                const order = '${sectionOrder}';
                 const courseSeq = '${tempCourseSeq}';
                 $.ajax({
                     url: "${pageContext.request.contextPath}/coach/ajaxAddSection",
