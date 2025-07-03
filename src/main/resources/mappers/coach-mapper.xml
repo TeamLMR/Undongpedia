@@ -82,4 +82,45 @@
     <insert id="insertCoachApply" parameterType="coachApply">
         INSERT INTO COACH_APPLY VALUES (SEQ_COACH_APPLY.nextval,#{coaBank}, #{coaBankNum}, #{coaBankName}, #{coaIntro}, #{coaYn}, #{memberNo})
     </insert>
+
+    <select id="getDashboardInfo" parameterType="_long" resultType="map">
+        SELECT 'confirmedCourse' as dashKey, count(*) as dashValue FROM COURSE WHERE MEMBER_NO = #{memberNo} AND COURSE_CONFIRM_TIME IS NOT NULL
+        UNION ALL
+        SELECT 'unconfirmedCourse' as dashKey, count(*) as dashValue FROM COURSE WHERE MEMBER_NO = #{memberNo} AND COURSE_CONFIRM_TIME IS NOT NULL
+        UNION ALL
+        select 'rateAverage',AVG(REVIEW_RATE) from COURSE_REVIEW WHERE COURSE_SEQ IN (SELECT COURSE_SEQ FROM COURSE WHERE MEMBER_NO = #{memberNo})
+        UNION ALL
+        select 'totalIncome', SUM(ORDERS_PRICE) from ORDERS WHERE ORDERS_STATUS = 'PAID' AND COURSE_SEQ IN (SELECT COURSE_SEQ FROM COURSE WHERE MEMBER_NO = #{memberNo})
+        UNION ALL
+        select 'onlineStudent', COUNT(*) from ORDERS WHERE COURSE_TYPE = 'ON' AND ORDERS_STATUS = 'PAID' AND COURSE_SEQ IN (SELECT COURSE_SEQ FROM COURSE WHERE MEMBER_NO = #{memberNo})
+        UNION ALL
+        select 'offlineStudent', COUNT(*) from ORDERS WHERE COURSE_TYPE = 'OFF' AND ORDERS_STATUS = 'PAID' AND COURSE_SEQ IN (SELECT COURSE_SEQ FROM COURSE WHERE MEMBER_NO = #{memberNo})
+        UNION ALL
+        select 'etcStudent', COUNT(*) from ORDERS WHERE (COURSE_TYPE NOT IN ('ON', 'OFF') OR COURSE_TYPE IS NULL) AND ORDERS_STATUS = 'PAID' AND COURSE_SEQ IN (SELECT COURSE_SEQ FROM COURSE WHERE MEMBER_NO = #{memberNo})
+    </select>
+
+    <select id="getMonthlyEarnings" parameterType="_long" resultType="map">
+        SELECT
+            TO_CHAR(ORDERS_TIMESTAMP, 'MM') AS MONTH,
+    SUM(ORDERS_PRICE) AS TOTAL
+        FROM ORDERS
+        WHERE ORDERS_STATUS = 'PAID'
+          AND COURSE_SEQ IN (
+            SELECT COURSE_SEQ FROM COURSE WHERE MEMBER_NO = #{memberNo}
+            )
+        GROUP BY TO_CHAR(ORDERS_TIMESTAMP, 'MM')
+        ORDER BY MONTH
+    </select>
+
+    <delete id="deleteCurrBySectionSeq" parameterType="_long">
+        DELETE FROM CURRICULUM WHERE SECTION_SEQ = #{sectionSeq}
+    </delete>
+
+    <delete id="deleteSectionByCourseSeq" parameterType="_long">
+        DELETE FROM SECTION WHERE COURSE_SEQ = #{courseSeq}
+    </delete>
+
+    <delete id="deleteCourseByCourseSeq" parameterType="_long">
+        DELETE FROM COURSE WHERE COURSE_SEQ = #{courseSeq}
+    </delete>
 </mapper>

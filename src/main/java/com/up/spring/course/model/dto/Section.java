@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class Section {
-    private String sectionSeq;
+    private long sectionSeq;
     private String sectionTitle;
     private String sectionContent;
     private String sectionOrder;
