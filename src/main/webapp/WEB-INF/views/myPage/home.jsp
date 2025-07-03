@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <c:set var="loginMember" value="${sessionScope.SPRING_SECURITY_CONTEXT.authentication.principal}"/>
 
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
@@ -23,8 +24,15 @@
                 <div class="col-lg-3 profile-sidebar collapse d-lg-block" id="profileSidebar">
                     <div class="sidebar-content">
                         <div class="profile-header">
-                            <div class="profile-avatar">
-                                <span>${loginMember.memberNickname}</span>
+                            <div class="profile-avatar" style="overflow: hidden">
+                                <c:choose>
+                                    <c:when test="${fn:length(loginMember.memberNickname) >= 2}">
+                                        <span>${fn:substring(loginMember.memberNickname, 0, 1)}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span>${loginMember.memberNickname}</span>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
                             <div class="profile-info">
                                 <h4>${loginMember.memberNickname}</h4>
@@ -46,7 +54,6 @@
                                     <button class="nav-link" data-page="learning">
                                         <i class="bi bi-book"></i>
                                         <span>내 학습</span>
-                                        <span class="badge">3</span>
                                     </button>
                                 </li>
                                 <%--작업 ing--%>

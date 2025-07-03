@@ -78,6 +78,11 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public int deleteReview(Review review) {
+        return courseDao.deleteReview(sqlSession,review);
+    }
+
+    @Override
     public List<Course> searchCourseListByMemberNo(long memberNo) {
         return courseDao.searchCourseListByMemberNo(sqlSession, memberNo);
     }

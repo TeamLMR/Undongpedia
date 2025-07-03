@@ -11,6 +11,7 @@ public interface CourseService {
     Map<String,Object> getReviewInfo(long courseSeq);
     Map<String,Object> getReviewAjax(long courseSeq,Map<String,Object> params);
     int insertReview(Review review);
+    int deleteReview(Review review);
     List<Course> searchCourseListByMemberNo(long memberNo);
     Curriculum getFirstCurriculum(long courseSeq);
     Curriculum getCurriculumBySeq(long currSeq);
