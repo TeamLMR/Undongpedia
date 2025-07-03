@@ -12,6 +12,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
   <meta name="author" content="">
+  <!-- Favicons -->
+  <link href="${path}/resources/assets/img/favicon.png" rel="icon">
+  <link href="${path}/resources/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
   <title>코치 관리 페이지</title>
 
@@ -26,7 +29,7 @@
   <!-- Bootstrap core JavaScript-->
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/jquery/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/admin/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <link href="${path}/resources/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="${pageContext.request.contextPath}/resources/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
 
   <!-- Core plugin JavaScript-->
   <script src="${pageContext.request.contextPath}/resources/assets/vendor/jquery-easing/jquery.easing.min.js"></script>
