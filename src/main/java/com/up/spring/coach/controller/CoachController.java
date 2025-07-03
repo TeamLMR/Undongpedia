@@ -112,17 +112,32 @@ public class CoachController {
     }
 
     @PostMapping("/modifycourse")
-    public String modifyCourse(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model){
+    public String modifyCourse(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model, RedirectAttributes redirectAttributes){
+        String loc = "common/msg";
+
         log.debug("modifyCourseSeq: " + modifyCourseSeq);
-        //1. 코스 정보가 있는지
-        //2. 코스의 타입이 온라인인지 (TODO: 타입에따라 수정)
-        //3. 코스의 승인 날짜의 존재가 없다면
-        //- 승인되지 않은 코스만 수정 가능
-        //3-1. 코스
-        //3-2. 섹션
-        //3-3. 커리큘럼
-        return "coach/modifyCourse";
+        Course course = isExistCourse(modifyCourseSeq);
+        if (canModifyAndDelete(course)) {
+            //- 승인되지 않은 코스만 수정 가능
+
+            //수정할 코스 보내줌
+            model.addAttribute("course", course);
+            loc = "coach/modify/modifyCourse";
+
+        } else {
+            redirectAttributes.addAttribute("result", "fail");
+            redirectAttributes.addAttribute("msg", "수정시도가 실패했습니다.");
+            loc = "redirect:/coach/coursemanager";
+        }
+        return loc;
     }
+
+    @PostMapping("/modifycourse-end")
+    public String modifyCourseEnd(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model){
+        String loc = "common/msg";
+        return loc;
+    }
+
 
     @RequestMapping("/dashboard")
     public String dashboard(Model model) {
