@@ -82,4 +82,16 @@
     <insert id="insertCoachApply" parameterType="coachApply">
         INSERT INTO COACH_APPLY VALUES (SEQ_COACH_APPLY.nextval,#{coaBank}, #{coaBankNum}, #{coaBankName}, #{coaIntro}, #{coaYn}, #{memberNo})
     </insert>
+
+    <delete id="deleteCurrBySectionSeq" parameterType="_long">
+        DELETE FROM CURRICULUM WHERE SECTION_SEQ = #{sectionSeq}
+    </delete>
+
+    <delete id="deleteSectionByCourseSeq" parameterType="_long">
+        DELETE FROM SECTION WHERE COURSE_SEQ = #{courseSeq}
+    </delete>
+
+    <delete id="deleteCourseByCourseSeq" parameterType="_long">
+        DELETE FROM COURSE WHERE COURSE_SEQ = #{courseSeq}
+    </delete>
 </mapper>

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -42,7 +43,7 @@ public class CoachController {
     private final CourseService courseService;
     private final CourseScheduleService courseScheduleService;
 
-    public long returnMemberNo(){
+    private long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         long memberNo = 0;
         if (m != null){
@@ -50,16 +51,76 @@ public class CoachController {
         }
         return memberNo;
     }
-    @PostMapping("/deletecourse")
-    public String deleteCourse(@RequestParam("delCourseSeq")long delCourseSeq, Model model){
-        log.debug("deleteCourse: " + delCourseSeq);
 
-        return "coach/deleteCourse";
+    private Course isExistCourse(long courseSeq){
+        return courseService.searchById(courseSeq);
+    }
+
+    private boolean canModifyAndDelete(Course course){
+        boolean result = false;
+        long memberNo = returnMemberNo();
+
+        //1. 코스가 빈값이 아니고 내가 만든 코스가 맞는지
+        if (course != null && course.getMemberNo() == memberNo){
+            //2. 온라인일때
+            if (course.getCourseType().equals("ON")){
+                //3. 승인 시간이 없다면 승인
+                if (course.getCourseConfirmTime() == null) {
+                    result = true;
+                }
+            }
+        }
+        //4. 그 외는 fail
+        return result;
+    }
+
+    @PostMapping("/deletecourse")
+    public String deleteCourse(@RequestParam("delCourseSeq")long delCourseSeq, Model model, RedirectAttributes redirectAttributes){
+        String loc = "common/msg";
+
+        log.debug("deleteCourse: " + delCourseSeq);
+        //1. 코스 정보가 있는지
+        Course course = isExistCourse(delCourseSeq);
+        if (canModifyAndDelete(course)) {
+            //역순으로 확인 후 삭제
+
+            //서비스에서 트렌젝션
+            //3-1. 커리큘럼 삭제(있다면)
+            //3-2. 섹션 삭제(있다면)
+            //3-3. 코스 삭제
+            Map<String, Integer> result = coachService.deleteCourseCascade(delCourseSeq);
+            int deleteCurrNum = result.get("deleteCurrNum");
+            int deleteSectionNum = result.get("deleteSectionNum");
+            int deleteCourseNum = result.get("deleteCourseNum");
+
+            //3-4 리다이렉트 메세지 설정
+            redirectAttributes.addAttribute("result", "success");
+            redirectAttributes.addAttribute("msg", "코스 " + deleteCourseNum +
+                     "개, 섹션 " + deleteSectionNum + "개, 커리큘럼 " + deleteCurrNum +
+                    "개 삭제를 완료했습니다.");
+
+            //3-5 코스관리 페이지로 이동
+            loc = "redirect:/coach/coursemanager";
+
+        } else {
+            redirectAttributes.addAttribute("result", "fail");
+            redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+            loc = "redirect:/coach/coursemanager";
+        }
+
+        return loc;
     }
 
     @PostMapping("/modifycourse")
     public String modifyCourse(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model){
         log.debug("modifyCourseSeq: " + modifyCourseSeq);
+        //1. 코스 정보가 있는지
+        //2. 코스의 타입이 온라인인지 (TODO: 타입에따라 수정)
+        //3. 코스의 승인 날짜의 존재가 없다면
+        //- 승인되지 않은 코스만 수정 가능
+        //3-1. 코스
+        //3-2. 섹션
+        //3-3. 커리큘럼
         return "coach/modifyCourse";
     }
 

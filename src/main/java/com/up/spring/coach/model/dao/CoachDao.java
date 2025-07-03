@@ -14,4 +14,7 @@ public interface CoachDao {
     List<Section> getSectionList(SqlSession sqlSession, Long courseSeq);
     int insertSection(SqlSession sqlSession, Section section);
     int insertCurriculum(SqlSession sqlSession, Curriculum curriculum);
+    int deleteCurrBySectionSeq (SqlSession sqlSession, long sectionSeq);
+    int deleteSectionByCourseSeq (SqlSession sqlSession, long courseSeq);
+    int deleteCourseByCourseSeq (SqlSession sqlSession, long courseSeq);
 }

@@ -11,6 +11,20 @@ import java.util.List;
 
 @Repository
 public class CoachDaoImpl implements CoachDao {
+    @Override
+    public int deleteCurrBySectionSeq(SqlSession sqlSession, long sectionSeq) {
+        return sqlSession.delete("coach.deleteCurrBySectionSeq", sectionSeq);
+    }
+
+    @Override
+    public int deleteSectionByCourseSeq(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.delete("coach.deleteSectionByCourseSeq", courseSeq);
+    }
+
+    @Override
+    public int deleteCourseByCourseSeq(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.delete("coach.deleteCourseByCourseSeq", courseSeq);
+    }
 
     @Override
     public List<Category> getCategoryAll(SqlSession sqlSession) {

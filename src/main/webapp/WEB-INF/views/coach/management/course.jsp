@@ -80,12 +80,19 @@
                                             <fmt:formatDate value="${course.courseConfirmTime}" pattern="yy-MM-dd hh:mm"/>
                                         </div>
                                         <div class="col-1 d-flex flex-column">
-                                            <div class="btn-outline-primary btn btn-sm mb-2 modifyButton" id="${course.courseSeq}">
-                                                수정
-                                            </div>
-                                            <div class="btn-outline-danger btn btn-sm deleteButton" id="${course.courseSeq}">
-                                                삭제
-                                            </div>
+                                            <c:if test="${not empty course.courseConfirmTime}">
+                                                <div class="mb-2 text-secondary small">
+                                                    삭제/수정 불가
+                                                </div>
+                                            </c:if>
+                                            <c:if test="${empty course.courseConfirmTime}">
+                                                <div class="btn-outline-primary btn btn-sm mb-2 modifyButton btn" id="${course.courseSeq}">
+                                                    수정
+                                                </div>
+                                                <div class="btn-outline-danger btn btn-sm deleteButton" id="${course.courseSeq}">
+                                                    삭제
+                                                </div>
+                                            </c:if>
                                         </div>
                                     </div>
                                     </c:forEach>
@@ -103,81 +110,126 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="confirmModalLabel" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="confirmModalLabel">알림</h5>
-                    <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+<div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="confirmModalLabel" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="confirmModalLabel">알림</h5>
+                <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                해당 코스를 수정하시겠습니까?
+            </div>
+
+            <div class="modal-footer">
+                <form action="${pageContext.request.contextPath}/coach/modifycourse" method="post"  name="modifyForm">
+                    <input type="hidden" value="" id="modifyCourseSeq" name="modifyCourseSeq">
+                    <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
                     </button>
-                </div>
-
-                <div class="modal-body">
-                    해당 코스를 수정하시겠습니까?
-                </div>
-
-                <div class="modal-footer">
-                    <form action="${pageContext.request.contextPath}/coach/modifycourse" method="post"  name="modifyForm">
-                        <input type="hidden" value="" id="modifyCourseSeq" name="modifyCourseSeq">
-                        <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
-                        </button>
-                        <button type="submit" class="btn btn-primary">네</button>
-                    </form>
-                </div>
+                    <button type="submit" class="btn btn-primary">네</button>
+                </form>
             </div>
         </div>
     </div>
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="confirmModalLabel" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white bi-">
-                    <h5 class="modal-title" id="confirmModalLabel">경고</h5>
-                    <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+</div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="confirmModalLabel" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white bi-">
+                <h5 class="modal-title" id="confirmModalLabel">경고</h5>
+                <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                정말 해당 코스를 삭제하시겠습니까?
+            </div>
+
+            <div class="modal-footer">
+                <form action="${pageContext.request.contextPath}/coach/deletecourse" method="post" name="deleteForm">
+                    <input type="hidden" value="" id="delCourseSeq" name="delCourseSeq">
+                    <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
                     </button>
-                </div>
-
-                <div class="modal-body">
-                    정말 해당 코스를 삭제하시겠습니까?
-                </div>
-
-                <div class="modal-footer">
-                    <form action="${pageContext.request.contextPath}/coach/deletecourse" method="post" name="deleteForm">
-                        <input type="hidden" value="" id="delCourseSeq" name="delCourseSeq">
-                        <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
-                        </button>
-                        <button type="submit" class="btn btn-danger">네</button>
-                    </form>
-                </div>
+                    <button type="submit" class="btn btn-danger">네</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        $(document).ready(function () {
-            bindingEvent();
+<script>
+    $(document).ready(function () {
+        bindingEvent();
+    });
+
+    function bindingEvent() {
+        $('.deleteButton').off('click').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const selectedCourseId = $(this).attr("id");
+            console.log(selectedCourseId);
+            $('#delCourseSeq').val(selectedCourseId);
+            $('#deleteModal').modal('show');
         });
 
-        function bindingEvent() {
-            $('.deleteButton').off('click').on('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const selectedCourseId = $(this).attr("id");
-                console.log(selectedCourseId);
-                $('#delCourseSeq').val(selectedCourseId);
-                $('#deleteModal').modal('show');
-            });
+        $('.modifyButton').off('click').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const selectedCourseId = $(this).attr("id");
+            console.log(selectedCourseId);
+            $('#modifyCourseSeq').val(selectedCourseId);
+            $('#modifyModal').modal('show');
+        });
+    }
+</script>
 
-            $('.modifyButton').off('click').on('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const selectedCourseId = $(this).attr("id");
-                console.log(selectedCourseId);
-                $('#modifyCourseSeq').val(selectedCourseId);
-                $('#modifyModal').modal('show');
-            });
+<div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultModalLabel">알림</h5>
+                <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body" id="resultModalMessage">
+                <!--메세지 -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modalCloseAct" data-dismiss="modal" onclick="location.replace('${pageContext.request.contextPath}/coach/coursemanager')">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const result = urlParams.get('result');
+            const msg = urlParams.get('msg');
+            console.log(urlParams, result, msg);
+            if (result && msg) {
+                if (result === 'success') {
+                    $('#resultModal .modal-body').text(msg);
+                    $('#resultModal').modal('show');
+                } else if (result === 'fail') {
+                    $('#resultModal .modal-body').text(msg);
+                    $('#resultModal').modal('show');
+                }
+            }
         }
-    </script>
+    });
 
-    <jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>
+</script>
+
+
+<jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>
