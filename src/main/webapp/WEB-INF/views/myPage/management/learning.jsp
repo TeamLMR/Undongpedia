@@ -3,7 +3,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <div class="container px-3 px-md-5 my-5">
-    <h2 class="fw-bold mb-5">구매내역</h2>
+    <h2 class="fw-bold mb-5">내 학습</h2>
 
     <c:if test="${not empty myCourse}">
         <c:forEach var="c" items="${myCourse}">
