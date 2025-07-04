@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Date;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,4 +19,11 @@ public class CoachApply {
     private String coaIntro;
     private String coaYn;
     private Long memberNo;
+    private Date applyDate;
+    private Date approveDate;
+    
+    // Member 정보 추가
+    private String memberName;
+    private String memberId;
+    private String memberNickname;
 }

@@ -49,6 +49,11 @@ public class CourseDaoImpl implements CourseDao {
     }
 
     @Override
+    public int deleteReview(SqlSession sqlSession, Review review) {
+        return sqlSession.delete("course.deleteReview", review);
+    }
+
+    @Override
     public List<Course> searchCourseListByMemberNo(SqlSession sqlSession, long memberNo) {
         return sqlSession.selectList("course.searchCourseListByMemberNo", memberNo);
     }

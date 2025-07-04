@@ -164,7 +164,9 @@ public class PaymentController {
     }
 
     @PostMapping("/cart/add")
-    public String addCart(@RequestParam("addCourseSeq") long courseSeq, Model model, RedirectAttributes redirectAttributes) {
+    public String addCart(@RequestParam("addCourseSeq") long courseSeq,
+                          @RequestParam(value = "addCourseDetailLoc", required = false) String addCourseDetailLoc,
+                          Model model, RedirectAttributes redirectAttributes) {
         String loc = "common/msg";
         log.debug("courseSeq: {}", courseSeq);
         long memberNo = returnMemberNo();
@@ -213,7 +215,9 @@ public class PaymentController {
             model.addAttribute("msg", "로그인을 확인해주세요.");
             model.addAttribute("loc", "/");
         }
-
+        if (addCourseDetailLoc != null && !addCourseDetailLoc.trim().isEmpty()) {
+            loc = addCourseDetailLoc;
+        }
         return loc;
     }
 

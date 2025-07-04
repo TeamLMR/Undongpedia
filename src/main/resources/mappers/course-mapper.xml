@@ -111,7 +111,9 @@
     <insert id="insertReview" parameterType="review">
         INSERT INTO COURSE_REVIEW VALUES (SEQ_COURSE_REVIEW.nextval,#{memberSeq},#{courseSeq},#{reviewTitle},#{reviewContent},#{reviewRate},DEFAULT,NULL)
     </insert>
-
+    <delete id="deleteReview" parameterType="review">
+        DELETE FROM COURSE_REVIEW WHERE REVIEW_SEQ = #{reviewSeq}
+    </delete>
     <select id="getFirstCurriculum" parameterType="_long" resultMap="curriculumMap">
         SELECT *
         FROM (

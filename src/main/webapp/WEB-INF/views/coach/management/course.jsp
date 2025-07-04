@@ -60,7 +60,7 @@
                                             <div class="col-4 d-flex justify-content-start" style="width: 50px;">
                                                 <img src="${pageContext.request.contextPath}${course.courseThumbnail}" alt="썸네일" class="object-fit-cover img-fluid rounded">
                                             </div>
-                                            <div class="col-8 d-flex justify-content-start">
+                                            <div class="col-8 d-flex justify-content-start align-items-center">
                                                     ${course.courseTitle}
                                             </div>
                                         </div>
@@ -73,10 +73,10 @@
                                         <div class="col-2">
                                             <fmt:formatNumber value="${course.coursePrice - (course.coursePrice * course.courseDiscount / 100)}" type="number"/>
                                         </div>
-                                        <div class="col-1">
+                                        <div class="col-1 small">
                                             <fmt:formatDate value="${course.courseCreateTime}" pattern="yy-MM-dd hh:mm"/>
                                         </div>
-                                        <div class="col-1">
+                                        <div class="col-1 small">
                                             <fmt:formatDate value="${course.courseConfirmTime}" pattern="yy-MM-dd hh:mm"/>
                                         </div>
                                         <div class="col-1 d-flex flex-column">

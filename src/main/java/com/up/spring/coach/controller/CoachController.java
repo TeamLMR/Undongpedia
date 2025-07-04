@@ -1,6 +1,7 @@
 package com.up.spring.coach.controller;
 
 import com.up.spring.common.model.dto.Category;
+import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.coach.model.service.CoachService;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.CourseSchedule;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import oracle.jdbc.proxy.annotation.Post;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -112,17 +114,121 @@ public class CoachController {
     }
 
     @PostMapping("/modifycourse")
-    public String modifyCourse(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model){
+    public String modifyCourse(@RequestParam("modifyCourseSeq")long modifyCourseSeq, Model model, RedirectAttributes redirectAttributes){
+        String loc = "common/msg";
+
         log.debug("modifyCourseSeq: " + modifyCourseSeq);
-        //1. 코스 정보가 있는지
-        //2. 코스의 타입이 온라인인지 (TODO: 타입에따라 수정)
-        //3. 코스의 승인 날짜의 존재가 없다면
-        //- 승인되지 않은 코스만 수정 가능
-        //3-1. 코스
-        //3-2. 섹션
-        //3-3. 커리큘럼
-        return "coach/modifyCourse";
+        Course course = isExistCourse(modifyCourseSeq);
+        if (canModifyAndDelete(course)) {
+            //- 승인되지 않은 코스만 수정 가능
+            //수정할 코스 보내줌
+            model.addAttribute("course", course);
+            loc = "coach/modify/modifyCourse";
+
+        } else {
+            redirectAttributes.addAttribute("result", "fail");
+            redirectAttributes.addAttribute("msg", "수정시도가 실패했습니다.");
+            loc = "redirect:/coach/coursemanager";
+        }
+        return loc;
     }
+
+    @RequestMapping("/modifysectioncurr")
+    public String modifySectionCurr(HttpSession session, RedirectAttributes redirectAttributes, Model model){
+        String loc = "coach/modify/modifySectionCurr";
+
+
+        long tempCourseSeq = (long) session.getAttribute("tempCourseSeq");
+        log.debug("tempCourseSeq: " + tempCourseSeq);
+
+        //검증
+        Course beforeCourse = isExistCourse(tempCourseSeq);
+        if (canModifyAndDelete(beforeCourse)) {
+            session.removeAttribute("tempCourseSeq");
+            List<Section> sectionList = coachService.getSectionList(tempCourseSeq);
+            log.debug("sectionList: " + sectionList);
+
+            model.addAttribute("tempCourseSeq", tempCourseSeq);
+            model.addAttribute("sectionList", sectionList);
+        } else {
+            redirectAttributes.addAttribute("result", "fail");
+            redirectAttributes.addAttribute("msg", "섹션/커리큘럼을 수정할 수 없습니다.");
+            loc = "redirect:/coach/coursemanager";
+        }
+
+       return loc;
+    }
+
+    @PostMapping("/modifycourse-end")
+    public String modifyCourseEnd(Course course,
+                                  @RequestParam("submitType") String submitType,
+                                  @RequestParam("modifyCourseSeq") long modifyCourseSeq,
+                                  @RequestParam("memberNo") long memberNo,
+                                  Model model,
+                                  HttpSession session, RedirectAttributes redirectAttributes){
+        String loc = "redirect:/coach/coursemanager";
+        log.debug("modifyCourseSeq: " + modifyCourseSeq);
+
+        //검증
+        Course beforeCourse = isExistCourse(modifyCourseSeq);
+        log.debug("beforeCourse: " + beforeCourse);
+
+        if (canModifyAndDelete(beforeCourse)) {
+            // 저장 경로
+            String realPath = session.getServletContext().getRealPath("/resources/upload/course/thumbnail");
+            File dir = new File(realPath);
+            if (!dir.exists()) dir.mkdirs();
+
+            // Base64 문자열 (data URI 포함될 수 있음)
+            String base64img = course.getCourseThumbnail();
+            if (base64img != null && base64img.contains(",")) {
+                base64img = base64img.split(",")[1]; // "data:image/jpeg;base64,..." 제거
+            }
+
+            // 디코딩
+            byte[] imageBytes = Base64.getDecoder().decode(base64img); // Java 8 이상 :contentReference[oaicite:1]{index=1}
+            int rnd = (int) (Math.random() * 1000) + 1;
+            Date d = new Date(System.currentTimeMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mmss");
+            String fileName = "COURSE_" + sdf.format(d) +  "_"+ rnd + ".jpg";
+
+            // 파일 저장
+            try (OutputStream os = new FileOutputStream(new File(dir, fileName))) {
+                os.write(imageBytes);
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // DB에 저장할 경로 설정
+            String dbPath = "/resources/upload/course/thumbnail/" + fileName;
+            course.setCourseThumbnail(dbPath); // setter 필요
+
+            //없는 부분 채움
+            course.setCourseSeq(modifyCourseSeq);
+            log.debug("after updateCourse: " + course);
+
+            int updateResult = coachService.updateTempCourse(course);
+            log.debug("submitType: " +  submitType);
+
+            if (updateResult == 1) {
+                //다시 코스 관리로 보낸다
+                if (submitType.equals("saveAfterExit")) {
+                    redirectAttributes.addAttribute("result", "success");
+                    redirectAttributes.addAttribute("msg", "코스 수정을 완료했습니다.");
+                //다음 섹션/커리큘럼 페이지로 보낸다
+                } else {
+                    session.setAttribute("tempCourseSeq", course.getCourseSeq());
+                    loc = "redirect:/coach/modifysectioncurr";
+                }
+
+            } else {
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "코스 수정을 실패했습니다.");
+            }
+        }
+        return loc;
+    }
+
 
     @RequestMapping("/dashboard")
     public String dashboard(Model model)
@@ -465,5 +571,22 @@ public class CoachController {
             // 다음 스케줄 날짜로 이동 (매주는 7일, 격주는 14일 후)
             currentDate = currentDate.plusDays(interval);
         }
+    }
+
+    // 코치 신청 페이지 이동
+    @GetMapping("/apply")
+    public String coachApplyPage() {
+        return "myPage/setting/coachApply";
+    }
+
+    // 코치 신청 처리
+    @PostMapping("/apply")
+    @ResponseBody
+    public ResponseEntity<String> submitCoachApply(@RequestBody CoachApply coachApply) {
+        // 기본 상태를 D(대기)로 설정
+        coachApply.setCoaYn("D");
+        coachApply.setMemberNo(returnMemberNo());
+        coachService.insertCoachApply(coachApply);
+        return ResponseEntity.ok("Success");
     }
 }

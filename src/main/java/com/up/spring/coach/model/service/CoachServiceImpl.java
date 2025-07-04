@@ -5,9 +5,9 @@ import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
 import com.up.spring.course.model.dto.Section;
-import lombok.extern.slf4j.Slf4j;
+import com.up.spring.coach.model.dto.CoachApply;
+import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,13 +15,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Service
+@RequiredArgsConstructor
 public class CoachServiceImpl implements CoachService {
-    @Autowired
-    private SqlSession sqlSession;
-    @Autowired
-    private CoachDao coachDao;
+    private final CoachDao coachDao;
+    private final SqlSession sqlSession;
+
+    @Override
+    public int updateTempCourse(Course course) {
+        return coachDao.updateTempCourse(sqlSession, course);
+    }
 
     @Override
     public int deleteCurrBySectionSeq(long sectionSeq) {
@@ -46,7 +49,6 @@ public class CoachServiceImpl implements CoachService {
         int deleteCourseNum = 0;
 
         if (!sectionList.isEmpty()) {
-            log.debug(sectionList.toString());
             //커리큘럼 삭제
             for (Section section : sectionList) {
                 int deleteCurrResult = deleteCurrBySectionSeq(section.getSectionSeq());
@@ -104,5 +106,35 @@ public class CoachServiceImpl implements CoachService {
     @Override
     public List<Map<String, Object>> getMonthlyEarnings(Long memberNo) {
         return coachDao.getMonthlyEarnings(sqlSession,memberNo);
+    }
+
+    @Override
+    public List<CoachApply> getCoachApplyList(Map<String, Object> params) {
+        return coachDao.selectCoachApplyList(sqlSession, params);
+    }
+
+    @Override
+    public Map<String, Integer> getCoachApplyCount() {
+        return coachDao.selectCoachApplyCount(sqlSession);
+    }
+
+    @Override
+    public CoachApply getCoachApplyDetail(Long coaSeq) {
+        return coachDao.selectCoachApplyDetail(sqlSession, coaSeq);
+    }
+
+    @Override
+    @Transactional
+    public void updateCoachApplyStatus(Long coaSeq, String status) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("coaSeq", coaSeq);
+        params.put("status", status);
+        coachDao.updateCoachApplyStatus(sqlSession, params);
+    }
+
+    @Override
+    @Transactional
+    public void insertCoachApply(CoachApply coachApply) {
+        coachDao.insertCoachApply(sqlSession, coachApply);
     }
 }

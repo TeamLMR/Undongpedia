@@ -2,7 +2,6 @@ package com.up.spring.member.controller;
 
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.common.EmailService;
-import com.up.spring.course.model.service.CourseService;
 import com.up.spring.email.model.dto.PasswordUpdateValidationResult;
 import com.up.spring.email.model.service.PasswordUpdateService;
 import com.up.spring.member.model.dto.Member;
@@ -53,7 +52,6 @@ public class MemberController {
 
     @Value("${x.naver.client.secret}")
     private String naverClientSecret;
-    private final CourseService courseService;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -92,10 +90,7 @@ public class MemberController {
     }
 
     @RequestMapping("/mypage/learning")
-    public String course(Model model){
-        long memberNo = returnMemberNo();
-        List<Map<String, Object>> myCourse = courseService.getMyLearningCourse(memberNo);
-        model.addAttribute("myCourse", myCourse);
+    public String course(){
         return "myPage/management/learning";
     }
 
@@ -113,14 +108,14 @@ public class MemberController {
 
     @PostMapping("/mypage/savemember")
     public String savemember(@ModelAttribute("member") Member member,
-                            @RequestParam(required = false) String memberSigntype,
-                            @RequestParam(required = false) String memberIdHidden,
-                            @RequestParam(required = false) String memberNameHidden,
-                            @RequestParam(required = false) String memberNicknameHidden,
-                            HttpSession session) {
+                             @RequestParam(required = false) String memberSigntype,
+                             @RequestParam(required = false) String memberIdHidden,
+                             @RequestParam(required = false) String memberNameHidden,
+                             @RequestParam(required = false) String memberNicknameHidden,
+                             HttpSession session) {
 
         log.debug("회원가입 요청 - memberId: {}, memberName: {}, memberNickname: {}, memberSigntype: {}",
-                 member.getMemberId(), member.getMemberName(), member.getMemberNickname(), memberSigntype);
+                member.getMemberId(), member.getMemberName(), member.getMemberNickname(), memberSigntype);
 
         // hidden 필드 값이 있으면 사용
         if (memberIdHidden != null && !memberIdHidden.isEmpty()) {
@@ -139,7 +134,14 @@ public class MemberController {
         // 네이버 로그인인 경우 signType 설정
         if ("NAVER".equals(memberSigntype)) {
             member.setMemberSignType("NAVER");
+            log.debug("네이버 회원가입으로 설정됨");
+        } else {
+            // 일반 회원가입인 경우 GENERAL로 설정
+            member.setMemberSignType("GENERAL");
+            log.debug("일반 회원가입으로 설정됨");
         }
+
+        log.debug("최종 memberSignType: {}", member.getMemberSignType());
 
         int result=memberService.saveMember(member);
         if(result > 0){
@@ -153,8 +155,8 @@ public class MemberController {
             Member savedMember = memberService.searchById(member.getMemberId());
             if (savedMember != null) {
                 UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                        savedMember, null, savedMember.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(
+                                savedMember, null, savedMember.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
             }
@@ -227,7 +229,7 @@ public class MemberController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> requestPasswordUpdate() {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             Member loginMember = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             if (loginMember == null) {
@@ -251,7 +253,7 @@ public class MemberController {
     @GetMapping("/member/update-password")
     public String showPasswordUpdateForm(@RequestParam String token, Model model) {
         PasswordUpdateValidationResult result = passwordUpdateService.validatePasswordUpdateToken(token);
-        
+
         if (!result.isValid()) {
             model.addAttribute("error", result.getErrorMessage());
             if (result.getMemberNo() != null) {
@@ -260,7 +262,7 @@ public class MemberController {
             }
             return "member/invalid-token";
         }
-        
+
         model.addAttribute("token", token);
         return "member/update-password";
     }
@@ -299,10 +301,10 @@ public class MemberController {
     }
 
     @PostMapping("/member/forgot-password")
-    public String processForgotPassword(@RequestParam String memberId, 
-                                       @RequestParam String memberName,
-                                       Model model,
-                                       RedirectAttributes redirectAttr) {
+    public String processForgotPassword(@RequestParam String memberId,
+                                        @RequestParam String memberName,
+                                        Model model,
+                                        RedirectAttributes redirectAttr) {
         try {
             Member member = memberService.searchById(memberId);
 
@@ -366,11 +368,17 @@ public class MemberController {
             // 3. 회원 존재 여부 확인
             Member member = memberService.searchById(email);
             if (member != null) {
+                // 탈퇴한 회원인지 확인
+                if ("WITHDRAW".equals(member.getMemberStatus())) {
+                    redirectAttr.addFlashAttribute("error", "탈퇴한 회원입니다.");
+                    return "redirect:/";
+                }
+
                 // 이미 회원이면 Spring Security 인증 처리
                 // Spring Security의 Authentication 객체를 생성하여 로그인 처리
                 org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
-                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                        member, null, member.getAuthorities());
+                        new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                                member, null, member.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
                 return "redirect:/";
@@ -482,7 +490,7 @@ public class MemberController {
                     userInfo.put("nickname", (String) responseObj.get("nickname"));
 
                     log.debug("네이버 사용자 정보 파싱 결과 - email: {}, name: {}, nickname: {}",
-                             userInfo.get("email"), userInfo.get("name"), userInfo.get("nickname"));
+                            userInfo.get("email"), userInfo.get("name"), userInfo.get("nickname"));
 
                     return userInfo;
                 } else {
@@ -503,6 +511,33 @@ public class MemberController {
             log.error("네이버 사용자 정보 요청 중 오류", e);
         }
         return null;
+    }
+
+    @PostMapping("/member/withdraw")
+    public String withdrawMember(HttpSession session, RedirectAttributes redirectAttr) {
+        try {
+            Member loginMember = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (loginMember == null) {
+                redirectAttr.addFlashAttribute("error", "로그인이 필요한 서비스입니다.");
+                return "redirect:/";
+            }
+
+            int result = memberService.withdrawMember(loginMember.getMemberNo());
+            if (result > 0) {
+                // 로그아웃 처리
+                SecurityContextHolder.clearContext();
+                session.invalidate();
+                redirectAttr.addFlashAttribute("message", "회원탈퇴가 완료되었습니다.");
+                return "redirect:/";
+            } else {
+                redirectAttr.addFlashAttribute("error", "회원탈퇴 처리에 실패했습니다.");
+                return "redirect:/mypage";
+            }
+        } catch (Exception e) {
+            log.error("회원탈퇴 처리 중 오류 발생", e);
+            redirectAttr.addFlashAttribute("error", "회원탈퇴 처리 중 오류가 발생했습니다.");
+            return "redirect:/mypage";
+        }
     }
 
 }

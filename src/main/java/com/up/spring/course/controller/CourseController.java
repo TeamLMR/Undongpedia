@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -77,12 +78,21 @@ public class CourseController {
         if(m != null){
             int memberNo = m.getMemberNo().intValue();
             review.setMemberSeq(memberNo);
-            int result = courseService.insertReview(review);
-            if(result > 0) {
-                model.addAttribute("msg", "댓글이 등록 되었습니다.");
-                model.addAttribute("loc", "/course/detail?courseSeq="+review.getCourseSeq()+"#reviews-list");
+            Orders o = new Orders();
+            o.setCourseSeq(review.getCourseSeq());
+            o.setMemberNo(memberNo);
+            int order = orderService.isCoursePaidByMember(o);
+            if(order > 0){
+                int result = courseService.insertReview(review);
+                if(result > 0) {
+                    model.addAttribute("msg", "댓글이 등록 되었습니다.");
+                    model.addAttribute("loc", "/course/detail?courseSeq="+review.getCourseSeq()+"#reviews-list");
+                }else{
+                    model.addAttribute("msg", "이미 작성한 댓글이 있습니다.");
+                    model.addAttribute("loc", "/course/detail?courseSeq="+review.getCourseSeq()+"#reviews-list");
+                }
             }else{
-                model.addAttribute("msg", "이미 댓글이 작성한 댓글이 있습니다.");
+                model.addAttribute("msg", "구매 후에 리뷰 작성이 가능합니다.");
                 model.addAttribute("loc", "/course/detail?courseSeq="+review.getCourseSeq()+"#reviews-list");
             }
         }else{
@@ -90,6 +100,19 @@ public class CourseController {
             model.addAttribute("loc", "/course/detail?courseSeq="+review.getCourseSeq()+"#reviews-list");
         }
         return "common/msg";
+    }
+
+    @PostMapping("/course/deletereview")
+    @ResponseBody
+    public int deleteReview(Review review, Model model) {
+        Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(m != null){
+            int memberNo = m.getMemberNo().intValue();
+            if(memberNo == review.getMemberSeq()){
+                return courseService.deleteReview(review);
+            }
+        }
+        return 0;
     }
 
     @RequestMapping("/course/reviewlistajax")
