@@ -20,6 +20,16 @@ public class CourseDaoImpl implements CourseDao {
     }
 
     @Override
+    public List<Course> getCourseApplyList(SqlSession sqlSession, String status) {
+        return sqlSession.selectList("course.getCourseApplyList", status);
+    }
+
+    @Override
+    public int courseApplyConfirm(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.update("course.courseApplyConfirm", courseSeq);
+    }
+
+    @Override
     public List<Review> getReviewList(SqlSession sqlSession, long courseSeq, Map<String,Object> params) {
         int cPage= params.get("cPage") == null ? 1 : Integer.parseInt(params.get("cPage").toString());
         int numPerpage= params.get("numPerpage") == null ? 3 : Integer.parseInt(params.get("numPerpage").toString());

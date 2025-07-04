@@ -8,6 +8,8 @@ import java.util.Map;
 
 public interface CourseService {
     Course searchById(long courseSeq);
+    List<Course> getCourseApplyList(String status);
+    int courseApplyConfirm(long courseSeq);
     Map<String,Object> getReviewInfo(long courseSeq);
     Map<String,Object> getReviewAjax(long courseSeq,Map<String,Object> params);
     int insertReview(Review review);

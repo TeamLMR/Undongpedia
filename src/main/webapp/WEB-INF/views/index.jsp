@@ -352,7 +352,8 @@
                                      style="min-height: 240px;">
                                     <div>
                                         <p class="text-muted small mb-1">${c.memberNickname}</p>
-                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTarget}</h5>
+                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTitle}</h5>
+                                        <p class="card-text text-secondary small text-truncate">${c.courseTarget}</p>
                                             <%--                                        <p class="card-text text-secondary small text-truncate">${c.courseContent}</p>--%>
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mt-3">

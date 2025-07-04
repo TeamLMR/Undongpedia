@@ -2,6 +2,7 @@ package com.up.spring.member.controller;
 
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.common.EmailService;
+import com.up.spring.course.model.service.CourseService;
 import com.up.spring.email.model.dto.PasswordUpdateValidationResult;
 import com.up.spring.email.model.service.PasswordUpdateService;
 import com.up.spring.member.model.dto.Member;
@@ -52,6 +53,7 @@ public class MemberController {
 
     @Value("${x.naver.client.secret}")
     private String naverClientSecret;
+    private final CourseService courseService;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -90,7 +92,10 @@ public class MemberController {
     }
 
     @RequestMapping("/mypage/learning")
-    public String course(){
+    public String course(Model model){
+        long memberNo = returnMemberNo();
+        List<Map<String, Object>> myCourse = courseService.getMyLearningCourse(memberNo);
+        model.addAttribute("myCourse", myCourse);
         return "myPage/management/learning";
     }
 
