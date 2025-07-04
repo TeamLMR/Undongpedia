@@ -65,9 +65,9 @@
     </nav>
 
     <!-- 검색 -->
-    <form class="d-lg-block flex-grow-1 mx-4 ">
+    <form class="d-lg-block flex-grow-1 mx-4" id="searchForm">
       <div class="input-group">
-        <input type="text" class="form-control" placeholder="운동을 검색해보세요!">
+        <input type="text" name="keyword" class="form-control" placeholder="운동을 검색해보세요!">
         <button class="btn btn-primary" type="submit">
           <i class="bi bi-search"></i>
         </button>
@@ -95,7 +95,10 @@
 <div id="categoryBar" class="bg-light py-3" style="display: none;">
   <div class="container d-flex flex-wrap justify-content-center gap-4 text-center">
     <c:forEach var="category" items="${categories}">
-      <div class="text-center mx-auto opacity-75" onclick="location.assign('${path}/course/list')" style="width: 50px;" >
+      <div class="text-center mx-auto opacity-75 category-item" 
+           data-category-seq="${category.cateSeq}" 
+           data-category-name="${category.cateValue}"
+           style="width: 50px; cursor: pointer;" >
         <img src="${path}/resources/images/icons/${category.cateIcon}" alt="${category.cateValue}" width="30" height="30" class="mb-2">
         <div class="text-secondary small text-center" style="min-height: 2.5em;">
           <c:forEach var="part" items="${fn:split(category.cateValue, '/')}">
@@ -108,16 +111,47 @@
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggleCategoryBtn");
-    const categoryBar = document.getElementById("categoryBar");
-    const icon = toggleBtn.querySelector("i");
-
-    toggleBtn.addEventListener("click", function () {
-      const isVisible = categoryBar.style.display === "block";
-      categoryBar.style.display = isVisible ? "none" : "block";
-      icon.classList.toggle("bi-chevron-down", isVisible);
-      icon.classList.toggle("bi-chevron-up", !isVisible);
+  $(document).ready(function() {
+    // 기존 카테고리 토글 코드
+    $("#toggleCategoryBtn").click(function() {
+      const categoryBar = $("#categoryBar");
+      const icon = $(this).find("i");
+      const isVisible = categoryBar.is(":visible");
+      
+      if (isVisible) {
+        categoryBar.hide();
+        icon.removeClass("bi-chevron-up").addClass("bi-chevron-down");
+      } else {
+        categoryBar.show();
+        icon.removeClass("bi-chevron-down").addClass("bi-chevron-up");
+      }
+    });
+    
+    // 카테고리 클릭 이벤트
+    $(document).on('click', '.category-item', function() {
+      const categorySeq = $(this).data('category-seq');
+      const categoryName = $(this).data('category-name');
+      
+      // 카테고리 바 숨기기
+      $("#categoryBar").hide();
+      $("#toggleCategoryBtn i").removeClass("bi-chevron-up").addClass("bi-chevron-down");
+      
+      // 메인 페이지로 이동하면서 카테고리 검색
+      window.location.href = '${pageContext.request.contextPath}/?category=' + categorySeq + '&categoryName=' + encodeURIComponent(categoryName);
+    });
+    
+    // 검색 폼 처리 - 메인 페이지로 리다이렉트
+    $("#searchForm").submit(function(e) {
+      e.preventDefault(); // 기본 form 제출 방지
+      
+      const keyword = $(this).find('input[name="keyword"]').val().trim();
+      if (!keyword) {
+        alert('검색어를 입력해주세요!');
+        return;
+      }
+      
+      // 무조건 메인 페이지로 이동하면서 검색어 전달
+      window.location.href = '${pageContext.request.contextPath}/?search=' + encodeURIComponent(keyword);
     });
   });
 </script>

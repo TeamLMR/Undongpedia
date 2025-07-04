@@ -14,7 +14,7 @@ import java.util.Map;
 public class MainDaoImpl implements MainDao {
     @Override
     public List<Category> getCategorys(SqlSession session) {
-        return session.selectList("getCategorys");
+        return session.selectList("common.getCategorys");
     }
 
     @Override
@@ -23,12 +23,12 @@ public class MainDaoImpl implements MainDao {
         int numPerPage= params.get("numPerPage") == null ? 8 : Integer.parseInt(params.get("numPerPage").toString());
         RowBounds rowBounds = new RowBounds(((cPage-1)*numPerPage), numPerPage);
 
-        return session.selectList("getCourseList", params, rowBounds);
+        return session.selectList("common.getCourseList", params, rowBounds);
     }
 
     @Override
     public List<EventCourse> getActiveEventCourses(SqlSession session) {
-        return session.selectList("getActiveEventCourses");
+        return session.selectList("common.getActiveEventCourses");
     }
     
     @Override
@@ -37,6 +37,6 @@ public class MainDaoImpl implements MainDao {
         int numPerPage = filters.get("numPerPage") == null ? 8 : Integer.parseInt(filters.get("numPerPage").toString());
         RowBounds rowBounds = new RowBounds(((cPage-1)*numPerPage), numPerPage);
         
-        return session.selectList("getFilteredCourses", filters, rowBounds);
+        return session.selectList("common.getFilteredCourses", filters, rowBounds);
     }
 }

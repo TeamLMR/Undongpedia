@@ -604,6 +604,48 @@
                 console.log('폼 제출됨');
                 return true;
             });
+
+            // ===== 이메일 중복 확인 및 버튼 제어 =====
+            document.getElementById('email').addEventListener('keyup', function() {
+                const emailInput = this;
+                const email = emailInput.value.trim();
+                const sendBtn = document.getElementById('sendVerificationBtn');
+                const emailError = document.getElementById('emailError');
+                sendBtn.disabled = true; // 기본적으로 비활성화
+
+                if (!validateEmail(email)) {
+                    emailError.textContent = '올바른 이메일 주소를 입력해주세요.';
+                    emailInput.classList.add('is-invalid');
+                    emailInput.classList.remove('is-valid');
+                    return;
+                }
+
+                // 이메일 형식이 맞으면 중복 확인 요청
+                fetch('/undongpedia/email/check-duplicate?email=' + encodeURIComponent(email))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (data.duplicate) {
+                                emailError.textContent = '이미 사용 중인 이메일입니다.';
+                                emailInput.classList.add('is-invalid');
+                                emailInput.classList.remove('is-valid');
+                                sendBtn.disabled = true;
+                            } else {
+                                emailError.textContent = '';
+                                emailInput.classList.remove('is-invalid');
+                                emailInput.classList.add('is-valid');
+                                sendBtn.disabled = false;
+                            }
+                        } else {
+                            emailError.textContent = data.message || '중복 확인 중 오류가 발생했습니다.';
+                            sendBtn.disabled = true;
+                        }
+                    })
+                    .catch(() => {
+                        emailError.textContent = '서버 오류가 발생했습니다.';
+                        sendBtn.disabled = true;
+                    });
+            });
         });
     </script>
 </section>

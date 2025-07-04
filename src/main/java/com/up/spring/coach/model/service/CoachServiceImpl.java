@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class CoachServiceImpl implements CoachService {
     private final CoachDao coachDao;
     private final SqlSession sqlSession;
+    private static final Logger log = LoggerFactory.getLogger(CoachServiceImpl.class);
 
     @Override
     public Curriculum selectCurrByCurrSeq(long currSeq) {
@@ -181,7 +184,32 @@ public class CoachServiceImpl implements CoachService {
 
     @Override
     public Map<String, Integer> getCoachApplyCount() {
-        return coachDao.selectCoachApplyCount(sqlSession);
+        log.info("=== getCoachApplyCount 호출됨 ===");
+        Map<String, Integer> rawResult = coachDao.selectCoachApplyCount(sqlSession);
+        log.info("DB에서 조회한 원본 결과: {}", rawResult);
+        
+        Map<String, Integer> result = new HashMap<>();
+        
+        // DB에서 반환되는 컬럼명에 맞춰 매핑 (대문자 키로 반환됨)
+        result.put("pending", convertToInteger(rawResult.get("PENDINGCOUNT")));
+        result.put("approved", convertToInteger(rawResult.get("APPROVEDCOUNT")));
+        result.put("rejected", convertToInteger(rawResult.get("REJECTEDCOUNT")));
+        result.put("total", convertToInteger(rawResult.get("TOTALCOUNT")));
+        
+        log.info("변환된 최종 결과: {}", result);
+        return result;
+    }
+    
+    private Integer convertToInteger(Object value) {
+        if (value == null) return 0;
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.valueOf(value.toString());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     @Override

@@ -28,6 +28,16 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public List<Course> getCourseApplyList(String status) {
+        return courseDao.getCourseApplyList(sqlSession, status);
+    }
+
+    @Override
+    public int courseApplyConfirm(long courseSeq) {
+        return courseDao.courseApplyConfirm(sqlSession, courseSeq);
+    }
+
+    @Override
     public Map<String,Object> getReviewAjax(long courseSeq, Map<String, Object> params) {
         Map<String,Object> map = new HashMap<>();
         List<Review> reviews = courseDao.getReviewList(sqlSession, courseSeq, params);

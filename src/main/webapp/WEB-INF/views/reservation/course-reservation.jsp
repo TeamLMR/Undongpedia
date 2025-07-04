@@ -1084,8 +1084,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         success: function(response) {
                             if (response.success) {
-                                alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
-                                window.location.href = '/undongpedia/cart';
+                    alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
+                    window.location.href = '/undongpedia/cart';
                             } else {
                                 alert('장바구니 추가 실패: ' + response.message);
                                 window.location.href = '/undongpedia/cart';
@@ -1100,16 +1100,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 // 대기열이 필요한 경우
                 else if (result.queueRequired || result.message.includes('대기열')) {
-                    showQueueModal(data);
+                    showQueueModal(data, result);
                 } else {
                     // 일반 예약 성공 - 장바구니로 이동
                     alert('강의 예약이 완료되었습니다! 장바구니로 이동합니다.');
                     window.location.href = '/undongpedia/cart';
                 }
             } else {
-                alert('강의 예약에 실패했습니다: ' + result.message);
-                reservationBtn.disabled = false;
-                reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+                // success == false 이더라도 queueRequired가 true이면 대기열로 전환
+                if (result.queueRequired || (result.message && result.message.includes('대기열'))) {
+                    showQueueModal(data, result);
+                } else {
+                    // 임시예약 실패
+                    console.log('❌ 임시예약 실패:', result.message);
+
+                    const skipAlertMsg3 = result.message && (result.message.includes('대기열') || result.message.includes('차례') || result.message.includes('잠시만'));
+                    if (!result.queueRequired && !skipAlertMsg3) {
+                        alert('임시예약 실패: ' + (result.message || '알 수 없는 오류'));
+                    }
+
+                    // 실패 시 대기열 상태 다시 확인
+                    setTimeout(checkModalQueueStatus, 2000);
+                }
             }
         })
         .catch(error => {
@@ -1211,7 +1223,7 @@ window.leaveQueue = function() {
 };
 
     // 대기열 모달 표시
-    function showQueueModal(reservationData) {
+    function showQueueModal(reservationData, queueResult) {
         window.currentCourseSeq = reservationData.courseSeq;
         window.currentScheduleId = reservationData.scheduleId;
         // 🔥 실제 로그인 사용자 정보 사용
@@ -1230,9 +1242,17 @@ window.leaveQueue = function() {
             console.log('🆔 비로그인 사용자 - 임시 memberNo:', window.currentMemberNo);
         }
         
+        console.log('🎯 스케줄 대기열 모달 표시 - 강의:', window.currentCourseSeq, '스케줄:', window.currentScheduleId, '사용자:', window.currentMemberNo);
+        
         // 모달 표시
         const modal = new bootstrap.Modal(document.getElementById('queueModal'));
         modal.show();
+        
+        // 이미 받은 대기열 정보가 있으면 UI 업데이트
+        if (queueResult && queueResult.data) {
+            console.log('📋 초기 대기열 정보:', queueResult.data);
+            updateModalQueueUI(queueResult.data);
+        }
         
         // WebSocket 연결 시작
         connectQueueWebSocket();
@@ -1242,7 +1262,7 @@ window.leaveQueue = function() {
         
         // 첫 상태 조회 및 주기적 폴링 백업 (WebSocket 실패 시)
         checkModalQueueStatus();
-        window.queueStatusInterval = setInterval(checkModalQueueStatus, 5000); // 5초마다 확인 (WebSocket 보조용)
+        window.queueStatusInterval = setInterval(checkModalQueueStatus, 3000); // 3초마다 확인 (스케줄 대기열은 더 자주)
     }
 
     // 대기열 웹소켓 연결
@@ -1320,6 +1340,10 @@ window.leaveQueue = function() {
                 handleModalTempReservationFailed(data);
                 break;
                 
+            case 'queue_closed':
+                handleQueueClosed(data);
+                break;
+                
             case 'reservation_success':
                 // 기존 호환성 - 장바구니로 이동
                 alert(data.message + ' 장바구니로 이동합니다.');
@@ -1394,6 +1418,42 @@ window.leaveQueue = function() {
         // 대기열 UI 업데이트 (다시 대기 상태로)
         if (data.queueData) {
             updateModalQueueUI(data.queueData);
+        }
+    }
+
+    /**
+     * 대기열 마감 처리
+     */
+    function handleQueueClosed(data) {
+        console.log('대기열 마감:', data);
+        
+        // 모든 타이머와 WebSocket 정리
+        if (window.queueHeartbeatInterval) {
+            clearInterval(window.queueHeartbeatInterval);
+            window.queueHeartbeatInterval = null;
+        }
+        if (window.queueStatusInterval) {
+            clearInterval(window.queueStatusInterval);
+            window.queueStatusInterval = null;
+        }
+        if (window.queueWebSocket) {
+            window.queueWebSocket.onclose = null; // 재연결 방지
+            window.queueWebSocket.close();
+            window.queueWebSocket = null;
+        }
+        
+        // 모달 닫기
+        const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+        if (modal) modal.hide();
+        
+        // 마감 알림
+        alert(data.message || '선택하신 시간대의 좌석이 모두 마감되었습니다.');
+        
+        // 예약 버튼 다시 활성화
+        const reservationBtn = document.querySelector('.reservation-btn');
+        if (reservationBtn) {
+            reservationBtn.disabled = false;
+            reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
         }
     }
 
@@ -1475,7 +1535,50 @@ window.leaveQueue = function() {
     function checkModalQueueStatus() {
         const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
         
-                        // 기존 API 사용하여 대기열 위치 확인
+        // 스케줄 대기열 상태 조회 API 사용
+        const statusUrl = contextPath + '/reservation/schedule-queue-status/' + window.currentCourseSeq + '/' + window.currentScheduleId + '?memberNo=' + window.currentMemberNo;
+        
+        fetch(statusUrl, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 스케줄 대기열 상태 응답:', data);
+            
+            if (data.success && data.userPosition && data.userPosition.success && data.userPosition.data) {
+                const queueData = data.userPosition.data;
+                console.log('📋 대기열 정보 업데이트:', queueData);
+                
+                // 첫 번째 순서라면 예약 시도
+                if (queueData.position === 1) {
+                    console.log('🎯 대기열 첫 번째 - 예약 시도');
+                    attemptReservation();
+                } else {
+                    // 대기열 UI 업데이트
+                    updateModalQueueUI(queueData);
+                }
+            } else {
+                console.log('❌ 대기열에 없음 또는 오류:', data);
+                // 대기열에 없으면 모달 닫기
+                if (!data.success) {
+                    alert('대기열에서 제외되었습니다: ' + (data.message || '알 수 없는 이유'));
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+                    if (modal) modal.hide();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('모달 대기열 상태 조회 실패:', error);
+        });
+    }
+    
+    // 예약 시도 함수
+    function attemptReservation() {
+        console.log('📝 임시예약 시도 시작');
+        
+        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+        
         fetch(contextPath + '/reservation/book', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1487,22 +1590,32 @@ window.leaveQueue = function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('대기열 상태 응답:', data);
-            if (data.success && data.data) {
-                // 임시예약이 생성되었다면 장바구니로 이동
-                if (data.data.tempReservationId) {
-                    alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
-                    window.location.href = contextPath + '/cart';
-                    return;
+            console.log('📝 예약 시도 결과:', data);
+            
+            if (data.success && data.data && data.data.tempReservationId) {
+                // 임시예약 성공
+                console.log('✅ 임시예약 성공:', data.data.tempReservationId);
+                handleModalTempReservationSuccess({
+                    tempReservationId: data.data.tempReservationId,
+                    scheduleId: window.currentScheduleId,
+                    courseSeq: window.currentCourseSeq
+                });
+            } else {
+                // 임시예약 실패
+                console.log('❌ 임시예약 실패:', data.message);
+
+                const skipAlertMsg3 = data.message && (data.message.includes('대기열') || data.message.includes('차례') || data.message.includes('잠시만'));
+                if (!data.queueRequired && !skipAlertMsg3) {
+                    alert('임시예약 실패: ' + (data.message || '알 수 없는 오류'));
                 }
-                // 대기열 정보가 있다면 UI 업데이트
-                updateModalQueueUI(data.data);
+
+                // 실패 시 대기열 상태 다시 확인
+                setTimeout(checkModalQueueStatus, 2000);
             }
         })
         .catch(error => {
-            console.error('모달 대기열 상태 조회 실패:', error);
-            // 에러 시에도 계속 폴링
-            setTimeout(checkModalQueueStatus, 5000);
+            console.error('예약 시도 오류:', error);
+            setTimeout(checkModalQueueStatus, 2000);
         });
     }
 
@@ -1556,6 +1669,63 @@ window.leaveQueue = function() {
             } else {
                 alert('예약 처리 실패: ' + data.message);
             }
+        });
+    }
+
+    // 🔥 대기열 나가기 함수
+    function leaveQueue() {
+        if (!confirm('대기열에서 나가시겠습니까?')) {
+            return;
+        }
+        
+        console.log('🚪 스케줄 대기열 나가기 - 강의:', window.currentCourseSeq, '스케줄:', window.currentScheduleId, '사용자:', window.currentMemberNo);
+        
+        // 모든 타이머와 WebSocket 정리
+        if (window.queueHeartbeatInterval) {
+            clearInterval(window.queueHeartbeatInterval);
+            window.queueHeartbeatInterval = null;
+        }
+        if (window.queueStatusInterval) {
+            clearInterval(window.queueStatusInterval);
+            window.queueStatusInterval = null;
+        }
+        if (window.queueWebSocket) {
+            window.queueWebSocket.onclose = null; // 재연결 방지
+            window.queueWebSocket.close();
+            window.queueWebSocket = null;
+        }
+        
+        // 스케줄 대기열에서 제거 API 호출
+        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+        fetch(contextPath + '/reservation/leave-schedule-queue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                courseSeq: window.currentCourseSeq,
+                scheduleId: window.currentScheduleId,
+                memberNo: window.currentMemberNo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('🚪 스케줄 대기열 나가기 완료:', data);
+            
+            // 모달 닫기
+            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+            if (modal) modal.hide();
+            
+            // 예약 버튼 다시 활성화
+            const reservationBtn = document.querySelector('.reservation-btn');
+            if (reservationBtn) {
+                reservationBtn.disabled = false;
+                reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+            }
+        })
+        .catch(error => {
+            console.error('스케줄 대기열 나가기 실패:', error);
+            // 실패해도 모달은 닫기
+            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+            if (modal) modal.hide();
         });
     }
 

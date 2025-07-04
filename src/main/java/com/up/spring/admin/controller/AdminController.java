@@ -2,6 +2,9 @@ package com.up.spring.admin.controller;
 
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.coach.model.service.CoachService;
+import com.up.spring.course.model.dto.Course;
+import com.up.spring.course.model.dto.Section;
+import com.up.spring.course.model.service.CourseService;
 import com.up.spring.member.model.dto.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +16,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 @RequestMapping("/admin")
@@ -23,6 +28,7 @@ public class AdminController {
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     private final CoachService coachService;
+    private final CourseService courseService;
 
     public long returnMemberNo() {
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -87,9 +93,60 @@ public class AdminController {
         return ResponseEntity.ok("Success");
     }
 
+    @GetMapping("/coach/statistics")
+    @ResponseBody
+    public ResponseEntity<Map<String, Integer>> getCoachStatistics() {
+        log.info("==== 코치 통계 API 호출됨 ====");
+        try {
+            Map<String, Integer> stats = coachService.getCoachApplyCount();
+            log.info("통계 조회 성공: {}", stats);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            log.error("통계 조회 중 오류 발생", e);
+            Map<String, Integer> errorStats = new HashMap<>();
+            errorStats.put("pending", 0);
+            errorStats.put("approved", 0);
+            errorStats.put("rejected", 0);
+            errorStats.put("total", 0);
+            return ResponseEntity.ok(errorStats);
+        }
+    }
+
     @GetMapping("/courseConfirm")
     public String courseConfirm(Model model) {
         return "admin/management/courseConfirm";
     }
+
+    @PostMapping("/course/apply/list")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCourseApplyList(@RequestParam String status){
+        Map<String, Object> response = new java.util.HashMap<>();
+
+        List<Course> courseList = courseService.getCourseApplyList(status);
+        response.put("courseList", courseList);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/course/apply/detail")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCourseApplyDetail(@RequestParam long courseSeq){
+        Map<String, Object> response = new java.util.HashMap<>();
+
+        Course course = courseService.searchById(courseSeq);
+        List<Section> section = coachService.getSectionList(courseSeq);
+        response.put("course", course);
+        response.put("sectionList", section);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/course/apply/confirm")
+    public String getCourseApplyConfirm(@RequestParam("confirmCourseSeq") long courseSeq){
+        Map<String, Object> response = new java.util.HashMap<>();
+        int course = courseService.courseApplyConfirm(courseSeq);
+        return "redirect:/admin/courseConfirm";
+    }
+
+
 }
 

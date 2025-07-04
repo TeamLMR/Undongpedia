@@ -63,6 +63,26 @@
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
         WHERE COURSE_SEQ=#{courseSeq}
     </select>
+
+    <select id="getCourseApplyList" resultMap="courseResultMap" parameterType="_long">
+        SELECT C.*,M.MEMBER_NICKNAME,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
+        FROM COURSE C
+        JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
+        <if test="status != null and status != ''">
+            <if test="status == 'unconfirmed'">
+                WHERE COURSE_CONFIRM_TIME IS NULL AND COURSE_EXPOSE = 'N'
+            </if>
+            <if test="status == 'confirmed'">
+                WHERE COURSE_CONFIRM_TIME IS NOT NULL AND COURSE_EXPOSE = 'Y'
+            </if>
+        </if>
+        ORDER BY COURSE_CREATE_TIME DESC
+    </select>
+
+    <update id="courseApplyConfirm" parameterType="_long">
+        UPDATE COURSE SET COURSE_EXPOSE = 'Y', COURSE_CONFIRM_TIME = SYSTIMESTAMP
+        WHERE COURSE_SEQ = #{courseSeq}
+    </update>
     <select id="searchCourseListByMemberNo" resultMap="courseResultMap" parameterType="_long">
         SELECT C.*,(SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE
         FROM COURSE C

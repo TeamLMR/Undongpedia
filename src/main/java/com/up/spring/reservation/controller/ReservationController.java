@@ -385,9 +385,17 @@ public class ReservationController {
                 }
             }
 
+            // 🔥 대기열에서 제거
             reservationRedisService.removeFromCourseQueue(courseSeq, (int) memberNo);
+            
+            // 🔥 대기열 통과 토큰도 함께 제거 (사용자가 나갔을 때)
+            String accessToken = "queue_pass:" + courseSeq + ":" + memberNo;
+            Boolean tokenDeleted = redisTemplate.delete(accessToken);
+            if (tokenDeleted) {
+                log.info("🎫 대기열 통과 토큰 제거 - 강의{}, 사용자{}", courseSeq, memberNo);
+            }
 
-            log.info("코스 대기열 이탈 - 강의{}, 사용자{}", courseSeq, memberNo);
+            log.info("🚪 코스 대기열 이탈 완료 - 강의{}, 사용자{}", courseSeq, memberNo);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             return ResponseEntity.ok(response);
@@ -756,13 +764,24 @@ public class ReservationController {
 
     @GetMapping("/queue/{courseSeq}")
     public String queuePage(@PathVariable Long courseSeq, Model model) {
-            log.info("예약페이지 이동{}", courseSeq);
+        log.info("대기열 페이지 접속 - courseSeq: {}", courseSeq);
+        
         if(!courseReservationConfigService.isEventCourse(courseSeq)) {
             return "redirect:/reservation/"+courseSeq;
         }
         if (!courseReservationConfigService.isOpenTime(courseSeq)) {
             log.info("강의 {} - 아직 오픈 시간이 아님, 메인페이지로 리다이렉트", courseSeq);
             return "redirect:/";
+        }
+        
+        // 🔥 대기열 통과 토큰 검증 - 토큰이 있으면 예약 페이지로 리다이렉트
+        long memberNo = returnMemberNo();
+        if (memberNo > 0) {
+            boolean hasPassToken = reservationRedisService.hasQueuePassToken(courseSeq, (int) memberNo);
+            if (hasPassToken) {
+                log.info("🎫 대기열 통과 토큰 보유 - 예약 페이지로 리다이렉트: 강의{}, 사용자{}", courseSeq, memberNo);
+                return "redirect:/reservation/" + courseSeq + "?from_queue=true";
+            }
         }
         
         // 대기열 페이지 진입 시 활성 강의로 등록
@@ -856,6 +875,50 @@ public class ReservationController {
         } catch (Exception e) {
             log.error("대기열 통과 토큰 생성 실패", e);
             return ResponseEntity.ok(Map.of("success", false, "message", "토큰 생성 실패: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 🔥 대기열 통과 토큰 정리 (개발용)
+     */
+    @PostMapping("/admin/clear-queue-tokens")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> clearQueueTokens(@RequestBody Map<String, Object> request) {
+        try {
+            Long courseSeq = (Long) request.get("courseSeq");
+            String pattern;
+            
+            if (courseSeq != null) {
+                // 특정 강의의 토큰만 정리
+                pattern = "queue_pass:" + courseSeq + ":*";
+            } else {
+                // 모든 대기열 토큰 정리
+                pattern = "queue_pass:*";
+            }
+            
+            Set<String> keys = redisTemplate.keys(pattern);
+            int deletedCount = 0;
+            
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                deletedCount = keys.size();
+            }
+            
+            log.info("🎫 대기열 토큰 정리 완료: 패턴={}, 제거된 토큰 수={}", pattern, deletedCount);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", deletedCount + "개의 대기열 토큰이 제거되었습니다.",
+                "deletedCount", deletedCount,
+                "pattern", pattern
+            ));
+            
+        } catch (Exception e) {
+            log.error("대기열 토큰 정리 실패", e);
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", "토큰 정리 중 오류가 발생했습니다."
+            ));
         }
     }
 

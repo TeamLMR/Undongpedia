@@ -75,6 +75,8 @@
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
         LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ
             AND R.REVIEW_DELETE_TIME IS NULL
+        WHERE COURSE_CONFIRM_TIME IS NOT NULL
+          AND COURSE_EXPOSE = 'Y'
         GROUP BY C.COURSE_SEQ, C.COURSE_TITLE, C.COURSE_CONTENT, 
                  C.COURSE_CATEGORY, C.COURSE_DIFFICULT, C.COURSE_PRICE,
                  C.COURSE_DISCOUNT, C.COURSE_THUMBNAIL, C.COURSE_TARGET,
@@ -129,6 +131,8 @@
         LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ
             AND R.REVIEW_DELETE_TIME IS NULL
         WHERE C.COURSE_TYPE = 'EVENT'
+        AND C.COURSE_CONFIRM_TIME IS NOT NULL
+        AND C.COURSE_EXPOSE = 'Y'
         GROUP BY C.COURSE_SEQ, C.COURSE_TITLE, C.COURSE_CONTENT, 
                  C.COURSE_CATEGORY, C.COURSE_DIFFICULT, C.COURSE_PRICE,
                  C.COURSE_DISCOUNT, C.COURSE_THUMBNAIL, C.COURSE_TARGET,
@@ -139,16 +143,27 @@
     <!-- 필터링된 강의 목록 조회 -->
     <select id="getFilteredCourses" parameterType="map" resultMap="courseListMap">
         SELECT 
-            C.*, 
-            M.MEMBER_NICKNAME, 
+            C.*,
+            M.MEMBER_NICKNAME,
             (SELECT CATE_VALUE FROM CATEGORY WHERE CATE_SEQ = C.COURSE_CATEGORY) AS CATE_VALUE,
             COALESCE(AVG(R.REVIEW_RATE), 0.0) AS AVG_RATING,
             COUNT(R.REVIEW_SEQ) AS REVIEW_COUNT
         FROM COURSE C
         JOIN MEMBER M ON M.MEMBER_NO = C.MEMBER_NO
-        LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ 
+        LEFT JOIN COURSE_REVIEW R ON R.COURSE_SEQ = C.COURSE_SEQ
             AND R.REVIEW_DELETE_TIME IS NULL
-        WHERE 1=1
+        WHERE C.COURSE_CONFIRM_TIME IS NOT NULL
+        AND C.COURSE_EXPOSE = 'Y'
+        <if test="keyword != null and keyword != ''">
+            AND (C.COURSE_TITLE LIKE '%' || #{keyword} || '%'
+            OR C.COURSE_CONTENT LIKE '%' || #{keyword} || '%'
+            OR C.COURSE_TARGET LIKE '%' || #{keyword} || '%')
+        </if>
+
+        <!-- 카테고리 필터 -->
+        <if test="categorySeq != null and categorySeq != ''">
+            AND C.COURSE_CATEGORY = #{categorySeq}
+        </if>
         
         <!-- 온라인/오프라인 필터 -->
         <if test="courseType != null and courseType != 'all'">
@@ -183,4 +198,5 @@
             <otherwise>ORDER BY C.COURSE_CREATE_TIME DESC</otherwise>
         </choose>
     </select>
+
 </mapper>
