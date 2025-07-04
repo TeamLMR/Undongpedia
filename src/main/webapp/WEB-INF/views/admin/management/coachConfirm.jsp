@@ -116,8 +116,8 @@
                                 <div class="col-md-3">
                                     <label for="statusFilter" class="form-label">상태</label>
                                     <select class="form-control" id="statusFilter">
-                                        <option value="">전체</option>
-                                        <option value="D" selected>승인 대기</option>
+                                        <option value="" selected>전체</option>
+                                        <option value="D">승인 대기</option>
                                         <option value="Y">승인 완료</option>
                                         <option value="N">승인 거절</option>
                                     </select>
@@ -320,12 +320,12 @@ $(document).ready(function() {
         }
     });
 
-    // 모달 이벤트
-    $('#detailModal').on('show.bs.modal', function(e) {
-        const button = $(e.relatedTarget);
-        const coachSeq = button.data('seq');
-        loadCoachDetail(coachSeq);
-    });
+    // 모달 이벤트 - showDetail 함수에서 처리하므로 제거
+    // $('#detailModal').on('show.bs.modal', function(e) {
+    //     const button = $(e.relatedTarget);
+    //     const coachSeq = button.data('seq');
+    //     loadCoachDetail(coachSeq);
+    // });
 
     // 승인 상태 라디오 버튼 변경 시
     $('input[name="approvalStatus"]').on('change', function() {
@@ -361,6 +361,91 @@ function loadCoachApplyList() {
             alert('데이터를 불러오는데 실패했습니다.');
         }
     });
+}
+
+// 통계 카운트 업데이트
+function updateCounts(counts) {
+    if (counts) {
+        $('#pendingCount').text(counts.pending || 0);
+        $('#approvedCount').text(counts.approved || 0);
+        $('#rejectedCount').text(counts.rejected || 0);
+        $('#totalCount').text(counts.total || 0);
+    }
+}
+
+// 코치 목록 업데이트
+function updateList(list) {
+    const tbody = $('#coachApplyList');
+    tbody.empty();
+
+    if (!list || list.length === 0) {
+        $('#emptyState').show();
+        $('#dataTable').hide();
+        return;
+    }
+
+    $('#emptyState').hide();
+    $('#dataTable').show();
+
+    list.forEach(function(coach) {
+        console.log('코치 데이터:', coach); // 디버깅용 로그
+        
+        const statusClass = coach.coaYn === 'D' ? 'warning' :
+            coach.coaYn === 'Y' ? 'success' : 'danger';
+        const statusText = coach.coaYn === 'D' ? '승인 대기' :
+            coach.coaYn === 'Y' ? '승인 완료' : '승인 거절';
+
+        const memberName = coach.memberName || '알 수 없음';
+        const memberId = coach.memberId || '알 수 없음';
+        const applyDate = coach.applyDate || new Date().toISOString();
+        const processDate = coach.approveDate || null;
+
+        const row = '<tr>' +
+            '<td>' +
+            '<div class="d-flex align-items-center">' +
+            '<div class="mr-3">' +
+            '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">' +
+            memberName.charAt(0) +
+            '</div>' +
+            '</div>' +
+            '<div>' +
+            '<h6 class="mb-0">' + memberName + '</h6>' +
+            '<small class="text-muted">' + memberId + '</small>' +
+            '</div>' +
+            '</div>' +
+            '</td>' +
+            '<td>' + formatDate(applyDate) + '</td>' +
+            '<td>' +
+            '<div>' + (coach.coaBank || '-') + '</div>' +
+            '<small class="text-muted">' + maskAccountNumber(coach.coaBankNum) + '</small>' +
+            '</td>' +
+            '<td>' +
+            '<span class="badge badge-' + statusClass + '">' + statusText + '</span>' +
+            '</td>' +
+            '<td>' + (processDate ? formatDate(processDate) : '-') + '</td>' +
+            '<td>' +
+            '<button class="btn btn-sm btn-primary mr-1" onclick="showDetail(' + coach.coaSeq + ')" title="상세보기">' +
+            '<i class="fas fa-eye"></i> 상세보기' +
+            '</button>' +
+            (coach.coaYn === 'D' ?
+                '<button class="btn btn-sm btn-success mr-1" onclick="quickApprove(' + coach.coaSeq + ')" title="승인">' +
+                '<i class="fas fa-check"></i> 승인' +
+                '</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="quickReject(' + coach.coaSeq + ')" title="거절">' +
+                '<i class="fas fa-times"></i> 거절' +
+                '</button>'
+                : '') +
+            '</td>' +
+            '</tr>';
+        tbody.append(row);
+    });
+}
+
+// 계좌번호 마스킹
+function maskAccountNumber(accountNumber) {
+    if (!accountNumber) return '-';
+    if (accountNumber.length <= 4) return accountNumber;
+    return accountNumber.substring(0, 4) + '-****-' + accountNumber.substring(accountNumber.length - 4);
 }
 
 // 코치 목록 렌더링
@@ -416,14 +501,14 @@ function renderCoachList(list) {
             '<td>' +
             '<button class="btn btn-sm btn-primary mr-1" data-toggle="modal" ' +
             'data-target="#detailModal" data-seq="' + coach.coaSeq + '">' +
-            '<i class="fas fa-eye"></i>' +
+            '<i class="fas fa-eye">상세보기</i>' +
             '</button>' +
             (coach.coaYn === 'N' ?
                 '<button class="btn btn-sm btn-success mr-1" onclick="quickApprove(' + coach.coaSeq + ')" title="승인">' +
-                '<i class="fas fa-check"></i>' +
+                '<i class="fas fa-check">승인</i>' +
                 '</button>' +
                 '<button class="btn btn-sm btn-danger" onclick="quickReject(' + coach.coaSeq + ')" title="거절">' +
-                '<i class="fas fa-times"></i>' +
+                '<i class="fas fa-times">거절</i>' +
                 '</button>'
                 : '') +
             '</td>' +
@@ -440,6 +525,8 @@ function loadCoachDetail(coachSeq) {
         url: contextPath + `/admin/coach/apply/\${coachSeq}`,
         method: 'GET',
         success: function(apply) {
+            console.log('loadCoachDetail 응답:', apply); // 디버깅용 로그
+            
             // DTO 기준으로 필드명 수정
             $('#detailMemberNo').text(apply.memberNo || '-');
             $('#detailName').text(apply.memberName || '-');
@@ -514,7 +601,7 @@ function quickApprove(coachSeq) {
 // 빠른 거절
 function quickReject(coachSeq) {
     if (confirm('거절하시겠습니까?')) {
-        processCoach(coachSeq, 'R');
+        processCoach(coachSeq, 'N');
     }
 }
 
@@ -615,17 +702,44 @@ function hideLoading() {
 
 // 상세 정보 표시
 function showDetail(coaSeq) {
+    console.log('showDetail 호출됨, coaSeq:', coaSeq); // 디버깅용 로그
+    
+    if (!coaSeq || coaSeq === 'null') {
+        alert('유효하지 않은 코치 ID입니다.');
+        return;
+    }
+    
     $.ajax({
         url: contextPath + `/admin/coach/apply/\${coaSeq}`,
         method: 'GET',
         success: function(response) {
-            $('#detailMemberNo').text(response.memberNo);
-            $('#detailName').text(response.memberName);
-            $('#detailNickname').text(response.memberNickname);
-            $('#detailEmail').text(response.memberId);
-            $('#detailCoaBankName').text(response.coaBankName);
-            $('#detailCoaBank').text(response.coaBank);
-            $('#detailCoaBankNum').text(response.coaBankNum);
+            console.log('상세 정보 응답:', response); // 디버깅용 로그
+            
+            // 신청자 정보
+            $('#detailMemberNo').text(response.memberNo || '-');
+            $('#detailName').text(response.memberName || '-');
+            $('#detailNickname').text(response.memberNickname || '-');
+            $('#detailEmail').text(response.memberId || '-');
+            
+            // 계좌 정보
+            $('#detailCoaBankName').text(response.coaBankName || '-');
+            $('#detailCoaBank').text(response.coaBank || '-');
+            $('#detailCoaBankNum').text(response.coaBankNum || '-');
+            
+            // 소개 정보
+            $('#detailCoaIntro').text(response.coaIntro || '소개글이 없습니다.');
+            
+            // 승인 섹션 표시 여부
+            if (response.coaYn === 'D') {
+                $('#approvalSection').show();
+                $('#saveBtn').show();
+                $('input[name="approvalStatus"]').prop('checked', false);
+            } else {
+                $('#approvalSection').hide();
+                $('#saveBtn').hide();
+            }
+            
+            // 모달 표시
             $('#detailModal').modal('show');
         },
         error: function(xhr, status, error) {

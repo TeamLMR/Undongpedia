@@ -124,14 +124,26 @@ public class CoachServiceImpl implements CoachService {
         
         Map<String, Integer> result = new HashMap<>();
         
-        // DB에서 반환되는 컬럼명에 맞춰 매핑 (pendingCount -> pending 등)
-        result.put("pending", rawResult.get("pendingCount") != null ? rawResult.get("pendingCount") : 0);
-        result.put("approved", rawResult.get("approvedCount") != null ? rawResult.get("approvedCount") : 0);
-        result.put("rejected", rawResult.get("rejectedCount") != null ? rawResult.get("rejectedCount") : 0);
-        result.put("total", rawResult.get("totalCount") != null ? rawResult.get("totalCount") : 0);
+        // DB에서 반환되는 컬럼명에 맞춰 매핑 (대문자 키로 반환됨)
+        result.put("pending", convertToInteger(rawResult.get("PENDINGCOUNT")));
+        result.put("approved", convertToInteger(rawResult.get("APPROVEDCOUNT")));
+        result.put("rejected", convertToInteger(rawResult.get("REJECTEDCOUNT")));
+        result.put("total", convertToInteger(rawResult.get("TOTALCOUNT")));
         
         log.info("변환된 최종 결과: {}", result);
         return result;
+    }
+    
+    private Integer convertToInteger(Object value) {
+        if (value == null) return 0;
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        try {
+            return Integer.valueOf(value.toString());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     @Override
