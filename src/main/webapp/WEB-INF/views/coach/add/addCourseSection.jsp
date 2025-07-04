@@ -229,7 +229,7 @@
                                 </select>
                             </div>
 
-                            <input type="text" class="form-control" id="currOrder" name="currOrder">
+                            <input type="hidden" class="form-control" id="currOrder" name="currOrder">
 
                             <div class="form-group">
                                 <input type="hidden" class="form-control" id="sectionSeq" name="sectionSeq" readonly>
@@ -301,10 +301,21 @@
             });
 
             const addSection = () => {
-                const title = $("#addSectionTitle").val();
-                const content = $("#addSectionContent").val();
+                const title = $("#addSectionTitle").val().trim();
+                const content = $("#addSectionContent").val().trim();
                 const order = '${sectionOrder}';
                 const courseSeq = '${tempCourseSeq}';
+
+                if (title===""){
+                    alert("섹션 제목을 입력해주세요.");
+                    document.getElementById('addSectionTitle').focus();
+                    return;
+                }
+                if (content===""){
+                    alert("섹션 내용을 입력해주세요.");
+                    document.getElementById('addSectionContent').focus();
+                    return;
+                }
                 $.ajax({
                     url: "${pageContext.request.contextPath}/coach/ajaxAddSection",
                     type: "POST",

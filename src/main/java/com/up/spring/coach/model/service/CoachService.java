@@ -5,6 +5,7 @@ import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
 import com.up.spring.course.model.dto.Section;
 import com.up.spring.coach.model.dto.CoachApply;
+import org.apache.ibatis.session.SqlSession;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,13 @@ public interface CoachService {
     int deleteSectionByCourseSeq (long courseSeq);
     int deleteCourseByCourseSeq (long courseSeq);
     Map<String,Integer> deleteCourseCascade(long delCourseSeq);
+    Map<String,Integer> deleteSectionCascade(long courseSeq, long sectionSeq);
     int updateTempCourse(Course course);
+    Section getSection (long courseSeq, long sectionSeq);
+    int deleteSectionBySectionSeq(long sectionSeq);
+    int deleteCurrByCurrSeq(long currSeq);
+    int updateCurrOrderBySectionSeqAfterDelete(long sectionSeq);
+    Curriculum selectCurrByCurrSeq (long currSeq);
 
     // 코치 신청 목록 조회
     List<CoachApply> getCoachApplyList(Map<String, Object> params);
@@ -37,4 +44,6 @@ public interface CoachService {
 
     // 코치 신청 등록
     void insertCoachApply(CoachApply coachApply);
+
+    Map<String,Integer> delCurrAndUpdateCurrOrder(long sectionSeq, long currSeq);
 }

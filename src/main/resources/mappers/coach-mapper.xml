@@ -26,6 +26,16 @@
         </collection>
     </resultMap>
 
+    <resultMap id="curr" type="curriculum">
+        <id column="CURR_SEQ" property="currSeq" />
+        <result column="CURR_TITLE" property="currTitle" />
+        <result column="CURR_VIDEO_URL" property="currVideoUrl" />
+        <result column="CURR_VIDEO_TYPE" property="currVideoType" />
+        <result column="CURR_PREVIEW" property="currPreview" />
+        <result column="CURR_ORDER" property="currOrder" />
+        <result column="SECTION_SEQ" property="sectionSeq" />
+    </resultMap>
+
     <resultMap id="coachApplyMap" type="coachApply">
         <id column="COA_SEQ" property="coaSeq"/>
         <result column="COA_BANK" property="coaBank"/>
@@ -40,6 +50,10 @@
         <result column="MEMBER_ID" property="memberId"/>
         <result column="MEMBER_NICKNAME" property="memberNickname"/>
     </resultMap>
+
+    <select id="selectCurrByCurrSeq" parameterType="_long" resultMap="curr">
+        SELECT * FROM CURRICULUM WHERE CURR_SEQ = #{currSeq}
+    </select>
 
     <select id="getCategoryAll" resultMap="categoryMap">
         SELECT * FROM CATEGORY
@@ -80,6 +94,22 @@
         FROM SECTION S
         LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
         WHERE S.COURSE_SEQ = #{courseSeq}
+        ORDER BY S.SECTION_ORDER,C.CURR_ORDER
+    </select>
+
+    <select id="getSection" parameterType="map" resultMap="sectionMap">
+        SELECT *
+        FROM SECTION S
+                 LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
+        WHERE S.COURSE_SEQ = #{courseSeq} AND S.SECTION_SEQ = #{sectionSeq}
+        ORDER BY S.SECTION_ORDER,C.CURR_ORDER
+    </select>
+
+    <select id="getSectionBySectionSeq" parameterType="_long" resultMap="sectionMap">
+        SELECT *
+        FROM SECTION S
+                 LEFT JOIN CURRICULUM C ON S.SECTION_SEQ = C.SECTION_SEQ
+        WHERE S.SECTION_SEQ = #{sectionSeq}
         ORDER BY S.SECTION_ORDER,C.CURR_ORDER
     </select>
 
@@ -145,6 +175,11 @@
         DELETE FROM CURRICULUM WHERE SECTION_SEQ = #{sectionSeq}
     </delete>
 
+    <delete id="deleteCurrByCurrSeq" parameterType="_long">
+        DELETE FROM CURRICULUM WHERE CURR_SEQ = #{currSeq}
+    </delete>
+
+
     <delete id="deleteSectionByCourseSeq" parameterType="_long">
         DELETE FROM SECTION WHERE COURSE_SEQ = #{courseSeq}
     </delete>
@@ -152,6 +187,24 @@
     <delete id="deleteCourseByCourseSeq" parameterType="_long">
         DELETE FROM COURSE WHERE COURSE_SEQ = #{courseSeq}
     </delete>
+
+    <delete id="deleteSectionBySectionSeq" parameterType="_long">
+        DELETE FROM SECTION WHERE SECTION_SEQ = #{sectionSeq}
+    </delete>
+
+    <update id="updateCurrOrderBySectionSeqAfterDelete" parameterType="_long">
+        UPDATE CURRICULUM
+        SET curr_order = (
+            SELECT rn - 1
+            FROM (
+                     SELECT CURR_SEQ,
+                            ROW_NUMBER() OVER (ORDER BY curr_order) as rn
+                     FROM CURRICULUM
+                     WHERE SECTION_SEQ = #{sectionSeq}
+                 )
+            WHERE CURR_SEQ = CURRICULUM.CURR_SEQ
+        ) WHERE SECTION_SEQ = #{sectionSeq}
+    </update>
 
     <!-- 코치 신청 목록 조회 -->
     <select id="selectCoachApplyList" parameterType="map" resultMap="coachApplyMap">

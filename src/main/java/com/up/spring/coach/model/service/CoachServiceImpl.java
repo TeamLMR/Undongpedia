@@ -7,6 +7,7 @@ import com.up.spring.course.model.dto.Curriculum;
 import com.up.spring.course.model.dto.Section;
 import com.up.spring.coach.model.dto.CoachApply;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CoachServiceImpl implements CoachService {
@@ -22,8 +24,23 @@ public class CoachServiceImpl implements CoachService {
     private final SqlSession sqlSession;
 
     @Override
+    public Curriculum selectCurrByCurrSeq(long currSeq) {
+        return coachDao.selectCurrByCurrSeq(sqlSession, currSeq);
+    }
+
+    @Override
+    public Section getSection(long courseSeq, long sectionSeq) {
+        return coachDao.getSection(sqlSession, courseSeq, sectionSeq);
+    }
+
+    @Override
     public int updateTempCourse(Course course) {
         return coachDao.updateTempCourse(sqlSession, course);
+    }
+
+    @Override
+    public int deleteCurrByCurrSeq(long currSeq) {
+        return coachDao.deleteCurrByCurrSeq(sqlSession, currSeq);
     }
 
     @Override
@@ -37,8 +54,57 @@ public class CoachServiceImpl implements CoachService {
     }
 
     @Override
+    public int deleteSectionBySectionSeq(long sectionSeq) {
+        return coachDao.deleteSectionBySectionSeq(sqlSession, sectionSeq);
+    }
+
+    @Override
+    public int updateCurrOrderBySectionSeqAfterDelete(long sectionSeq) {
+        return coachDao.updateCurrOrderBySectionSeqAfterDelete(sqlSession, sectionSeq);
+    }
+
+    @Override
     public int deleteCourseByCourseSeq(long courseSeq) {
         return coachDao.deleteCourseByCourseSeq(sqlSession, courseSeq);
+    }
+
+    @Transactional
+    public Map<String,Integer> delCurrAndUpdateCurrOrder(long sectionSeq, long currSeq){
+        int deleteResultNum = deleteCurrByCurrSeq(currSeq);
+        int updateResultNum = updateCurrOrderBySectionSeqAfterDelete(sectionSeq);
+        log.debug("deleteCurrByCurrSeq:{}",deleteResultNum);
+        log.debug("updateCurrOrderBySectionSeqAfterDelete:{}",updateResultNum);
+
+        Map<String,Integer> result = new HashMap<>();
+        result.put("deleteResult",deleteResultNum);
+        result.put("updateResult",updateResultNum);
+        return result;
+    }
+
+    @Transactional
+    public Map<String,Integer> deleteSectionCascade(long courseSeq, long sectionSeq) {
+        Section section =  getSection(courseSeq, sectionSeq);
+        int deleteSectionNum = 0;
+        int deleteCurrNum = 0;
+
+        if (section != null) {
+            //커리큘럼 삭제
+            int deleteCurrResult = deleteCurrBySectionSeq(section.getSectionSeq());
+            if (deleteCurrResult > 0) {
+                deleteCurrNum += deleteCurrResult;
+            }
+
+            //섹션 삭제
+            int deleteSectionBySectionSeq = deleteSectionBySectionSeq(sectionSeq);
+            if (deleteSectionBySectionSeq > 0) {
+                deleteSectionNum += deleteSectionBySectionSeq;
+            }
+        }
+
+        Map<String,Integer> result = new HashMap<>();
+        result.put("deleteCurrNum",deleteCurrNum);
+        result.put("deleteSectionNum",deleteSectionNum);
+        return result;
     }
 
     @Transactional
