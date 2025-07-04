@@ -76,7 +76,7 @@ public class CoachController {
         return result;
     }
     @PostMapping("/deletecurr")
-    public String deleteCurriculum(@RequestParam("deleteCurrSeq")long delCurrSeq, @RequestParam("courseSeq")long courseSeq, HttpSession session, RedirectAttributes redirectAttributes){
+    public String deleteCurriculum(@RequestParam("deleteCurrSeq")long delCurrSeq, @RequestParam("courseSeq")long courseSeq, HttpSession session, RedirectAttributes redirectAttributes, HttpServletRequest request){
         String loc = "redirect:/coach/coursemanager";
         //1. 코스 정보가 있는지
         Course course = isExistCourse(courseSeq);
@@ -89,10 +89,16 @@ public class CoachController {
                 int deleteResult = result.get("deleteResult");
                 int updateResult = result.get("updateResult");
 
-                if (deleteResult > 0 && updateResult > 0) {
+                if (deleteResult > 0) {
                     session.setAttribute("tempCourseSeq", course.getCourseSeq());
                     redirectAttributes.addAttribute("courseSeq", courseSeq);
+                    String referer = request.getHeader("Referer");
+                    log.debug("referer:{}", referer);
                     loc = "redirect:/coach/modifycoursesection";
+                    /*임시.. add로 넘어가게*/
+                    if(referer != null && referer.contains("/addCourseSection")){
+                        loc = "redirect:/coach/addCourseSection";
+                    }
                 } else {
                     redirectAttributes.addAttribute("result", "fail");
                     redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
@@ -111,7 +117,7 @@ public class CoachController {
 
 
     @PostMapping("/deletesection")
-    public String deleteSection(@RequestParam("deleteSectionSeq")long delSectionSeq, @RequestParam("courseSeq")long courseSeq, RedirectAttributes redirectAttributes, HttpSession session){
+    public String deleteSection(@RequestParam("deleteSectionSeq")long delSectionSeq, @RequestParam("courseSeq")long courseSeq, RedirectAttributes redirectAttributes, HttpServletRequest request, HttpSession session){
         String loc = "redirect:/coach/coursemanager";
         //1. 코스 정보가 있는지
         Course course = isExistCourse(courseSeq);
@@ -134,6 +140,13 @@ public class CoachController {
                     session.setAttribute("tempCourseSeq", course.getCourseSeq());
                     redirectAttributes.addAttribute("courseSeq", courseSeq);
                     loc = "redirect:/coach/modifycoursesection";
+
+                    String referer = request.getHeader("Referer");
+                    log.debug("referer:{}", referer);
+                    /*임시.. add로 넘어가게*/
+                    if(referer != null && referer.contains("/addCourseSection")){
+                        loc = "redirect:/coach/addCourseSection";
+                    }
                 } else {
                     redirectAttributes.addAttribute("result", "fail");
                     redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
