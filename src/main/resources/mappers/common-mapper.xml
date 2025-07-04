@@ -156,6 +156,11 @@
             OR C.COURSE_TARGET LIKE '%' || #{keyword} || '%')
         </if>
 
+        <!-- 카테고리 필터 -->
+        <if test="categorySeq != null and categorySeq != ''">
+            AND C.COURSE_CATEGORY = #{categorySeq}
+        </if>
+        
         <!-- 온라인/오프라인 필터 -->
         <if test="courseType != null and courseType != 'all'">
             AND C.COURSE_TYPE = #{courseType}

@@ -249,13 +249,26 @@
             </button>
             
             <!-- 검색어 표시 -->
-            <div id="searchKeywordDisplay" class="d-none">
-                <span class="badge bg-primary fs-6 px-3 py-2">
-                    <i class="bi bi-search me-1"></i>
-                    "<span id="currentSearchKeyword"></span>"
-                    <button type="button" class="btn-close btn-close-white ms-2" onclick="resetSearch()" aria-label="검색 취소"></button>
-                </span>
-            </div>
+            <c:if test="${not empty searchKeyword}">
+                <div id="searchKeywordDisplay">
+                    <span class="badge bg-primary fs-6 px-3 py-2">
+                        <i class="bi bi-search me-1"></i>
+                        "<span id="currentSearchKeyword">${searchKeyword}</span>"
+                        <button type="button" class="btn-close btn-close-white ms-2" onclick="resetSearch()" aria-label="검색 취소"></button>
+                    </span>
+                </div>
+            </c:if>
+            
+            <!-- 카테고리 표시 -->
+            <c:if test="${not empty selectedCategoryName}">
+                <div id="categoryDisplay">
+                    <span class="badge bg-success fs-6 px-3 py-2">
+                        <i class="bi bi-tag me-1"></i>
+                        "${selectedCategoryName}"
+                        <button type="button" class="btn-close btn-close-white ms-2" onclick="resetCategory()" aria-label="카테고리 취소"></button>
+                    </span>
+                </div>
+            </c:if>
 
             <!-- 드롭다운: 온라인/오프라인 -->
             <div class="dropdown">
@@ -409,7 +422,9 @@
             courseType: 'all',     // 온라인/오프라인
             difficulty: 'all',     // 난이도 1~5
             priceType: 'all',      // 무료/유료
-            sortBy: 'latest'       // 정렬방식
+            sortBy: 'latest',      // 정렬방식
+            categorySeq: '',       // 카테고리
+            keyword: ''            // 검색어
         };
 
         // 필터링된 강의 목록 불러오기
@@ -602,9 +617,11 @@
 
         // 페이지 로드 시 필터 이벤트 설정
         $(document).ready(function () {
-            // URL 파라미터에서 검색어 확인
+            // URL 파라미터에서 검색어와 카테고리 확인
             const urlParams = new URLSearchParams(window.location.search);
             const searchKeyword = urlParams.get('search');
+            const categorySeq = urlParams.get('category');
+            const categoryName = urlParams.get('categoryName');
             
             if (searchKeyword) {
                 // 검색어가 있으면 필터에 추가해서 검색 실행
@@ -618,15 +635,26 @@
                 $('input[name="keyword"]').val(searchKeyword);
             }
             
+            if (categorySeq) {
+                // 카테고리가 있으면 필터에 추가
+                currentFilters.categorySeq = categorySeq;
+                if (categoryName) {
+                    updateSectionTitle(categoryName); // 제목 업데이트
+                    showSearchStatus(categoryName); // 검색 상태 표시
+                }
+                loadFilteredCourses(true); // 카테고리 필터 적용
+            }
+            
             // 모든 필터 초기화 버튼
             $('.btn-outline-secondary').first().click(function () {
                 currentFilters = {
                     courseType: 'all',
                     difficulty: 'all',
                     priceType: 'all',
-                    sortBy: 'latest'
+                    sortBy: 'latest',
+                    categorySeq: '',
+                    keyword: ''
                 };
-                delete currentFilters.keyword; // 검색어 제거
                 updateFilterUI();
                 loadFilteredCourses();
                 resetSectionTitle(); // 제목 원복
@@ -684,9 +712,33 @@
             if (titleElement.length) {
                 titleElement.html('<i class="bi bi-search me-2"></i>"' + keyword + '" 검색 결과');
             }
-            
-            // 검색 시 히어로 섹션 숨기기
-            $('#hero').hide();
+        }
+        
+        function resetSearch() {
+            // 검색어만 초기화하고 다른 필터는 유지
+            currentFilters.keyword = '';
+            loadFilteredCourses(true);
+            resetSectionTitle();
+            $('#searchStatus').remove();
+            hideSearchKeywordInFilter();
+            // URL에서 검색 파라미터만 제거
+            const url = new URL(window.location);
+            url.searchParams.delete('search');
+            window.history.replaceState({}, '', url);
+        }
+        
+        function resetCategory() {
+            // 카테고리만 초기화하고 다른 필터는 유지
+            currentFilters.categorySeq = '';
+            loadFilteredCourses(true);
+            resetSectionTitle();
+            $('#searchStatus').remove();
+            hideCategoryDisplay(); // 카테고리 배지 숨기기
+            // URL에서 카테고리 파라미터만 제거
+            const url = new URL(window.location);
+            url.searchParams.delete('category');
+            url.searchParams.delete('categoryName');
+            window.history.replaceState({}, '', url);
         }
         
         function resetSectionTitle() {
@@ -721,11 +773,6 @@
             $('.section-title').parent().parent().after(statusHtml);
         }
         
-        function resetSearch() {
-            // URL에서 검색 파라미터 제거하고 페이지 새로고침
-            window.location.href = '${pageContext.request.contextPath}/';
-        }
-        
         function showSearchKeywordInFilter(keyword) {
             $('#currentSearchKeyword').text(keyword);
             $('#searchKeywordDisplay').removeClass('d-none');
@@ -733,6 +780,10 @@
         
         function hideSearchKeywordInFilter() {
             $('#searchKeywordDisplay').addClass('d-none');
+        }
+        
+        function hideCategoryDisplay() {
+            $('#categoryDisplay').addClass('d-none');
         }
     </script>
 </main>

@@ -35,26 +35,45 @@ public class MainController {
     */
 
     @RequestMapping("/")
-    public String index(Model model) {
-        int cPage = 1;
-        int numPerPage = 8;
-        Map<String, Object> params = new HashMap<>();
-        params.put("cPage", cPage);
-        params.put("numPerPage", numPerPage);
-        List<Course> courseList = mainService.getCourseList(params);
-        log.info("메인 페이지 강의 목록: {}개 조회됨", courseList.size());
-        if (!courseList.isEmpty()) {
-            Course firstCourse = courseList.get(0);
-            log.info("첫 번째 강의 - 제목: {}, 평점: {}, 리뷰수: {}", 
-                    firstCourse.getCourseTitle(), firstCourse.getAvgRating(), firstCourse.getReviewCount());
+    public String index(Model model, 
+                       @RequestParam(required = false) String search,
+                       @RequestParam(required = false) String category,
+                       @RequestParam(required = false) String categoryName) {
+        
+        // 검색 조건이 있는 경우 필터링된 결과 조회
+        if ((search != null && !search.trim().isEmpty()) || (category != null && !category.trim().isEmpty())) {
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("keyword", search != null ? search.trim() : "");
+            filters.put("categorySeq", category != null ? category.trim() : "");
+            filters.put("cPage", 1);
+            filters.put("numPerPage", 8);
+            
+            List<Course> courseList = mainService.getFilteredCourses(filters);
+            model.addAttribute("courseList", courseList);
+            
+            // 검색 조건을 모델에 추가
+            if (search != null && !search.trim().isEmpty()) {
+                model.addAttribute("searchKeyword", search.trim());
+            }
+            if (category != null && !category.trim().isEmpty()) {
+                model.addAttribute("selectedCategory", category.trim());
+                model.addAttribute("selectedCategoryName", categoryName);
+            }
+        } else {
+            // 기본 강의 목록 조회
+            int cPage = 1;
+            int numPerPage = 8;
+            Map<String, Object> params = new HashMap<>();
+            params.put("cPage", cPage);
+            params.put("numPerPage", numPerPage);
+            List<Course> courseList = mainService.getCourseList(params);
+            model.addAttribute("courseList", courseList);
         }
-        model.addAttribute("courseList", courseList);
         
         // 활성화된 이벤트 강의 조회
-
         List<EventCourse> eventCourses = mainService.getActiveEventCourses();
         model.addAttribute("eventCourses", eventCourses);
-        log.info("{},{}", eventCourses,eventCourses.size());
+        
         return "/index";
     }
 
@@ -87,6 +106,7 @@ public class MainController {
             @RequestParam(defaultValue = "all") String priceType,
             @RequestParam(defaultValue = "latest") String sortBy,
             @RequestParam(defaultValue="") String keyword,
+            @RequestParam(defaultValue = "") String categorySeq,
             @RequestParam(defaultValue = "1") int page
     ) {
 
@@ -100,6 +120,7 @@ public class MainController {
         filters.put("sortBy", sortBy);
         filters.put("cPage", cPage);
         filters.put("keyword", keyword);
+        filters.put("categorySeq", categorySeq);
         filters.put("numPerPage", numPerPage);
         
         List<Course> result = mainService.getFilteredCourses(filters);
