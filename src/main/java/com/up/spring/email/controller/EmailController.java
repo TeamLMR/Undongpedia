@@ -3,6 +3,7 @@ package com.up.spring.email.controller;
 import com.up.spring.common.EmailService;
 import com.up.spring.email.model.dto.VerificationResult;
 import com.up.spring.email.model.service.EmailVerificationService;
+import com.up.spring.member.model.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ public class EmailController {
 
     private final EmailService emailService;
     private final EmailVerificationService emailVerificationService;
+    private final MemberService memberService;
 
     /**
      * 회원가입용 이메일 인증번호 발송
@@ -34,12 +36,6 @@ public class EmailController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // 이메일 형식 검증
-            if (!isValidEmail(email)) {
-                response.put("success", false);
-                response.put("message", "올바른 이메일 형식이 아닙니다.");
-                return ResponseEntity.badRequest().body(response);
-            }
 
             // 인증번호 저장 (기존 미사용 인증번호는 자동 삭제됨)
             VerificationResult result = emailVerificationService.saveVerificationCode(email);
@@ -167,5 +163,28 @@ public class EmailController {
 
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
         return email.matches(emailRegex);
+    }
+
+    /**
+     * 이메일 중복 확인 (searchById 활용)
+     * GET /email/check-duplicate
+     */
+    @GetMapping("/check-duplicate")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkDuplicateEmail(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            com.up.spring.member.model.dto.Member member = memberService.searchById(email);
+            boolean isDuplicate = (member != null);
+
+            response.put("success", true);
+            response.put("duplicate", isDuplicate);
+            response.put("message", isDuplicate ? "이미 사용 중인 이메일입니다." : "사용 가능한 이메일입니다.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }
