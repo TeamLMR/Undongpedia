@@ -2,6 +2,7 @@ package com.up.spring.member.model.service;
 
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.member.model.dto.Member;
+import java.util.List;
 
 public interface MemberService {
     Member searchById(String memberId);

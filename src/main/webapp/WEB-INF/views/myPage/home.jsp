@@ -112,6 +112,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 
 <script>
+    // JSP에서 memberRole을 JS 변수로 전달
+    var memberRole = '${loginMember.memberRole}';
+
     $(document).ready(function() {
         // 페이지 로드시 첫 번째 메뉴 로드
         loadPage('personal');
@@ -143,6 +146,10 @@
     });
 
     function confirmWithdrawal() {
+        if (memberRole === 'COACH') {
+            alert('코치 회원 탈퇴는 고객센터로 문의해주시기 바랍니다.');
+            return;
+        }
         if (confirm('정말로 회원탈퇴를 하시겠습니까?\n\n탈퇴 시 모든 학습 데이터가 삭제되며 복구할 수 없습니다.')) {
             if (confirm('마지막 확인입니다.\n회원탈퇴를 진행하시겠습니까?')) {
                 // 폼을 생성하여 POST 요청으로 회원탈퇴 처리
