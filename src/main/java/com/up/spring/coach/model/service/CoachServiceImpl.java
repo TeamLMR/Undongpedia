@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class CoachServiceImpl implements CoachService {
     private final CoachDao coachDao;
     private final SqlSession sqlSession;
+    private static final Logger log = LoggerFactory.getLogger(CoachServiceImpl.class);
 
     @Override
     public int updateTempCourse(Course course) {
@@ -115,7 +118,20 @@ public class CoachServiceImpl implements CoachService {
 
     @Override
     public Map<String, Integer> getCoachApplyCount() {
-        return coachDao.selectCoachApplyCount(sqlSession);
+        log.info("=== getCoachApplyCount 호출됨 ===");
+        Map<String, Integer> rawResult = coachDao.selectCoachApplyCount(sqlSession);
+        log.info("DB에서 조회한 원본 결과: {}", rawResult);
+        
+        Map<String, Integer> result = new HashMap<>();
+        
+        // DB에서 반환되는 컬럼명에 맞춰 매핑 (pendingCount -> pending 등)
+        result.put("pending", rawResult.get("pendingCount") != null ? rawResult.get("pendingCount") : 0);
+        result.put("approved", rawResult.get("approvedCount") != null ? rawResult.get("approvedCount") : 0);
+        result.put("rejected", rawResult.get("rejectedCount") != null ? rawResult.get("rejectedCount") : 0);
+        result.put("total", rawResult.get("totalCount") != null ? rawResult.get("totalCount") : 0);
+        
+        log.info("변환된 최종 결과: {}", result);
+        return result;
     }
 
     @Override

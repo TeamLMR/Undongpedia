@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 @RequestMapping("/admin")
@@ -90,6 +91,25 @@ public class AdminController {
     @GetMapping("/courseConfirm")
     public String courseConfirm(Model model) {
         return "admin/management/courseConfirm";
+    }
+
+    @GetMapping("/coach/statistics")
+    @ResponseBody
+    public ResponseEntity<Map<String, Integer>> getCoachStatistics() {
+        log.info("==== 코치 통계 API 호출됨 ====");
+        try {
+            Map<String, Integer> stats = coachService.getCoachApplyCount();
+            log.info("통계 조회 성공: {}", stats);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            log.error("통계 조회 중 오류 발생", e);
+            Map<String, Integer> errorStats = new HashMap<>();
+            errorStats.put("pending", 0);
+            errorStats.put("approved", 0);
+            errorStats.put("rejected", 0);
+            errorStats.put("total", 0);
+            return ResponseEntity.ok(errorStats);
+        }
     }
 }
 
