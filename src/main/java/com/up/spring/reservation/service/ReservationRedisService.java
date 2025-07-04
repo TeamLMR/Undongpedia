@@ -583,7 +583,7 @@ public class ReservationRedisService {
             
             if (result.get("data") != null) {
                 Map<String, Object> queueData = (Map<String, Object>) result.get("data");
-                Integer position = (Integer) queueData.get("position");
+                Integer position = toInt(queueData.get("position"));
                 log.info("📋 대기열 위치 조회: 강의{}, 스케줄{}, 사용자{}, 순서{}", 
                     courseSeq, scheduleId, memberNo, position);
                 

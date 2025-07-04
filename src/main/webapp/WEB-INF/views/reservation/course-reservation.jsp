@@ -1107,9 +1107,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = '/undongpedia/cart';
                 }
             } else {
-                alert('강의 예약에 실패했습니다: ' + result.message);
-                reservationBtn.disabled = false;
-                reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+                // success == false 이더라도 queueRequired가 true이면 대기열로 전환
+                if (result.queueRequired || (result.message && result.message.includes('대기열'))) {
+                    showQueueModal(data, result);
+                } else {
+                    // 임시예약 실패
+                    console.log('❌ 임시예약 실패:', result.message);
+
+                    const skipAlertMsg3 = result.message && (result.message.includes('대기열') || result.message.includes('차례') || result.message.includes('잠시만'));
+                    if (!result.queueRequired && !skipAlertMsg3) {
+                        alert('임시예약 실패: ' + (result.message || '알 수 없는 오류'));
+                    }
+
+                    // 실패 시 대기열 상태 다시 확인
+                    setTimeout(checkModalQueueStatus, 2000);
+                }
             }
         })
         .catch(error => {
@@ -1591,8 +1603,12 @@ window.leaveQueue = function() {
             } else {
                 // 임시예약 실패
                 console.log('❌ 임시예약 실패:', data.message);
-                alert('임시예약 실패: ' + (data.message || '알 수 없는 오류'));
-                
+
+                const skipAlertMsg3 = data.message && (data.message.includes('대기열') || data.message.includes('차례') || data.message.includes('잠시만'));
+                if (!data.queueRequired && !skipAlertMsg3) {
+                    alert('임시예약 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+
                 // 실패 시 대기열 상태 다시 확인
                 setTimeout(checkModalQueueStatus, 2000);
             }
