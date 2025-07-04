@@ -52,17 +52,27 @@ public class ScheduleCacheService {
         redisTemplate.opsForValue().set(cacheKey, schedule, SCHEDULE_TTL, TimeUnit.SECONDS);
     }
 
-    public void updateSeatsCount(Long scheduleId, int change) {
+    public void updateSeatsCount(Long scheduleId, int delta) {
         String cacheKey = SCHEDULE_SEATS_PREFIX + scheduleId;
 
-        Integer currentSeats = (Integer) redisTemplate.opsForValue().get(cacheKey);
-        if (currentSeats != null) {
-            int newSeats = Math.max(0, currentSeats + change);
-            redisTemplate.opsForValue().set(cacheKey, newSeats, SEATS_TTL, TimeUnit.SECONDS);
-        } else {
+        // Redis의 INCRBY를 이용해 원자적으로 증감 처리
+        Long updated = null;
+        try {
+            updated = redisTemplate.opsForValue().increment(cacheKey, delta);
+        } catch (Exception e) {
+            log.warn("좌석 수 증감 실패, fallback to set - key:{}, delta:{}", cacheKey, delta, e);
+        }
+
+        if (updated == null) {
+            // 캐시가 없거나 증감 실패 시 DB 값을 조회해 재설정
             int dbSeats = courseScheduleService.getAvailableSeats(scheduleId);
-            int newSeats = Math.max(0, dbSeats + change);
+            int newSeats = Math.max(0, dbSeats + delta);
             redisTemplate.opsForValue().set(cacheKey, newSeats, SEATS_TTL, TimeUnit.SECONDS);
+            log.debug("좌석 캐시 재설정 scheduleId:{}, seats:{}", scheduleId, newSeats);
+        } else {
+            // TTL 연장
+            redisTemplate.expire(cacheKey, SEATS_TTL, TimeUnit.SECONDS);
+            log.debug("좌석 업데이트 scheduleId:{}, delta:{}, after:{}", scheduleId, delta, updated);
         }
 
     }

@@ -699,8 +699,8 @@ public class ReservationRedisService {
                 String cartExpiryKey = "cart_expiry:" + tempReservationId;
                 redisTemplate.opsForValue().set(cartExpiryKey, "expire", Duration.ofMinutes(10));
 
-                //카프카 이벤트
-                publishEvent("TEMP_RESERVATION_CREATED", tempReservation);
+                //카프카 이벤트 (tempReservationId 포함하여 중복 알림 방지)
+                publishEvent("TEMP_RESERVATION_CREATED:" + tempReservationId, tempReservation);
 
                 log.info("임시예약 완료 사용자{}, 임시예약{}, 스케쥴{}", memberNo, tempReservationId,scheduleId);
 

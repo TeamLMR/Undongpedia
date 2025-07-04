@@ -36,4 +36,5 @@
               classpath:config/local/redis.properties,
               classpath:config/local/kafka.properties"
             ignore-unresolvable="true" />
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 </beans>
