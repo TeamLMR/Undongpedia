@@ -917,13 +917,13 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log(`시간대 로드 시작: courseSeq=\${courseSeq}, date=\${date}`);
            
            // URL 생성 및 로깅
-          const apiUrl = `/undongpedia/reservation/timeslots?courseSeq=\${courseSeq}&date=\${date}`;
-         console.log('생성된 API URL:', apiUrl);
+          const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+         console.log('생성된 API URL:', contextPath);
          console.log('courseSeq 값:', courseSeq, '타입:', typeof courseSeq);
          console.log('date 값:', date, '타입:', typeof date);
          
          // AJAX로 해당 날짜의 시간대 정보 가져오기
-         fetch(apiUrl)
+         fetch(contextPath + '/reservation/timeslots?courseSeq=' + encodeURIComponent(courseSeq) + '&date=' + encodeURIComponent(date))
              .then(response => {
                  console.log('HTTP 응답 상태:', response.status);
                  console.log('HTTP 응답 URL:', response.url);
@@ -1218,7 +1218,16 @@ window.leaveQueue = function() {
         // 5. 모달 닫기
         window.forceCloseQueueModal();
         
-                        console.log('대기열 나가기 완료');
+        // 예약 버튼 원상복구
+        const reservationBtnRestore = document.querySelector('.reservation-btn');
+        if (reservationBtnRestore) {
+            reservationBtnRestore.disabled = false;
+            reservationBtnRestore.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+            reservationBtnRestore.classList.remove('btn-secondary');
+            reservationBtnRestore.classList.add('btn-primary');
+        }
+
+        console.log('대기열 나가기 완료');
     }
 };
 
@@ -1283,7 +1292,8 @@ window.leaveQueue = function() {
             
             // 🔥 JSP EL을 별도 변수로 처리하여 URL 파싱 오류 방지
             const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
-            const wsUrl = 'ws://' + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(window.currentCourseSeq) + '&memberNo=' + encodeURIComponent(window.currentMemberNo);
+            const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsUrl = wsScheme + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(window.currentCourseSeq) + '&memberNo=' + encodeURIComponent(window.currentMemberNo);
             console.log('🔌 대기열 WebSocket 연결 시도:', wsUrl);
             console.log('📋 변수값 확인 - host:', window.location.host, 'contextPath:', contextPath, 'currentCourseSeq:', window.currentCourseSeq, 'memberNo:', window.currentMemberNo);
             

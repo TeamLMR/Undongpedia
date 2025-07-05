@@ -122,6 +122,15 @@
     <select id="isCoursePaidByMember" parameterType="orders" resultType="_int">
         SELECT COUNT(*) FROM ORDERS WHERE MEMBER_NO = #{memberNo} AND COURSE_SEQ = #{courseSeq} AND ORDERS_STATUS= 'PAID'
     </select>
+
+    <!-- 같은 회원이 동일 스케줄을 이미 예약했는지 체크 (취소 제외) -->
+    <select id="existsScheduleReservation" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM ORDERS
+        WHERE MEMBER_NO = #{memberNo}
+          AND SCHEDULE_ID = #{scheduleId}
+          AND CANCEL_YN = 'N'
+    </select>
+
     <update id="cancelOrdersByPaymentId" parameterType="string">
         UPDATE ORDERS
         SET

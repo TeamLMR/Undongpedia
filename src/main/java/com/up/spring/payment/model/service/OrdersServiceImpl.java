@@ -204,6 +204,18 @@ public class OrdersServiceImpl implements OrderService{
         if (courseSeq == 0) {
             return fail;
         }
+        // 중복 예약 방지: 같은 회원이 동일 스케줄 이미 예약했는지 확인
+        if(scheduleId != null){
+            Map<String,Object> dupParams = new java.util.HashMap<>();
+            dupParams.put("memberNo", memberNo);
+            dupParams.put("scheduleId", scheduleId);
+            int dupCnt = ordersDao.existsScheduleReservation(session, dupParams);
+            if(dupCnt>0){
+                log.warn("중복 스케줄 예약 시도 차단 - memberNo:{}, scheduleId:{}", memberNo, scheduleId);
+                return fail;
+            }
+        }
+
         //오프라인 order 객체 생성
         Orders ordersData = buildOfflineOrders(detail, memberNo, courseSeq, scheduleId, tempReservationId);
         if (ordersData == null) {

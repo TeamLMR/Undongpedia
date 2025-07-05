@@ -102,7 +102,7 @@
                     <c:set var="resultPrice" value="${course.coursePrice - (course.coursePrice * course.courseDiscount / 100)}"/>
                     <td>₩<fmt:formatNumber value="${resultPrice}" type="number" /></td>
                     <td>₩<fmt:formatNumber value="${resultPrice}" type="number" /></td>
-                    <td>₩<fmt:formatNumber value="${resultPrice*0.1}" type="number" /></td>
+                    <td>₩<fmt:formatNumber value="${resultPrice/11}" type="number" maxFractionDigits="0"/></td>
                     <td>${bigoText}</td>
                 </c:forEach>
             </tr>
@@ -117,7 +117,7 @@
             </c:if>
             <c:if test="${ordersList[0].ordersStatus eq 'PAID'}">
                 <td>₩<fmt:formatNumber value="${ordersList[0].ordersPrice}" type="number" /></td>
-                <td>₩<fmt:formatNumber value="${ordersList[0].ordersPrice * 0.1}" type="number" /></td>
+                <td>₩<fmt:formatNumber value="${ordersList[0].ordersPrice / 11}" type="number" maxFractionDigits="0"/></td>
             </c:if>
             <td> </td>
         </tr>

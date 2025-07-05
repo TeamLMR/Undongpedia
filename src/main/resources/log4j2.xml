@@ -2,12 +2,12 @@
 <Configuration>
     <!--    출력하는 방식을 설정하는 태그 Appenders-->
     <Appenders>
-        <!--        콘솔창에 출력하는 appender-->
+                콘솔창에 출력하는 appender
         <Console name="console">
             <PatternLayout pattern="[%-5p] ⏰%d{yyyy-MM-dd HH:mm:ss}  📂%l 🗣️%m %n"/>
             <!--            <JsonTemplateLayout eventTemplateUri="classpath:mylayout.json"/>-->
         </Console>
-        <!--        로그 내용 파일로 출력하기-->
+                로그 내용 파일로 출력하기
         <RollingFile name="rollingFile"
                      fileName="logs/spring-log.log"
                      filePattern="logs/spring-log-%d{yyyy-MM-dd}.log">

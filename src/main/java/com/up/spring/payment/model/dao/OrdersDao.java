@@ -18,5 +18,6 @@ public interface OrdersDao {
     List<OrdersInvoice> selectOrdersByPaymentIdAndMemberNo(SqlSession session, Map<String, Object> orders);
     int cancelOrderById(SqlSession session, int ordersSeq);
     int isCoursePaidByMember(SqlSession session, Orders orders);
+    int existsScheduleReservation(SqlSession session, Map<String,Object> params);
     int cancelOrdersByPaymentId(SqlSession session, String paymentId);
 }

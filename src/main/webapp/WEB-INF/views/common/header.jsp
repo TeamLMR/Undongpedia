@@ -175,8 +175,9 @@
     if(memberNo){
       const contextPath = '${pageContext.request.contextPath}';
       let notifWs;
+      const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
       function connectNotifWS(){
-        notifWs = new WebSocket(contextPath + '/ws/notification?memberNo=' + memberNo);
+        notifWs = new WebSocket(wsScheme + window.location.host + contextPath + '/ws/notification?memberNo=' + memberNo);
         notifWs.onmessage = function(e){ handleNotif(JSON.parse(e.data)); };
         notifWs.onclose = function(){ setTimeout(connectNotifWS, 5000); };
       }

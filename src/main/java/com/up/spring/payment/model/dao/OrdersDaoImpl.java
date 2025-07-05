@@ -26,7 +26,7 @@ public class OrdersDaoImpl implements OrdersDao {
 
     @Override
     public int isCoursePaidByMember(SqlSession session, Orders orders) {
-        return session.selectOne("isCoursePaidByMember", orders);
+        return session.selectOne("orders.isCoursePaidByMember", orders);
     }
 
     @Override
@@ -57,5 +57,10 @@ public class OrdersDaoImpl implements OrdersDao {
     @Override
     public List<Orders> selectOrdersByMember(SqlSession session, Long memberNo) {
         return session.selectList("selectOrdersByMember", memberNo);
+    }
+
+    @Override
+    public int existsScheduleReservation(SqlSession sqlSession, Map<String, Object> params) {
+        return sqlSession.selectOne("orders.existsScheduleReservation", params);
     }
 }

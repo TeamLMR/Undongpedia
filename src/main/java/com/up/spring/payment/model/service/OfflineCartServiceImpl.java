@@ -18,6 +18,7 @@ public class OfflineCartServiceImpl implements OfflineCartService {
 
     private final SqlSession sqlSession;
     private final OfflineCartDao offlineCartDao;
+    private final com.up.spring.reservation.service.ReservationRedisService reservationRedisService;
 
     @Override
     public List<OfflineCart> searchOfflineCartByMemberNo(long memberNo) {
@@ -51,6 +52,9 @@ public class OfflineCartServiceImpl implements OfflineCartService {
         if(result > 0) {
             log.info("임시예약 ID로 오프라인 장바구니 삭제 성공 - tempReservationId: {}, 삭제된 항목 수: {}", 
                     tempReservationId, result);
+
+            // 좌석 복구 및 임시예약 정리
+            reservationRedisService.cancelTemporaryReservation(tempReservationId);
         } else {
             log.debug("삭제할 오프라인 장바구니 항목이 없음 - tempReservationId: {}", tempReservationId);
         }

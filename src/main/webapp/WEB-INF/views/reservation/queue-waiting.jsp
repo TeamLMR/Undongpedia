@@ -189,7 +189,8 @@ function connectWebSocket() {
         }
         
         // URL 생성 및 로깅
-        const wsUrl = 'ws://' + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(courseSeq) + '&memberNo=' + encodeURIComponent(memberNo);
+        const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const wsUrl = wsScheme + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(courseSeq) + '&memberNo=' + encodeURIComponent(memberNo);
         console.log(' WebSocket 연결 시도:', wsUrl);
         console.log(' 변수값 확인 - host:', window.location.host, 'contextPath:', contextPath, 'courseSeq:', courseSeq, 'memberNo:', memberNo, 'typeof memberNo:', typeof memberNo);
         
