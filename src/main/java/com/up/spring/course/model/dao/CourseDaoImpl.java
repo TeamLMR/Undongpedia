@@ -20,6 +20,11 @@ public class CourseDaoImpl implements CourseDao {
     }
 
     @Override
+    public List<Review> getReviewListByCourseSeq(SqlSession sqlSession, long courseSeq) {
+        return sqlSession.selectList("course.getReviewList", courseSeq);
+    }
+
+    @Override
     public List<Course> getCourseApplyList(SqlSession sqlSession, String status) {
         return sqlSession.selectList("course.getCourseApplyList", status);
     }
