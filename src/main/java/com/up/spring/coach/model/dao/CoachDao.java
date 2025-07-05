@@ -21,7 +21,12 @@ public interface CoachDao {
     int deleteCurrBySectionSeq (SqlSession sqlSession, long sectionSeq);
     int deleteSectionByCourseSeq (SqlSession sqlSession, long courseSeq);
     int deleteCourseByCourseSeq (SqlSession sqlSession, long courseSeq);
+    int deleteSectionBySectionSeq(SqlSession sqlSession, long sectionSeq);
+    int deleteCurrByCurrSeq(SqlSession sqlSession, long currSeq);
     int updateTempCourse(SqlSession sqlSession, Course course);
+    int updateCurrOrderBySectionSeqAfterDelete(SqlSession sqlSession, long sectionSeq);
+    Curriculum selectCurrByCurrSeq(SqlSession sqlSession, long currSeq);
+    Section getSection (SqlSession sqlSession, long courseSeq, long sectionSeq);
 
     // 코치 신청 목록 조회
     List<CoachApply> selectCoachApplyList(SqlSession session, Map<String, Object> params);

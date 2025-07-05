@@ -25,10 +25,14 @@
                                     <input type="hidden" value="${section.sectionSeq}"
                                            id="sectionSeq${section.sectionSeq}">
                                     <div class="card-body">
-                                        <div class="row no-gutters align-items-center mb-3">
-                                            <div class="col pl-3 pr-3">
-                                                <div class="text-lg font-weight-bold text-info text-uppercase mb-1">${section.sectionTitle}</div>
+                                        <div class="row no-gutters align-items-center justify-content-between mb-3 ">
+                                            <div class="col-10 pr-3">
+                                                <div class="text-lg font-weight-bold badge-primary badge badge-fill text-uppercase mb-1">${section.sectionTitle}</div>
                                                 <div class="row no-gutters align-items-center">${section.sectionContent}</div>
+                                            </div>
+                                            <div class="col-1 btn-outline-danger btn btn-sm deleteSectionButton"
+                                                 style="max-width: 50px" id="${section.sectionSeq}">
+                                                삭제
                                             </div>
                                         </div>
                                         <c:if test="${not empty section.curriculums}">
@@ -39,7 +43,7 @@
                                                         <div class="col p-6">
                                                                 ${cur.currTitle}
                                                         </div>
-                                                        <div class="col p-3">
+                                                        <div class="col-3">
                                                             <c:if test='${cur.currVideoType == "UPLOAD"}'>
                                                                 <video controls style="max-width: 100%; height: auto;">
                                                                     <source src="${pageContext.request.contextPath}${cur.currVideoUrl}"
@@ -48,7 +52,11 @@
                                                                 </video>
                                                             </c:if>
                                                         </div>
-                                                        <div class="col p-3">${cur.currPreview}</div>
+                                                        <div class="col-2 small">${cur.currPreview}</div>
+                                                        <div class="col-1 btn-outline-warning btn btn-sm deleteCurrButton "
+                                                             style="max-width: 50px" id="${cur.currSeq}">
+                                                            삭제
+                                                        </div>
                                                     </div>
 
                                                 </c:if>
@@ -88,7 +96,7 @@
                                                     <input type="text" class="form-control form-control-user"
                                                            name="addSectionTitle"
                                                            id="addSectionTitle"
-                                                           placeholder="ex) 오리엔테이션">
+                                                           placeholder="ex) 오리엔테이션" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -103,7 +111,7 @@
                                                     <input type="text" class="form-control form-control-user"
                                                            name="assSectionContent"
                                                            id="addSectionContent"
-                                                           placeholder="ex) 강의에 대한 전반적인 설명... ">
+                                                           placeholder="ex) 강의에 대한 전반적인 설명... " required>
                                                 </div>
                                             </div>
                                         </div>
@@ -114,8 +122,7 @@
                                         <div class="row no-gutters align-items-center">
                                             <div class="col">
                                                 <div class="form-group d-flex justify-content-end">
-                                                    <button class="btn btn-lg btn-primary" onclick="addSection()">섹션
-                                                        추가
+                                                    <button class="btn btn-lg btn-primary" onclick="addSection()">섹션 추가
                                                     </button>
                                                 </div>
                                             </div>
@@ -229,7 +236,7 @@
                                 </select>
                             </div>
 
-                            <input type="text" class="form-control" id="currOrder" name="currOrder">
+                            <input type="hidden" class="form-control" id="currOrder" name="currOrder">
 
                             <div class="form-group">
                                 <input type="hidden" class="form-control" id="sectionSeq" name="sectionSeq" readonly>
@@ -301,10 +308,21 @@
             });
 
             const addSection = () => {
-                const title = $("#addSectionTitle").val();
-                const content = $("#addSectionContent").val();
+                const title = $("#addSectionTitle").val().trim();
+                const content = $("#addSectionContent").val().trim();
                 const order = '${sectionOrder}';
                 const courseSeq = '${tempCourseSeq}';
+
+                if (title===""){
+                    alert("섹션 제목을 입력해주세요.");
+                    document.getElementById('addSectionTitle').focus();
+                    return;
+                }
+                if (content===""){
+                    alert("섹션 내용을 입력해주세요.");
+                    document.getElementById('addSectionContent').focus();
+                    return;
+                }
                 $.ajax({
                     url: "${pageContext.request.contextPath}/coach/ajaxAddSection",
                     type: "POST",
@@ -427,6 +445,136 @@
                 return true;
             }
         </script>
+            <div class="modal fade" id="deleteCurrModal" tabindex="-1" aria-labelledby="deleteCurrModal" role="dialog"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white bi-">
+                            <h5 class="modal-title">경고</h5>
+                            <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
 
+                        <div class="modal-body">
+                            정말 해당 커리큘럼을 삭제하시겠습니까?
+                        </div>
+
+                        <div class="modal-footer">
+                            <form action="${pageContext.request.contextPath}/coach/deletecurr" method="post"
+                                  name="deleteForm">
+                                <input type="hidden" value="" id="deleteCurrSeq" name="deleteCurrSeq">
+                                <input type="hidden" value="${tempCourseSeq}" id="courseSeq" name="courseSeq">
+                                <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
+                                </button>
+                                <button type="submit" class="btn btn-danger">네</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="deleteSectionModal" tabindex="-1" aria-labelledby="deleteSectionModal"
+                 role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white bi-">
+                            <h5 class="modal-title">경고</h5>
+                            <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            정말 해당 섹션을 삭제하시겠습니까?
+                            하위 커리큘럼까지 함께 삭제됩니다.
+                        </div>
+
+                        <div class="modal-footer">
+                            <form action="${pageContext.request.contextPath}/coach/deletesection" method="post"
+                                  name="deleteForm">
+                                <input type="hidden" value="" id="deleteSectionSeq" name="deleteSectionSeq">
+                                <input type="hidden" value="${tempCourseSeq}" id="courseSeq" name="courseSeq">
+                                <button type="button" class="btn btn-secondary modalCloseAct" data-dismiss="modal">닫기
+                                </button>
+                                <button type="submit" class="btn btn-danger">네</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                $(document).ready(function () {
+                    bindingEvent();
+                });
+
+                function bindingEvent() {
+                    $('.deleteSectionButton').off('click').on('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const selectedSectionSeq = $(this).attr("id");
+                        console.log(selectedSectionSeq);
+                        $('#deleteSectionSeq').val(selectedSectionSeq);
+                        $('#deleteSectionModal').modal('show');
+                    });
+
+                    $('.deleteCurrButton').off('click').on('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const selectedCurrSeq = $(this).attr("id");
+                        console.log(selectedCurrSeq);
+                        $('#deleteCurrSeq').val(selectedCurrSeq);
+                        $('#deleteCurrModal').modal('show');
+                    });
+                }
+            </script>
+
+            <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="resultModalLabel">알림</h5>
+                            <button class="close modalCloseAct" type="button" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body" id="resultModalMessage">
+                            <!--메세지 -->
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary modalCloseAct" data-dismiss="modal"
+                                    onclick="location.replace('${pageContext.request.contextPath}/coach/coursemanager')">
+                                확인
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    onload = () => {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const result = urlParams.get('result');
+                        const msg = urlParams.get('msg');
+                        console.log(urlParams, result, msg);
+                        if (result && msg) {
+                            if (result === 'success') {
+                                $('#resultModal .modal-body').text(msg);
+                                $('#resultModal').modal('show');
+                            } else if (result === 'fail') {
+                                $('#resultModal .modal-body').text(msg);
+                                $('#resultModal').modal('show');
+                            }
+                        }
+                    }
+                });
+            </script>
         <!-- End of Main Content -->
         <jsp:include page="/WEB-INF/views/coach/common/footer.jsp"/>

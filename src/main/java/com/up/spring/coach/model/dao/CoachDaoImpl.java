@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,8 +19,36 @@ public class CoachDaoImpl implements CoachDao {
     private final SqlSession sqlSession;
 
     @Override
+    public Curriculum selectCurrByCurrSeq(SqlSession sqlSession, long currSeq) {
+        return sqlSession.selectOne("selectCurrByCurrSeq", currSeq);
+    }
+
+    @Override
+    public Section getSection(SqlSession sqlSession, long courseSeq, long sectionSeq) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("courseSeq", courseSeq);
+        params.put("sectionSeq", sectionSeq);
+        return sqlSession.selectOne("coach.getSection", params);
+    }
+
+    @Override
+    public int deleteCurrByCurrSeq(SqlSession sqlSession, long currSeq) {
+        return sqlSession.delete("coach.deleteCurrByCurrSeq", currSeq);
+    }
+
+    @Override
+    public int deleteSectionBySectionSeq(SqlSession sqlSession, long sectionSeq) {
+        return sqlSession.delete("coach.deleteSectionBySectionSeq", sectionSeq);
+    }
+
+    @Override
     public int updateTempCourse(SqlSession sqlSession, Course course) {
         return sqlSession.update("coach.updateTempCourse", course);
+    }
+
+    @Override
+    public int updateCurrOrderBySectionSeqAfterDelete(SqlSession sqlSession, long sectionSeq) {
+        return sqlSession.update("coach.updateCurrOrderBySectionSeqAfterDelete", sectionSeq);
     }
 
     @Override

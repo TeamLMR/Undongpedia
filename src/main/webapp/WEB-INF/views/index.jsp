@@ -3,45 +3,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <jsp:include page="/WEB-INF/views/common/header.jsp"/>
 <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-
-<script>
-    // 이미지가 없는 경우를 체크하기 위해 해당 이미지의 URL을 변수에 저장
-    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
-
-    // 이미지가 있는지 체크하는 함수
-    function checkImageExists(imageUrl) {
-        // 새로운 이미지 객체 생성
-        const img = new Image();
-        // 이미지 URL 설정
-        img.src = '${pageContext.request.contextPath}' + imageUrl;
-
-        // 이미지 로드가 성공한 경우
-        img.onload = function () {
-            // 이미지가 존재하는 경우 true를 반환
-            return true;
-        };
-        // 이미지 로드가 실패한 경우
-        img.onerror = function () {
-            // 이미지가 존재하지 않는 경우 false를 반환
-            return false;
-        };
-        console.log(img.src);
-        // 이미지가 존재하는지 여부를 반환
-        return img.complete;
-    }
-
-    // 이미지가 없는 경우 defaultImageUrl을 반환하는 함수
-    function getImageUrl(imageUrl) {
-        console.log("imageUrl: " + imageUrl)
-        // 이미지가 존재하는 경우 해당 URL을 반환
-        if (checkImageExists(imageUrl)) {
-            return imageUrl;
-        }
-        // 이미지가 존재하지 않는 경우 defaultImageUrl을 반환
-        return defaultImageUrl;
-    }
-</script>
-
 <c:set var="dummyImg" value="${pageContext.request.contextPath}/resources/images/dummy.webp"/>
 <main class="main">
     <section id="hero" class="hero bg-dark bg-gradient text-white border-top"
@@ -340,19 +301,21 @@
                         <div class="col-12 col-sm-6 col-md-4 col-lg-3 list-to-detail" id="${c.courseSeq}">
                             <div class="card h-100 border-0 shadow-sm">
                                 <div class="ratio" style="--bs-aspect-ratio: 80%; min-height: 200px;">
-                                    <img id="productImage${c.courseSeq}" src="" class="w-100 h-100 object-fit-cover"
-                                         alt="강의 썸네일">
-                                    <script>
-                                        // 이미지가 있으면 myImage 아이디를 갖고 있는 img 태그에 적용한다.
-                                        // 없으면 getImageUrl 함수안에 return defaultImageUrl; 실행.
-                                        document.getElementById("productImage${c.courseSeq}").src = getImageUrl("${c.courseThumbnail}");
-                                    </script>
+                                    <img
+                                            class="w-100 h-100 object-fit-cover course-thumb"
+                                            id="productImage${c.courseSeq}"
+                                            data-thumb="${c.courseThumbnail}"
+                                            data-id="productImage${c.courseSeq}"
+                                            src="${pageContext.request.contextPath}/resources/images/dummy.png"
+                                            alt="강의 썸네일"
+                                    >
                                 </div>
                                 <div class="card-body d-flex flex-column justify-content-between"
                                      style="min-height: 240px;">
                                     <div>
                                         <p class="text-muted small mb-1">${c.memberNickname}</p>
-                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTarget}</h5>
+                                        <h5 class="card-title fw-semibold text-truncate">${c.courseTitle}</h5>
+                                        <p class="card-text text-secondary small text-truncate">${c.courseTarget}</p>
                                             <%--                                        <p class="card-text text-secondary small text-truncate">${c.courseContent}</p>--%>
                                     </div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
@@ -857,6 +820,33 @@
     $(document).ready(function () {
         bindCourseEvents();
     });
+
+    const defaultImageUrl = "${pageContext.request.contextPath}/resources/images/dummy.png";
+    const basePath = "${pageContext.request.contextPath}";
+
+    async function imageExists(url) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+        });
+    }
+
+    async function checkAndSetAllImages() {
+        const thumbs = document.querySelectorAll(".course-thumb");
+
+        for (const img of thumbs) {
+            const thumbPath = img.dataset.thumb;
+            const fullUrl = basePath + thumbPath;
+
+            const exists = await imageExists(fullUrl);
+            img.src = exists ? fullUrl : defaultImageUrl;
+        }
+    }
+
+    // 페이지 로드 시 실행
+    window.addEventListener("DOMContentLoaded", checkAndSetAllImages);
 </script>
 
 

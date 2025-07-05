@@ -75,10 +75,96 @@ public class CoachController {
         //4. 그 외는 fail
         return result;
     }
+    @PostMapping("/deletecurr")
+    public String deleteCurriculum(@RequestParam("deleteCurrSeq")long delCurrSeq, @RequestParam("courseSeq")long courseSeq, HttpSession session, RedirectAttributes redirectAttributes, HttpServletRequest request){
+        String loc = "redirect:/coach/coursemanager";
+        //1. 코스 정보가 있는지
+        Course course = isExistCourse(courseSeq);
+        //2. 삭제가 가능한 상태인지
+        if (canModifyAndDelete(course)) {
+            Curriculum curr = coachService.selectCurrByCurrSeq(delCurrSeq);
+            if (curr != null){
+                Map<String, Integer> result = coachService.delCurrAndUpdateCurrOrder(curr.getSectionSeq(), delCurrSeq);
+                log.debug("result:{}", result);
+                int deleteResult = result.get("deleteResult");
+                int updateResult = result.get("updateResult");
+
+                if (deleteResult > 0) {
+                    session.setAttribute("tempCourseSeq", course.getCourseSeq());
+                    redirectAttributes.addAttribute("courseSeq", courseSeq);
+                    String referer = request.getHeader("Referer");
+                    log.debug("referer:{}", referer);
+                    loc = "redirect:/coach/modifycoursesection";
+                    /*임시.. add로 넘어가게*/
+                    if(referer != null && referer.contains("/addCourseSection")){
+                        loc = "redirect:/coach/addCourseSection";
+                    }
+                } else {
+                    redirectAttributes.addAttribute("result", "fail");
+                    redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+                }
+
+            } else {
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+            }
+        } else {
+            redirectAttributes.addAttribute("result", "fail");
+            redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+        }
+        return loc;
+    }
+
+
+    @PostMapping("/deletesection")
+    public String deleteSection(@RequestParam("deleteSectionSeq")long delSectionSeq, @RequestParam("courseSeq")long courseSeq, RedirectAttributes redirectAttributes, HttpServletRequest request, HttpSession session){
+        String loc = "redirect:/coach/coursemanager";
+        //1. 코스 정보가 있는지
+        Course course = isExistCourse(courseSeq);
+        //2. 삭제가 가능한 상태인지
+        if (canModifyAndDelete(course)) {
+            log.debug("course: " + course.toString());
+            //3. 섹션도 확인이 된다면
+            Section section = coachService.getSection(courseSeq, delSectionSeq);
+            if (section != null) {
+                log.debug("section: " + section.toString());
+                Map<String, Integer> result = coachService.deleteSectionCascade(courseSeq, delSectionSeq);
+                int deleteCurrNum = result.get("deleteCurrNum");
+                int deleteSectionNum = result.get("deleteSectionNum");
+                log.debug("deleteCurrNum: " + deleteCurrNum);
+                log.debug("deleteSectionNum: " + deleteSectionNum);
+
+                //섹션커리큘럼 수정
+                if(deleteCurrNum + deleteSectionNum > 0){
+                    //리다이렉트 메세지 설정
+                    session.setAttribute("tempCourseSeq", course.getCourseSeq());
+                    redirectAttributes.addAttribute("courseSeq", courseSeq);
+                    loc = "redirect:/coach/modifycoursesection";
+
+                    String referer = request.getHeader("Referer");
+                    log.debug("referer:{}", referer);
+                    /*임시.. add로 넘어가게*/
+                    if(referer != null && referer.contains("/addCourseSection")){
+                        loc = "redirect:/coach/addCourseSection";
+                    }
+                } else {
+                    redirectAttributes.addAttribute("result", "fail");
+                    redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+                }
+
+            }
+        }
+        else {
+            redirectAttributes.addAttribute("result", "fail");
+            redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+        }
+
+        return loc;
+    }
 
     @PostMapping("/deletecourse")
     public String deleteCourse(@RequestParam("delCourseSeq")long delCourseSeq, Model model, RedirectAttributes redirectAttributes){
-        String loc = "common/msg";
+        String loc = "redirect:/coach/coursemanager";
 
         log.debug("deleteCourse: " + delCourseSeq);
         //1. 코스 정보가 있는지
@@ -95,21 +181,22 @@ public class CoachController {
             int deleteSectionNum = result.get("deleteSectionNum");
             int deleteCourseNum = result.get("deleteCourseNum");
 
-            //3-4 리다이렉트 메세지 설정
-            redirectAttributes.addAttribute("result", "success");
-            redirectAttributes.addAttribute("msg", "코스 " + deleteCourseNum +
-                     "개, 섹션 " + deleteSectionNum + "개, 커리큘럼 " + deleteCurrNum +
-                    "개 삭제를 완료했습니다.");
-
-            //3-5 코스관리 페이지로 이동
-            loc = "redirect:/coach/coursemanager";
+            if(deleteCourseNum + deleteCurrNum + deleteSectionNum > 0){
+                //3-4 리다이렉트 메세지 설정
+                redirectAttributes.addAttribute("result", "success");
+                redirectAttributes.addAttribute("msg", "코스 " + deleteCourseNum +
+                        "개, 섹션 " + deleteSectionNum + "개, 커리큘럼 " + deleteCurrNum +
+                        "개 삭제를 완료했습니다.");
+            } else {
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
+            }
 
         } else {
             redirectAttributes.addAttribute("result", "fail");
             redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
-            loc = "redirect:/coach/coursemanager";
         }
-
+        //코스관리 페이지로 이동
         return loc;
     }
 
@@ -137,14 +224,13 @@ public class CoachController {
     public String modifySectionCurr(HttpSession session, RedirectAttributes redirectAttributes, Model model){
         String loc = "coach/modify/modifySectionCurr";
 
-
         long tempCourseSeq = (long) session.getAttribute("tempCourseSeq");
         log.debug("tempCourseSeq: " + tempCourseSeq);
 
         //검증
         Course beforeCourse = isExistCourse(tempCourseSeq);
         if (canModifyAndDelete(beforeCourse)) {
-            session.removeAttribute("tempCourseSeq");
+//            session.removeAttribute("tempCourseSeq");
             List<Section> sectionList = coachService.getSectionList(tempCourseSeq);
             log.debug("sectionList: " + sectionList);
 
@@ -218,7 +304,9 @@ public class CoachController {
                 //다음 섹션/커리큘럼 페이지로 보낸다
                 } else {
                     session.setAttribute("tempCourseSeq", course.getCourseSeq());
-                    loc = "redirect:/coach/modifysectioncurr";
+                    redirectAttributes.addAttribute("courseSeq", course.getCourseSeq());
+
+                    loc = "redirect:/coach/modifycoursesection";
                 }
 
             } else {
@@ -228,7 +316,13 @@ public class CoachController {
         }
         return loc;
     }
-
+    @GetMapping("/modifycoursesection")
+    public String modifyCourseSection(Long courseSeq, Model model) {
+        List<Section> sectionList = coachService.getSectionList(courseSeq);
+        model.addAttribute("sectionList", sectionList);
+        model.addAttribute("tempCourseSeq", courseSeq);
+        return "/coach/modify/modifySectionCurr";
+    }
 
     @RequestMapping("/dashboard")
     public String dashboard(Model model)
@@ -324,9 +418,14 @@ public class CoachController {
         return coachService.insertSection(section);
     }
 
-    @RequestMapping("/insertCurriculum")
-    public String insertCurriculum(Curriculum curriculum, Model model,long courseSeq, HttpSession session) {
-        if ("UPLOAD".equals(curriculum.getCurrVideoType()) && curriculum.getCurrVideoFile() != null) {
+
+    @PostMapping("/modifyaddcurriculum")
+    public String modifyAddCurriculum(Curriculum curriculum, Model model,long courseSeq, HttpSession session, RedirectAttributes redirectAttributes) {
+        String loc = "redirect:/coach/coursemanager";
+        log.debug(curriculum.toString());
+        //성공
+
+        if (curriculum.getCurrVideoType().equals("UPLOAD") && curriculum.getCurrVideoFile() != null) {
             MultipartFile file = curriculum.getCurrVideoFile();
             if (!file.isEmpty()) {
                 try {
@@ -346,18 +445,94 @@ public class CoachController {
                     try (OutputStream os = new FileOutputStream(saveFile)) {
                         os.write(file.getBytes());
                     }
-                     curriculum.setCurrVideoUrl("/resources/upload/course/videos/" + fileRename);
+                    curriculum.setCurrVideoUrl("/resources/upload/course/videos/" + fileRename);
+
+                    int result = coachService.insertCurriculum(curriculum);
+                    log.debug("result: " + result);
+                    if (result > 0) {
+                        session.setAttribute("tempCourseSeq", courseSeq);
+                        redirectAttributes.addAttribute("courseSeq", courseSeq);
+                        loc = "redirect:/coach/modifysectioncurr";
+                    } else {
+                        redirectAttributes.addAttribute("result", "fail");
+                        redirectAttributes.addAttribute("msg", "커리큘럼 추가를 실패했습니다.");
+                    }
 
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    model.addAttribute("error", "파일 업로드 실패");
-                    return "errorPage"; // 에러 처리 뷰
+                    redirectAttributes.addAttribute("result", "fail");
+                    redirectAttributes.addAttribute("msg", "커리큘럼 추가를 실패했습니다.");
                 }
             }
+        } else if(!curriculum.getCurrVideoUrl().isEmpty()) {
+            int result = coachService.insertCurriculum(curriculum);
+            log.debug("result: " + result);
+            if (result > 0) {
+                session.setAttribute("tempCourseSeq", courseSeq);
+                redirectAttributes.addAttribute("courseSeq", courseSeq);
+                loc = "redirect:/coach/modifysectioncurr";
+            } else {
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "커리큘럼 추가를 실패했습니다.");
+            }
         }
-        coachService.insertCurriculum(curriculum);
 
-        return "redirect:/coach/addCourseSection?courseSeq="+courseSeq;
+        return loc;
+    }
+
+    @RequestMapping("/insertCurriculum")
+    public String insertCurriculum(Curriculum curriculum, Model model,long courseSeq, HttpSession session, RedirectAttributes redirectAttributes) {
+        String loc = "redirect:/coach/coursemanager";
+        log.debug(curriculum.toString());
+        //성공
+
+        if (curriculum.getCurrVideoType().equals("UPLOAD") && curriculum.getCurrVideoFile() != null) {
+            MultipartFile file = curriculum.getCurrVideoFile();
+            if (!file.isEmpty()) {
+                try {
+                    String realPath = session.getServletContext().getRealPath("/resources/upload/course/videos");
+                    File dir = new File(realPath);
+                    if (!dir.exists()) dir.mkdirs();
+
+                    int rnd = (int) (Math.random() * 1000) + 1;
+                    Date d = new Date(System.currentTimeMillis());
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mmss");
+                    String fileName =file.getOriginalFilename();
+                    int idx = fileName.lastIndexOf('.');
+                    String extension = fileName.substring(idx);
+                    String fileRename = "COURSE_" + sdf.format(d) + "_" + rnd + extension;
+
+                    File saveFile = new File(dir, fileRename);
+                    try (OutputStream os = new FileOutputStream(saveFile)) {
+                        os.write(file.getBytes());
+                    }
+                    curriculum.setCurrVideoUrl("/resources/upload/course/videos/" + fileRename);
+
+                    int result = coachService.insertCurriculum(curriculum);
+                    log.debug("result: " + result);
+                    if (result > 0) {
+                        loc = "redirect:/coach/addCourseSection?courseSeq="+courseSeq;
+                    } else {
+                        redirectAttributes.addAttribute("result", "fail");
+                        redirectAttributes.addAttribute("msg", "커리큘럼 추가를 실패했습니다.");
+                    }
+
+                } catch (IOException e) {
+                    redirectAttributes.addAttribute("result", "fail");
+                    redirectAttributes.addAttribute("msg", "커리큘럼 추가를 실패했습니다.");
+                }
+            }
+        } else if(!curriculum.getCurrVideoUrl().isEmpty()) {
+            int result = coachService.insertCurriculum(curriculum);
+            log.debug("result: " + result);
+            if (result > 0) {
+                loc = "redirect:/coach/addCourseSection?courseSeq="+courseSeq;
+            } else {
+                redirectAttributes.addAttribute("result", "fail");
+                redirectAttributes.addAttribute("msg", "커리큘럼 추가를 실패했습니다.");
+            }
+        }
+
+        return loc;
 
     }
     @RequestMapping("/coursemanager")
