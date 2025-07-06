@@ -25,12 +25,12 @@
     </Appenders>
     <Loggers>
         <Logger name="jdbc.sqlonly" additivity="false" level="INFO">
-<!--            <AppenderRef ref="sqlLogger"/>-->
-            <AppenderRef ref="rollingFile"/>
+            <AppenderRef ref="sqlLogger"/>
+<!--            <AppenderRef ref="rollingFile"/>-->
         </Logger>
         <Logger name="jdbc.resultsettable" additivity="false" level="INFO">
-<!--            <AppenderRef ref="sqlLogger"/>-->
-            <AppenderRef ref="rollingFile"/>
+            <AppenderRef ref="sqlLogger"/>
+<!--            <AppenderRef ref="rollingFile"/>-->
         </Logger>
         <Logger name="com.up.spring" level="DEBUG">
             <AppenderRef ref="rollingFile"/>
@@ -41,8 +41,8 @@
         <Logger name="org.springframework.web" level="INFO"/>
         <Logger name="org.springframework.beans" level="INFO"/>
         <Root level="WARN">
-<!--            <AppenderRef ref="console"/>-->
-            <AppenderRef ref="rollingFile"/>
+            <AppenderRef ref="console"/>
+<!--            <AppenderRef ref="rollingFile"/>-->
         </Root>
     </Loggers>
 </Configuration>

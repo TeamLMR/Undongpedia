@@ -32,9 +32,9 @@
 
 <!--    추후 local에서 server로 변경-->
     <context:property-placeholder
-            location="classpath:config/server/application.properties,
-              classpath:config/server/redis.properties,
-              classpath:config/server/kafka.properties"
+            location="classpath:config/local/application.properties,
+              classpath:config/local/redis.properties,
+              classpath:config/localxw/kafka.properties"
             ignore-unresolvable="true" />
     <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 </beans>
