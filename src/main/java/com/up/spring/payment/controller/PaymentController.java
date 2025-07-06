@@ -315,7 +315,7 @@ public class PaymentController {
             //result값이 1보다 커질 수 있음(삭제 칼럼 값)
             log.debug("result: " + result);
 
-            if (result > 1) {
+            if (result > 0) {
                 // 오프라인 예약인 경우 스케줄 좌석 복구
                 if (cancelOrder.getScheduleId() != null) {
                     try {
@@ -331,7 +331,8 @@ public class PaymentController {
                         log.error("주문 취소 시 좌석 복구 중 오류 발생 - ordersSeq: {}, scheduleId: {}", ordersSeq, cancelOrder.getScheduleId(), e);
                     }
                 }
-                loc = "redirect:/mypage";
+                model.addAttribute("msg", "주문 취소가 완료되었습니다.");
+                model.addAttribute("loc", "/mypage");
             }
         } else {
             model.addAttribute("msg", "문제가 있습니다.");
