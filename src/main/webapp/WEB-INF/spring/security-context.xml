@@ -28,16 +28,19 @@
     <security:intercept-url pattern="/signup" access="permitAll()"/>
     <security:intercept-url pattern="/savemember" access="permitAll()"/>
     <security:intercept-url pattern="/mypage/savemember" access="permitAll()"/>
-    <security:intercept-url pattern="/member/withdraw" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
+    <security:intercept-url pattern="/member/withdraw" access="hasAnyAuthority('ROLE_ADMIN','ROLE_COACH','ROLE_MEMBER')"/>
     <security:intercept-url pattern="/email" access="permitAll()"/>
     <security:intercept-url pattern="/email/**" access="permitAll()"/>
     <security:intercept-url pattern="/main/**" access="permitAll()"/>
     <security:intercept-url pattern="/resources/**" access="permitAll()"/>
-    <security:intercept-url pattern="/reservation" access="permitAll()"/>
-    <security:intercept-url pattern="/reservation/**" access="permitAll()"/>
-    <security:intercept-url pattern="/admin/**" access="permitAll()"/>
-    <security:intercept-url pattern="/**" access="hasAnyAuthority('ADMIN','COACH','MEMBER')"/>
+<!--    <security:intercept-url pattern="/reservation" access="permitAll()"/>-->
+<!--    <security:intercept-url pattern="/reservation/**" access="permitAll()"/>-->
+    <security:intercept-url pattern="/coach/**" access="hasAnyAuthority('ROLE_COACH')"/>
+    <security:intercept-url pattern="/admin/**" access="hasAnyAuthority('ROLE_ADMIN')"/>
+    <security:intercept-url pattern="/**" access="hasAnyAuthority('ROLE_ADMIN','ROLE_COACH','ROLE_MEMBER')"/>
 
+
+    <security:access-denied-handler error-page="/access-denied"/>
     <security:logout logout-url="/logout.do"/>
 
     <security:remember-me

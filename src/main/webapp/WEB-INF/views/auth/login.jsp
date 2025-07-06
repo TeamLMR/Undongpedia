@@ -14,7 +14,7 @@
     // 쿠키 배열이 null이 아닌 경우 쿠키를 탐색
     if (cookies != null) {
         for (Cookie cookie : cookies) {
-            System.out.println("cc = " + cookie.getName());
+//            System.out.println("cc = " + cookie.getName());
             if ("ambassador_token".equals(cookie.getName())) {
                 ambassadorToken = cookie.getValue();
             }
@@ -96,7 +96,7 @@
                                 <%
                                     String pathVar = request.getContextPath();
                                     String clientId = "CBUQIgHQrx9kpSArabUl";//애플리케이션 클라이언트 아이디값";
-                                    String redirectURI = URLEncoder.encode("http://localhost:9090/undongpedia/login.do", "UTF-8");
+                                    String redirectURI = URLEncoder.encode("https://chunjaefullstack.r-e.kr:3306/undongpedia/login.do", "UTF-8");
 //                                    String redirectURI = URLEncoder.encode("http://localhost:9090/undongpedia/login.do", "UTF-8");
                                     SecureRandom random = new SecureRandom();
                                     String state = new BigInteger(130, random).toString();

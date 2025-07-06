@@ -20,5 +20,10 @@
         <typeAlias type="com.up.spring.payment.model.dto.OrdersInvoice" alias="ordersInvoice"/>
         <typeAlias type="com.up.spring.payment.model.dto.OfflineCart" alias="offlineCart"/>
         <typeAlias type="com.up.spring.coach.model.dto.CoachPayment" alias="coachPayment"/>
+        <typeAlias type="com.up.spring.notification.model.dto.Notification" alias="notification"/>
     </typeAliases>
+    <typeHandlers>
+        <typeHandler handler="com.up.spring.config.LegacyLocalDateTimeHandler"
+                     javaType="java.time.LocalDateTime"/>
+    </typeHandlers>
 </configuration>

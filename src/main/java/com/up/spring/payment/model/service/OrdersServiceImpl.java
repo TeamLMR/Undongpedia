@@ -9,11 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.kafka.core.KafkaTemplate;
+import com.up.spring.course.model.service.CourseService;
 
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +26,9 @@ import java.util.Map;
 public class OrdersServiceImpl implements OrderService{
     private final OrdersDao ordersDao;
     private final SqlSession session;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final CourseService courseService;
+    private static final String PAYMENT_TOPIC = "payment-events";
 
     private Timestamp formatToTimestamp(String yyyyMMddHHmmss) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -152,6 +158,30 @@ public class OrdersServiceImpl implements OrderService{
         }
 
         log.debug("Order, OrderDetails Inserted Successfully");
+
+        // Kafka 알림 발행
+        try {
+            Map<String,Object> evt = new HashMap<>();
+            evt.put("memberNo", memberNo);
+            evt.put("courseSeq", courseSeq);
+            String paymentId = String.valueOf(detail.getOrDefault("paymentId", ""));
+            evt.put("eventType", "PAYMENT_SUCCESS" + (paymentId.isBlank() ? "" : (":" + paymentId)));
+            evt.put("paymentId", paymentId);
+            Object nameObj = detail.get("courseName");
+            String courseName;
+            if(nameObj == null || String.valueOf(nameObj).isBlank()){
+                courseName = courseService.searchById(courseSeq).getCourseTitle();
+            } else {
+                courseName = String.valueOf(nameObj);
+            }
+            evt.put("courseName", courseName);
+            evt.put("totalPayAmount", detail.get("totalPayAmount"));
+            evt.put("timestamp", java.time.LocalDateTime.now().toString());
+            kafkaTemplate.send(PAYMENT_TOPIC, evt);
+        } catch(Exception ex){
+            log.error("결제 성공 이벤트 발행 실패", ex);
+        }
+
         //다 성공했으면 success
         return success;
     }
@@ -174,6 +204,18 @@ public class OrdersServiceImpl implements OrderService{
         if (courseSeq == 0) {
             return fail;
         }
+        // 중복 예약 방지: 같은 회원이 동일 스케줄 이미 예약했는지 확인
+        if(scheduleId != null){
+            Map<String,Object> dupParams = new java.util.HashMap<>();
+            dupParams.put("memberNo", memberNo);
+            dupParams.put("scheduleId", scheduleId);
+            int dupCnt = ordersDao.existsScheduleReservation(session, dupParams);
+            if(dupCnt>0){
+                log.warn("중복 스케줄 예약 시도 차단 - memberNo:{}, scheduleId:{}", memberNo, scheduleId);
+                return fail;
+            }
+        }
+
         //오프라인 order 객체 생성
         Orders ordersData = buildOfflineOrders(detail, memberNo, courseSeq, scheduleId, tempReservationId);
         if (ordersData == null) {
@@ -198,6 +240,29 @@ public class OrdersServiceImpl implements OrderService{
         int orderDetailResult = insertOrderDetails(orderDetails);
         if (orderDetailResult != 1) {
             return fail;
+        }
+
+        // Kafka 알림 발행 (오프라인 결제)
+        try {
+            java.util.Map<String,Object> evt = new java.util.HashMap<>();
+            evt.put("memberNo", memberNo);
+            evt.put("courseSeq", courseSeq);
+            String paymentId2 = String.valueOf(detail.getOrDefault("paymentId", ""));
+            evt.put("eventType", "PAYMENT_SUCCESS" + (paymentId2.isBlank()? "" : (":" + paymentId2)));
+            evt.put("paymentId", paymentId2);
+            Object nameObj2 = detail.get("courseName");
+            String courseName2;
+            if(nameObj2 == null || String.valueOf(nameObj2).isBlank()){
+                courseName2 = courseService.searchById(courseSeq).getCourseTitle();
+            } else {
+                courseName2 = String.valueOf(nameObj2);
+            }
+            evt.put("courseName", courseName2);
+            evt.put("totalPayAmount", detail.get("totalPayAmount"));
+            evt.put("timestamp", java.time.LocalDateTime.now().toString());
+            kafkaTemplate.send(PAYMENT_TOPIC, evt);
+        } catch(Exception ex){
+            log.error("오프라인 결제 성공 이벤트 발행 실패", ex);
         }
 
         log.debug("Offline Order, OrderDetails Inserted Successfully");

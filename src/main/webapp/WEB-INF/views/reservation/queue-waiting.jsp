@@ -189,7 +189,8 @@ function connectWebSocket() {
         }
         
         // URL 생성 및 로깅
-        const wsUrl = 'ws://' + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(courseSeq) + '&memberNo=' + encodeURIComponent(memberNo);
+        const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const wsUrl = wsScheme + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(courseSeq) + '&memberNo=' + encodeURIComponent(memberNo);
         console.log(' WebSocket 연결 시도:', wsUrl);
         console.log(' 변수값 확인 - host:', window.location.host, 'contextPath:', contextPath, 'courseSeq:', courseSeq, 'memberNo:', memberNo, 'typeof memberNo:', typeof memberNo);
         
@@ -400,11 +401,20 @@ function updateQueueUI(queueData) {
     document.getElementById('estimatedTime').textContent = estimatedMinutes + '분';
                 console.log('예상 대기시간:', estimatedMinutes + '분');
     
-    // 🔥 진행률 계산 및 업데이트
-    const progress = totalInQueue > 0 ? 
-        ((totalInQueue - position + 1) / totalInQueue) * 100 : 0;
+        // 🔥 진행률 계산 및 업데이트 (입장 시 전체 인원수 기준)
+    let initialTotalInQueue = parseInt(sessionStorage.getItem('initialTotalInQueue')) || 0;
+    
+    // 처음 입장할 때만 저장 (totalInQueue가 0이 아닐 때)
+    if (initialTotalInQueue === 0 && totalInQueue > 0) {
+        initialTotalInQueue = totalInQueue;
+        sessionStorage.setItem('initialTotalInQueue', totalInQueue.toString());
+        console.log('💾 입장 시 전체 인원수 저장:', totalInQueue);
+    }
+    
+    const progress = initialTotalInQueue > 0 ? 
+        ((initialTotalInQueue - position + 1) / initialTotalInQueue) * 100 : 0;
     document.getElementById('queueProgress').style.width = progress + '%';
-    console.log('📊 진행률:', progress.toFixed(2) + '%');
+    console.log('📊 진행률:', progress.toFixed(2) + '% (입장시: ' + initialTotalInQueue + '명, 현재: ' + totalInQueue + '명)');
     
     // 상태 메시지 및 자동 이동
     const statusMsg = document.getElementById('statusMessage');
@@ -575,6 +585,7 @@ function leaveQueueAndCleanup() {
     
     // sessionStorage에서 대기열 키 제거 (다시 들어올 때를 위해)
     sessionStorage.removeItem(queueKey);
+    sessionStorage.removeItem('initialTotalInQueue'); // 초기 전체 인원수도 제거
     
     // 대기열에서 제거 API 호출
     try {

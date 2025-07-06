@@ -34,9 +34,8 @@ public class Member implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-        if(authorities.contains(memberRole)){
-            SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority(memberRole);
-            grantedAuthorities.add(simpleGrantedAuthority);
+        if (memberRole != null && !memberRole.isBlank()) {
+            grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_" + memberRole));
         }
         return grantedAuthorities;
     }

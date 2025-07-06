@@ -65,7 +65,8 @@ public class PasswordUpdateServiceImpl implements PasswordUpdateService {
         // 이메일 발송
         try {
             Member member = memberDao.selectOne(sqlSession, memberNo);
-            String resetUrl = "http://localhost:9090/undongpedia/member/update-password?token=" + token;
+//            String resetUrl = "http://localhost:9090/undongpedia/member/update-password?token=" + token;
+            String resetUrl = "https://chunjaefullstack.r-e.kr:3306/undongpedia/member/update-password?token=" + token;
             emailService.sendPasswordResetEmail(email, member.getMemberName(), resetUrl);
         } catch (MessagingException e) {
             throw new RuntimeException("비밀번호 업데이트 이메일 발송 실패", e);

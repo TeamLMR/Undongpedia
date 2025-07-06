@@ -917,13 +917,13 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log(`시간대 로드 시작: courseSeq=\${courseSeq}, date=\${date}`);
            
            // URL 생성 및 로깅
-          const apiUrl = `/undongpedia/reservation/timeslots?courseSeq=\${courseSeq}&date=\${date}`;
-         console.log('생성된 API URL:', apiUrl);
+          const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+         console.log('생성된 API URL:', contextPath);
          console.log('courseSeq 값:', courseSeq, '타입:', typeof courseSeq);
          console.log('date 값:', date, '타입:', typeof date);
          
          // AJAX로 해당 날짜의 시간대 정보 가져오기
-         fetch(apiUrl)
+         fetch(contextPath + '/reservation/timeslots?courseSeq=' + encodeURIComponent(courseSeq) + '&date=' + encodeURIComponent(date))
              .then(response => {
                  console.log('HTTP 응답 상태:', response.status);
                  console.log('HTTP 응답 URL:', response.url);
@@ -1083,18 +1083,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             courseSeq: data.courseSeq
                         },
                         success: function(response) {
+                            const redirectDelay = 700; // 0.7초
+                            const moveToCart = () => window.location.href = '/undongpedia/cart';
                             if (response.success) {
-                    alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
-                    window.location.href = '/undongpedia/cart';
+                                alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
+                                setTimeout(moveToCart, redirectDelay);
                             } else {
                                 alert('장바구니 추가 실패: ' + response.message);
-                                window.location.href = '/undongpedia/cart';
+                                setTimeout(moveToCart, redirectDelay);
                             }
                         },
                         error: function(xhr, status, error) {
                             console.error('장바구니 추가 요청 실패:', error);
+                            console.error('요청 데이터:', {
+                                tempReservationId: data.tempReservationId,
+                                scheduleId: data.scheduleId,
+                                courseSeq: window.currentCourseSeq
+                            });
                             alert('장바구니 추가 중 오류가 발생했습니다.');
-                            window.location.href = '/undongpedia/cart';
+                            setTimeout(moveToCart, redirectDelay);
                         }
                     });
                 }
@@ -1103,8 +1110,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     showQueueModal(data, result);
                 } else {
                     // 일반 예약 성공 - 장바구니로 이동
+                    const redirectDelay = 700; // 0.7초
+                    const moveToCart = () => window.location.href = '/undongpedia/cart';
                     alert('강의 예약이 완료되었습니다! 장바구니로 이동합니다.');
-                    window.location.href = '/undongpedia/cart';
+                    setTimeout(moveToCart, redirectDelay);
                 }
             } else {
                 // success == false 이더라도 queueRequired가 true이면 대기열로 전환
@@ -1218,7 +1227,16 @@ window.leaveQueue = function() {
         // 5. 모달 닫기
         window.forceCloseQueueModal();
         
-                        console.log('대기열 나가기 완료');
+        // 예약 버튼 원상복구
+        const reservationBtnRestore = document.querySelector('.reservation-btn');
+        if (reservationBtnRestore) {
+            reservationBtnRestore.disabled = false;
+            reservationBtnRestore.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+            reservationBtnRestore.classList.remove('btn-secondary');
+            reservationBtnRestore.classList.add('btn-primary');
+        }
+
+        console.log('대기열 나가기 완료');
     }
 };
 
@@ -1283,15 +1301,25 @@ window.leaveQueue = function() {
             
             // 🔥 JSP EL을 별도 변수로 처리하여 URL 파싱 오류 방지
             const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
-            const wsUrl = 'ws://' + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(window.currentCourseSeq) + '&memberNo=' + encodeURIComponent(window.currentMemberNo);
+            const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsUrl = wsScheme + window.location.host + contextPath + '/queue-websocket?courseSeq=' + encodeURIComponent(window.currentCourseSeq) + '&memberNo=' + encodeURIComponent(window.currentMemberNo);
             console.log('🔌 대기열 WebSocket 연결 시도:', wsUrl);
             console.log('📋 변수값 확인 - host:', window.location.host, 'contextPath:', contextPath, 'currentCourseSeq:', window.currentCourseSeq, 'memberNo:', window.currentMemberNo);
             
             window.queueWebSocket = new WebSocket(wsUrl);
             
             window.queueWebSocket.onopen = function() {
-                console.log('대기열 웹소켓 연결 성공');
+                console.log('🔌 WebSocket 연결 성공');
                 updateModalConnectionStatus('connected');
+                
+                // 🔥 연결 후 즉시 상태 확인
+                checkImmediateStatus();
+                
+                // 하트비트 시작
+                startQueueHeartbeat();
+                
+                // 대기열 상태 폴링 시작 (2초마다)
+                window.queueStatusInterval = setInterval(checkModalQueueStatus, 2000);
             };
             
             window.queueWebSocket.onmessage = function(event) {
@@ -1346,8 +1374,10 @@ window.leaveQueue = function() {
                 
             case 'reservation_success':
                 // 기존 호환성 - 장바구니로 이동
+                const redirectDelay = 700; // 0.7초
+                const moveToCart = () => window.location.href = '/undongpedia/cart';
                 alert(data.message + ' 장바구니로 이동합니다.');
-                window.location.href = '<c:out value="${pageContext.request.contextPath}" />/cart';
+                setTimeout(moveToCart, redirectDelay);
                 break;
                 
             default:
@@ -1360,52 +1390,105 @@ window.leaveQueue = function() {
      * 모달에서 임시예약 성공 처리
      */
     function handleModalTempReservationSuccess(data) {
-        console.log('모달 임시예약 성공:', data);
-        
-        // 모든 타이머와 WebSocket 정리
-        if (window.queueHeartbeatInterval) {
-            clearInterval(window.queueHeartbeatInterval);
-        }
-        if (window.queueStatusInterval) {
-            clearInterval(window.queueStatusInterval);
-        }
-        if (window.queueWebSocket) {
-            window.queueWebSocket.onclose = null; // 재연결 방지
-            window.queueWebSocket.close();
-            window.queueWebSocket = null;
-        }
-        
-        // 모달 닫기
-        const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
-        if (modal) modal.hide();
-        
-        // 장바구니에 추가
-        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
-        $.ajax({
-            url: contextPath + '/cart/add-offline',
-            type: 'POST',
-            data: {
-                tempReservationId: data.tempReservationId,
-                scheduleId: data.scheduleId,
-                courseSeq: data.courseSeq
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert('임시예약이 완료되었습니다! 장바구니로 이동합니다.');
-                    window.location.href = contextPath + '/cart';
-                } else {
-                    alert('장바구니 추가 실패: ' + response.message);
-                    // 실패 시에도 장바구니로 이동 (사용자 편의)
-                    window.location.href = contextPath + '/cart';
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('장바구니 추가 요청 실패:', error);
-                alert('장바구니 추가 중 오류가 발생했습니다.');
-                // 오류 시에도 장바구니로 이동
-                window.location.href = contextPath + '/cart';
+      console.log('모달 임시예약 성공:', data);
+
+      // 모든 타이머와 WebSocket 정리
+      if (window.queueHeartbeatInterval) {
+        clearInterval(window.queueHeartbeatInterval);
+      }
+      if (window.queueStatusInterval) {
+        clearInterval(window.queueStatusInterval);
+      }
+      if (window.queueWebSocket) {
+        window.queueWebSocket.onclose = null; // 재연결 방지
+        window.queueWebSocket.close();
+        window.queueWebSocket = null;
+      }
+
+      // 🔥 모달 내용을 성공 메시지로 변경
+      const modalBody = document.querySelector('#queueModal .modal-body');
+      if (modalBody) {
+        modalBody.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                <h4 class="mt-3 mb-3">임시예약이 완료되었습니다!</h4>
+                <p class="text-muted mb-4">장바구니에 추가하고 있습니다...</p>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+      }
+
+      // 🔥 장바구니에 추가
+      const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+
+      $.ajax({
+        url: contextPath + '/cart/add-offline',
+        type: 'POST',
+        data: {
+          tempReservationId: data.tempReservationId,
+          scheduleId: data.scheduleId || window.currentScheduleId,
+          courseSeq: data.courseSeq || window.currentCourseSeq
+        },
+        success: function(response) {
+          console.log('장바구니 추가 응답:', response);
+
+          // 🔥 성공 메시지 업데이트 (alert 대신)
+          if (modalBody) {
+            modalBody.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3 mb-3">장바구니에 추가되었습니다!</h4>
+                        <p class="text-muted mb-3">잠시 후 장바구니로 이동합니다.</p>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                `;
+          }
+
+          // 🔥 1.5초 후 모달 닫고 페이지 이동
+          setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+            if (modal) {
+              modal.hide();
             }
-        });
+
+            // 모달이 완전히 닫힌 후 페이지 이동
+            setTimeout(() => {
+              window.location.href = contextPath + '/cart';
+            }, 300);
+          }, 1500);
+        },
+        error: function(xhr, status, error) {
+          console.error('장바구니 추가 요청 실패:', error);
+
+          // 🔥 에러 메시지 표시 (alert 대신)
+          if (modalBody) {
+            modalBody.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3 mb-3">장바구니 추가 중 문제가 발생했습니다</h4>
+                        <p class="text-muted mb-3">장바구니 페이지로 이동합니다.</p>
+                    </div>
+                `;
+          }
+
+          // 1.5초 후 모달 닫고 페이지 이동
+          setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
+            if (modal) {
+              modal.hide();
+            }
+
+            setTimeout(() => {
+              window.location.href = contextPath + '/cart';
+            }, 300);
+          }, 1500);
+        }
+      });
     }
 
     /**
@@ -1444,16 +1527,15 @@ window.leaveQueue = function() {
         
         // 모달 닫기
         const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
-        if (modal) modal.hide();
-        
-        // 마감 알림
-        alert(data.message || '선택하신 시간대의 좌석이 모두 마감되었습니다.');
-        
-        // 예약 버튼 다시 활성화
-        const reservationBtn = document.querySelector('.reservation-btn');
-        if (reservationBtn) {
-            reservationBtn.disabled = false;
-            reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
+        if (modal) {
+            // 상태 메시지를 마감 메시지로 교체
+            const statusMsg = document.getElementById('modalStatusMessage');
+            if (statusMsg) {
+                statusMsg.className = 'alert alert-danger';
+                statusMsg.innerHTML = '🚫 선택하신 시간대의 좌석이 모두 마감되었습니다.<br>다음에 다시 이용해주세요.';
+            }
+            // 1.5초(1500ms) 후 모달 닫기
+            setTimeout(() => modal.hide(), redirectDelay);
         }
     }
 
@@ -1545,202 +1627,112 @@ window.leaveQueue = function() {
         .then(response => response.json())
         .then(data => {
             console.log('📊 스케줄 대기열 상태 응답:', data);
+            console.log('🔍 tempReservationSuccess 확인:', data.tempReservationSuccess);
+            console.log('🔍 userPosition:', data.userPosition);
             
-            if (data.success && data.userPosition && data.userPosition.success && data.userPosition.data) {
-                const queueData = data.userPosition.data;
-                console.log('📋 대기열 정보 업데이트:', queueData);
-                
-                // 첫 번째 순서라면 예약 시도
-                if (queueData.position === 1) {
-                    console.log('🎯 대기열 첫 번째 - 예약 시도');
-                    attemptReservation();
-                } else {
-                    // 대기열 UI 업데이트
-                    updateModalQueueUI(queueData);
-                }
-            } else {
-                console.log('❌ 대기열에 없음 또는 오류:', data);
-                // 대기열에 없으면 모달 닫기
-                if (!data.success) {
-                    alert('대기열에서 제외되었습니다: ' + (data.message || '알 수 없는 이유'));
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
-                    if (modal) modal.hide();
-                }
+            // 🔥 임시예약 성공 상태 확인 (Redis에서 감지)
+            if (data.tempReservationSuccess) {
+                console.log('🎯 폴링에서 임시예약 성공 감지 (최상위):', data.tempReservationId);
+                handleModalTempReservationSuccess({
+                    tempReservationId: data.tempReservationId,
+                    scheduleId: data.scheduleId,
+                    message: data.message
+                });
+                return;
+            }
+            
+            // 대기열 위치 업데이트
+            if (data.userPosition) {
+                updateModalQueueUI(data.userPosition);
             }
         })
         .catch(error => {
-            console.error('모달 대기열 상태 조회 실패:', error);
+            console.error('대기열 상태 확인 실패:', error);
         });
+    }
+
+    // 🔥 WebSocket 연결 후 즉시 상태 확인
+    function checkImmediateStatus() {
+        // WebSocket 연결 후 1초 뒤에 즉시 상태 확인
+        setTimeout(() => {
+            checkModalQueueStatus();
+        }, 1000);
+    }
+
+    // 🔥 테스트용 대기열 시뮬레이션 (개발용)
+    function simulateQueueForTesting() {
+        console.log('🧪 대기열 시뮬레이션 시작');
+        
+        // 가상의 대기자들을 추가
+        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
+        
+        // 여러 사용자가 동시에 대기열에 들어가는 상황 시뮬레이션
+        for (let i = 1; i <= 3; i++) {
+            setTimeout(() => {
+                fetch(contextPath + '/reservation/join-schedule-queue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        courseSeq: window.currentCourseSeq,
+                        scheduleId: window.currentScheduleId,
+                        memberNo: 1000 + i  // 가상 사용자 ID
+                    })
+                }).then(response => {
+                    if(!response.ok){
+                        console.warn('가상 사용자 추가 실패 - status:', response.status);
+                        return response.text().then(t=>({success:false, raw:t}));
+                    }
+                    return response.json();
+                }).then(data => {
+                    console.log(`🧪 가상 사용자 ${1000 + i} 대기열 추가 결과:`, data);
+                }).catch(err=>console.error('가상 사용자 추가 오류:',err));
+            }, i * 1000); // 1초씩 간격으로 추가
+        }
     }
     
-    // 예약 시도 함수
-    function attemptReservation() {
-        console.log('📝 임시예약 시도 시작');
+    // 🔥 테스트 버튼 추가 (개발용)
+    function addTestButton() {
+        const testBtn = document.createElement('button');
+        testBtn.textContent = '🧪 대기열 테스트';
+        testBtn.className = 'btn btn-warning btn-sm ms-2';
+        testBtn.onclick = simulateQueueForTesting;
         
-        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
-        
-        fetch(contextPath + '/reservation/book', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                courseSeq: window.currentCourseSeq,
-                scheduleId: window.currentScheduleId,
-                memberNo: window.currentMemberNo
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('📝 예약 시도 결과:', data);
-            
-            if (data.success && data.data && data.data.tempReservationId) {
-                // 임시예약 성공
-                console.log('✅ 임시예약 성공:', data.data.tempReservationId);
-                handleModalTempReservationSuccess({
-                    tempReservationId: data.data.tempReservationId,
-                    scheduleId: window.currentScheduleId,
-                    courseSeq: window.currentCourseSeq
-                });
-            } else {
-                // 임시예약 실패
-                console.log('❌ 임시예약 실패:', data.message);
-
-                const skipAlertMsg3 = data.message && (data.message.includes('대기열') || data.message.includes('차례') || data.message.includes('잠시만'));
-                if (!data.queueRequired && !skipAlertMsg3) {
-                    alert('임시예약 실패: ' + (data.message || '알 수 없는 오류'));
-                }
-
-                // 실패 시 대기열 상태 다시 확인
-                setTimeout(checkModalQueueStatus, 2000);
-            }
-        })
-        .catch(error => {
-            console.error('예약 시도 오류:', error);
-            setTimeout(checkModalQueueStatus, 2000);
-        });
+        const reservationBtn = document.querySelector('.reservation-btn');
+        if (reservationBtn && reservationBtn.parentNode) {
+            reservationBtn.parentNode.appendChild(testBtn);
+        }
     }
-
-    // 실제 예약 진행
-    function proceedToActualReservation() {
-        // 모달 닫기
-        const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
-        if (modal) modal.hide();
-        
-        // 웹소켓 연결 해제
-        if (window.queueWebSocket) {
-            // 자동 재연결 방지
-            try {
-                window.queueWebSocket.onclose = null;
-            } catch (e) {
-                console.warn('WebSocket onclose 초기화 실패', e);
-            }
-            window.queueWebSocket.close();
-            window.queueWebSocket = null;
-            console.log('🔌 WebSocket 연결 해제 (재연결 방지)');
-        }
-        
-        // 하트비트 정지
-        if (window.queueHeartbeatInterval) {
-            clearInterval(window.queueHeartbeatInterval);
-        }
-        
-        // 상태 폴링 정지
-        if (window.queueStatusInterval) {
-            clearInterval(window.queueStatusInterval);
-        }
-        
-        //  실제 예약 처리 (대기열 없이)
-        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
-        fetch(contextPath + '/reservation/book', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                courseSeq: window.currentCourseSeq,
-                scheduleId: window.currentScheduleId,
-                memberNo: window.currentMemberNo,
-                skipQueue: true  // 대기열 스킵 플래그
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // 장바구니로 이동
-                alert('예약이 완료되었습니다! 장바구니로 이동합니다.');
-                window.location.href = contextPath + '/cart';
-            } else {
-                alert('예약 처리 실패: ' + data.message);
-            }
-        });
-    }
-
-    // 🔥 대기열 나가기 함수
-    function leaveQueue() {
-        if (!confirm('대기열에서 나가시겠습니까?')) {
-            return;
-        }
-        
-        console.log('🚪 스케줄 대기열 나가기 - 강의:', window.currentCourseSeq, '스케줄:', window.currentScheduleId, '사용자:', window.currentMemberNo);
-        
-        // 모든 타이머와 WebSocket 정리
-        if (window.queueHeartbeatInterval) {
-            clearInterval(window.queueHeartbeatInterval);
-            window.queueHeartbeatInterval = null;
-        }
-        if (window.queueStatusInterval) {
-            clearInterval(window.queueStatusInterval);
-            window.queueStatusInterval = null;
-        }
-        if (window.queueWebSocket) {
-            window.queueWebSocket.onclose = null; // 재연결 방지
-            window.queueWebSocket.close();
-            window.queueWebSocket = null;
-        }
-        
-        // 스케줄 대기열에서 제거 API 호출
-        const contextPath = '<c:out value="${pageContext.request.contextPath}" />';
-        fetch(contextPath + '/reservation/leave-schedule-queue', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                courseSeq: window.currentCourseSeq,
-                scheduleId: window.currentScheduleId,
-                memberNo: window.currentMemberNo
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('🚪 스케줄 대기열 나가기 완료:', data);
-            
-            // 모달 닫기
-            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
-            if (modal) modal.hide();
-            
-            // 예약 버튼 다시 활성화
-            const reservationBtn = document.querySelector('.reservation-btn');
-            if (reservationBtn) {
-                reservationBtn.disabled = false;
-                reservationBtn.innerHTML = '<i class="bi bi-calendar-check"></i> 예약하기';
-            }
-        })
-        .catch(error => {
-            console.error('스케줄 대기열 나가기 실패:', error);
-            // 실패해도 모달은 닫기
-            const modal = bootstrap.Modal.getInstance(document.getElementById('queueModal'));
-            if (modal) modal.hide();
-        });
-    }
-
-    // 🔥 ESC키로 모달 닫기
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            const modal = document.getElementById('queueModal');
-            if (modal && modal.classList.contains('show')) {
-                if (confirm('ESC키로 대기열을 나가시겠습니까?')) {
-                    leaveQueue();
-                }
-            }
-        }
-    });
+    
+    // 페이지 로드 시 테스트 버튼 추가
+    // if (window.location.hostname === 'localhost') {
+    //     setTimeout(addTestButton, 1000);
+    // }
 });
+function showToast(message, type = 'info') {
+  const toastHtml = `
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
+            <div class="toast show align-items-center text-white bg-\${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        \${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        </div>
+    `;
+
+  // 기존 토스트 제거
+  document.querySelectorAll('.toast-container').forEach(el => el.remove());
+
+  // 새 토스트 추가
+  document.body.insertAdjacentHTML('beforeend', toastHtml);
+
+  // 3초 후 자동 제거
+  setTimeout(() => {
+    document.querySelectorAll('.toast-container').forEach(el => el.remove());
+  }, 3000);
+}
 </script>
 
 <!-- 🔥 대기열 모달 -->

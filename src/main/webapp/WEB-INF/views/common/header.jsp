@@ -74,19 +74,35 @@
       </div>
     </form>
     <!-- 유저/장바구니 -->
-    <div class="d-flex align-items-center gap-3">
+    <div class="header-actions d-flex align-items-center gap-3 justify-content-end">
       <c:if test="${empty loginMember}">
         <a href="${linkedPath}">로그인</a>
       </c:if>
       <c:if test="${not empty loginMember}">
         ${loginMember.memberNickname} 님
       </c:if>
-      <button class="btn btn-light" onclick="location.href='${linkedPath}'">
+      <button class="header-action-btn" onclick="location.href='${linkedPath}'">
         <i class="bi bi-person"></i>
       </button>
-      <button class="btn btn-light" onclick="location.href='${path}/cart'">
+      <button class="header-action-btn" onclick="location.href='${path}/cart'">
         <i class="bi bi-cart3"></i>
       </button>
+      <c:if test="${not empty loginMember}">
+        <div class="dropdown cart-dropdown position-relative" id="notifArea" data-memberno="${loginMember.memberNo}">
+          <button class="header-action-btn position-relative" id="notifDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bell"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notifBadge" style="display:none;">0</span>
+          </button>
+          <div class="dropdown-menu cart-dropdown-menu dropdown-menu-end p-0" data-bs-auto-close="outside" aria-labelledby="notifDropdownBtn" style="width: 350px; max-height: 400px; overflow-y: auto;" id="notifMenu">
+            <div class="dropdown-header"><h6>알림</h6></div>
+            <div class="dropdown-body">
+              <div class="cart-items" id="notifList">
+                <!-- 빈 알림 메시지는 JS에서 동적으로 삽입 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </c:if>
     </div>
   </div>
 </header>
@@ -153,8 +169,142 @@
       // 무조건 메인 페이지로 이동하면서 검색어 전달
       window.location.href = '${pageContext.request.contextPath}/?search=' + encodeURIComponent(keyword);
     });
+
+    // ────────── 알림 WebSocket & REST 초기화 ──────────
+    const memberNo = document.getElementById('notifArea')?.dataset.memberno || "";
+    if(memberNo){
+      const contextPath = '${pageContext.request.contextPath}';
+      let notifWs;
+      const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      function connectNotifWS(){
+        notifWs = new WebSocket(wsScheme + window.location.host + contextPath + '/ws/notification?memberNo=' + memberNo);
+        notifWs.onmessage = function(e){ handleNotif(JSON.parse(e.data)); };
+        notifWs.onclose = function(){ setTimeout(connectNotifWS, 5000); };
+      }
+      function handleNotif(msg){
+        switch(msg.type){
+          case 'bootstrap':
+            updateBadge(msg.unreadCount);
+            renderList(msg.notifications);
+            break;
+          case 'notification':
+            addItem(msg.data);
+            updateBadge(parseInt($('#notifBadge').text()||'0')+1);
+            break;
+          case 'unread_count':
+            updateBadge(msg.unreadCount);
+            break;
+        }
+      }
+      function updateBadge(count){
+        if(count>0){
+          $('#notifBadge').text(count).show();
+        } else {
+          $('#notifBadge').hide();
+        }
+      }
+      function addItem(n){
+        $('#notifEmpty').remove();
+        const itemHtml = '<div class="cart-item dynamic d-flex justify-content-between align-items-start">'
+          + '<div class="cart-item-content flex-grow-1 me-2">'
+          +   '<a href="' + n.notificationLink + '" class="text-decoration-none d-block notif-link" data-id="' + n.notificationId + '">' 
+          +     '<h6 class="cart-item-title mb-0">' + n.notificationTitle + '</h6>'
+          +     '<div class="cart-item-meta small text-muted">' + (n.notificationContent ?? '') + '</div>'
+          +   '</a>'
+          + '</div>'
+          + '<span class="cart-item-remove notif-close text-secondary" style="cursor:pointer;" data-id="' + n.notificationId + '" title="닫기">&times;</span>'
+          + '</div>';
+        $('#notifList').append(itemHtml);
+      }
+      function renderList(list){
+        $('#notifList .dynamic').remove();
+        $('#notifEmpty').remove();
+        const unread = list.filter(n=> n.isRead === 'N' || n.isRead===undefined);
+        if(unread.length===0){
+          $('#notifList').append('<div class="text-center py-2 text-muted" id="notifEmpty">알림이 없습니다</div>');
+        } else {
+          unread.forEach(addItem);
+        }
+      }
+      // REST 부트스트랩 (새로고침 시 대비)
+      $.get(contextPath + '/notification', {memberNo: memberNo, cPage:1, numPerPage:10}, function(res){
+        updateBadge(res.unreadCount);
+        renderList(res.notifications);
+      });
+      // 주기적 폴백 30초
+      setInterval(function(){
+        if(!notifWs || notifWs.readyState!==1){
+          $.get(contextPath + '/notification/unread-count', {memberNo: memberNo}, function(cnt){ updateBadge(cnt); });
+        }
+      }, 30000);
+      // 알림 클릭 시 읽음 처리
+      $(document).on('click', '#notifList .notif-link', function(e){
+        const id = $(this).data('id');
+        $.ajax({url: contextPath + '/notification/' + id + '/read', type: 'PUT'});
+        const cur = parseInt($('#notifBadge').text()||'0')-1;
+        updateBadge(Math.max(0, cur));
+      });
+      // X 버튼 클릭 시 읽음 처리 후 삭제
+      $(document).on('click', '#notifList .notif-close', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        const id = $(this).data('id');
+        const $item = $(this).closest('.cart-item');
+        $.ajax({url: contextPath + '/notification/' + id + '/read', type: 'PUT'});
+        $item.remove();
+        const cur = parseInt($('#notifBadge').text()||'0')-1;
+        updateBadge(Math.max(0, cur));
+        if($('#notifList .dynamic').length===0){
+          $('#notifList').append('<div class="text-center py-2 text-muted" id="notifEmpty">알림이 없습니다</div>');
+        }
+      });
+      connectNotifWS();
+    }
   });
 </script>
+
+<style>
+  /* 간단한 헤더 아이콘 커스텀 (템플릿 스타일 추출) */
+  header .header-actions {
+    gap: 16px;
+  }
+  header .header-actions .header-action-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    color: var(--default-color);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+  }
+  header .header-actions .header-action-btn i {
+    font-size: 24px;
+  }
+  header .header-actions .header-action-btn:hover {
+    color: var(--accent-color);
+  }
+
+  /* 알림 드롭다운 내부 아이템 크기/폰트 축소 */
+  header #notifMenu .cart-item {
+    padding: 0.4rem 0.75rem;
+  }
+  header #notifMenu .cart-item .cart-item-title {
+    font-size: 14px;
+  }
+  header #notifMenu .cart-item .cart-item-meta {
+    font-size: 12px;
+    margin-top: 2px;
+    color: color-mix(in srgb, var(--default-color), transparent 40%);
+  }
+  header #notifMenu .cart-item + .cart-item {
+    border-top: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  }
+  header #notifMenu .notif-close {
+    font-size: 14px;
+  }
+</style>
 
 <%--TODO: 이건 따로 광고할 거 있을때 광고 테이블 데이터 좍 돌려주면 될것같은데..--%>
 <%--  <div class="announcement-bar py-2">--%>
@@ -179,3 +329,5 @@
 <%--      </div>--%>
 <%--    </div>--%>
 <%--  </div>--%>
+
+

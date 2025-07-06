@@ -2,12 +2,12 @@
 <Configuration>
     <!--    출력하는 방식을 설정하는 태그 Appenders-->
     <Appenders>
-        <!--        콘솔창에 출력하는 appender-->
+                콘솔창에 출력하는 appender
         <Console name="console">
             <PatternLayout pattern="[%-5p] ⏰%d{yyyy-MM-dd HH:mm:ss}  📂%l 🗣️%m %n"/>
-            <!--            <JsonTemplateLayout eventTemplateUri="classpath:mylayout.json"/>-->
+<!--                        <JsonTemplateLayout eventTemplateUri="classpath:mylayout.json"/>-->
         </Console>
-        <!--        로그 내용 파일로 출력하기-->
+                로그 내용 파일로 출력하기
         <RollingFile name="rollingFile"
                      fileName="logs/spring-log.log"
                      filePattern="logs/spring-log-%d{yyyy-MM-dd}.log">
@@ -19,16 +19,18 @@
                 <SizeBasedTriggeringPolicy interval="10MB"/>
             </Policies>
         </RollingFile>
-        <Console name="sqlLogger">
+        <Console name="sqlLogger" >
             <PatternLayout pattern="[%-5p] 📝 %m %n"/>
         </Console>
     </Appenders>
     <Loggers>
         <Logger name="jdbc.sqlonly" additivity="false" level="INFO">
             <AppenderRef ref="sqlLogger"/>
+<!--            <AppenderRef ref="rollingFile"/>-->
         </Logger>
         <Logger name="jdbc.resultsettable" additivity="false" level="INFO">
             <AppenderRef ref="sqlLogger"/>
+<!--            <AppenderRef ref="rollingFile"/>-->
         </Logger>
         <Logger name="com.up.spring" level="DEBUG">
             <AppenderRef ref="rollingFile"/>
@@ -40,6 +42,7 @@
         <Logger name="org.springframework.beans" level="INFO"/>
         <Root level="WARN">
             <AppenderRef ref="console"/>
+<!--            <AppenderRef ref="rollingFile"/>-->
         </Root>
     </Loggers>
 </Configuration>

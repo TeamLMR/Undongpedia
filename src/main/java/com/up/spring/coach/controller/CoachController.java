@@ -815,10 +815,16 @@ public class CoachController {
     @PostMapping("/apply")
     @ResponseBody
     public ResponseEntity<String> submitCoachApply(@RequestBody CoachApply coachApply) {
+        log.info("코치 신청 요청 수신 - memberNo: {}", returnMemberNo());
+        
         // 기본 상태를 D(대기)로 설정
         coachApply.setCoaYn("D");
         coachApply.setMemberNo(returnMemberNo());
+        
+        log.info("코치 신청 처리 시작 - coachApply: {}", coachApply);
         coachService.insertCoachApply(coachApply);
+        
+        log.info("코치 신청 처리 완료");
         return ResponseEntity.ok("Success");
     }
 }

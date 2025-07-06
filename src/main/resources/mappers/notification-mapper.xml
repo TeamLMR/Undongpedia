@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="notification">
+
+    <resultMap id="notificationMap" type="notification">
+        <id     column="NOTIFICATION_ID"     property="notificationId"/>
+        <result column="MEMBER_NO"          property="memberNo"/>
+        <result column="NOTIFICATION_TYPE"  property="notificationType"/>
+        <result column="NOTIFICATION_TITLE" property="notificationTitle"/>
+        <result column="NOTIFICATION_CONTENT" property="notificationContent"/>
+        <result column="NOTIFICATION_LINK"  property="notificationLink"/>
+        <result column="IS_READ"            property="isRead"/>
+        <result column="CREATED_AT"         property="createdAt"/>
+        <result column="READ_AT"            property="readAt"/>
+    </resultMap>
+
+    <insert id="insertNotification" parameterType="notification">
+        <selectKey keyProperty="notificationId" resultType="long" order="BEFORE">
+            SELECT SEQ_NOTIFICATION_ID.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO NOTIFICATION
+            (NOTIFICATION_ID,
+             MEMBER_NO,
+             NOTIFICATION_TYPE,
+             NOTIFICATION_TITLE,
+             NOTIFICATION_CONTENT,
+             NOTIFICATION_LINK,
+             IS_READ,
+             CREATED_AT,
+             READ_AT)
+        VALUES
+            (#{notificationId},
+             #{memberNo},
+             #{notificationType},
+             #{notificationTitle},
+             #{notificationContent},
+             #{notificationLink},
+             'N',
+             SYSTIMESTAMP,
+             NULL)
+    </insert>
+
+    <!-- 중복 여부 체크 -->
+    <select id="existsNotification" parameterType="notification" resultType="int">
+        SELECT COUNT(*) FROM NOTIFICATION
+        WHERE MEMBER_NO = #{memberNo}
+          AND NOTIFICATION_TYPE = #{notificationType}
+          AND NOTIFICATION_LINK = #{notificationLink}
+    </select>
+
+    <select id="selectNotifications" resultMap="notificationMap">
+        SELECT *
+        FROM (
+                 SELECT n.*, ROWNUM rnum
+                 FROM (
+                          SELECT *
+                          FROM NOTIFICATION
+                          WHERE MEMBER_NO = #{memberNo}
+                          ORDER BY CREATED_AT DESC
+                      ) n
+                 WHERE ROWNUM &lt;= #{cPage} * #{numPerPage}
+             )
+        WHERE rnum &gt; (#{cPage}-1) * #{numPerPage}
+    </select>
+
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(*) FROM NOTIFICATION
+        WHERE MEMBER_NO = #{memberNo}
+          AND IS_READ = 'N'
+    </select>
+
+    <update id="markAsRead">
+        UPDATE NOTIFICATION
+        SET IS_READ = 'Y', READ_AT = SYSTIMESTAMP
+        WHERE NOTIFICATION_ID = #{notificationId}
+    </update>
+
+    <update id="markAllRead">
+        UPDATE NOTIFICATION
+        SET IS_READ = 'Y', READ_AT = SYSTIMESTAMP
+        WHERE MEMBER_NO = #{memberNo}
+          AND IS_READ = 'N'
+    </update>
+
+    <delete id="deleteNotification">
+        DELETE FROM NOTIFICATION
+        WHERE NOTIFICATION_ID = #{notificationId}
+    </delete>
+</mapper>

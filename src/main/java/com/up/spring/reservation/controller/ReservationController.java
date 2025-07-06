@@ -410,15 +410,25 @@ public class ReservationController {
      */
     @PostMapping("/leave-schedule-queue")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> leaveScheduleQueue(@RequestBody Map<String, Object> data) {
+    public ResponseEntity<Map<String, Object>> leaveScheduleQueue(@RequestBody Map<String, Object> data, HttpServletRequest request) {
         try{
             Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
             Long scheduleId = Long.valueOf(data.get("scheduleId").toString());
             
-            //  실제 로그인 사용자의 memberNo 사용
-            long memberNo = returnMemberNo();
-            if (memberNo == 0) {
-                return ResponseEntity.ok(Map.of("success", false, "message", "로그인이 필요합니다."));
+            // testUser 파라미터 체크 (부하테스트용)
+            String testUserParam = request.getParameter("testUser");
+            long memberNo;
+            
+            if (testUserParam != null) {
+                // 테스트 모드: testUser 파라미터 사용
+                memberNo = Long.parseLong(testUserParam);
+                log.debug("테스트 모드 스케줄 대기열 이탈 - testUser: {}, courseSeq: {}, scheduleId: {}", memberNo, courseSeq, scheduleId);
+            } else {
+                // 실제 로그인 사용자의 memberNo 사용
+                memberNo = returnMemberNo();
+                if (memberNo == 0) {
+                    return ResponseEntity.ok(Map.of("success", false, "message", "로그인이 필요합니다."));
+                }
             }
 
             reservationRedisService.removeFromScheduleQueue(courseSeq, scheduleId, (int) memberNo);
@@ -538,13 +548,18 @@ public class ReservationController {
             // 현재 사용자의 대기열 위치 (코스 레벨)
             Map<String, Object> queuePosition = reservationRedisService.getCourseQueuePosition(courseSeq, memberNo);
             
-            // 활성 사용자 수
+            // 활성 사용자 수 (하트비트 기반)
             Long activeMembers = reservationRedisService.getActiveMemberCount(courseSeq);
+            
+            // 🔥 실제 대기열 크기 추가 (Redis 직접 확인)
+            String queueKey = "queue:course:" + courseSeq;
+            Long totalInQueue = redisTemplate.opsForZSet().count(queueKey, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("userPosition", queuePosition);
             response.put("activeMembers", activeMembers);
+            response.put("totalInQueue", totalInQueue); // 🔥 실제 대기열 크기 추가
             response.put("queueActive", reservationRedisService.shouldActivateQueue(courseSeq));
             response.put("queueType", "COURSE");
             
@@ -574,6 +589,23 @@ public class ReservationController {
             
             // 현재 사용자의 대기열 위치 (스케줄 레벨)
             Map<String, Object> queuePosition = reservationRedisService.getScheduleQueuePosition(courseSeq, scheduleId, memberNo);
+            
+            // 🔥 임시예약 성공 상태를 최상위로 이동
+            if (queuePosition.get("tempReservationSuccess") != null && 
+                (Boolean) queuePosition.get("tempReservationSuccess")) {
+                
+                log.info("🎯 Controller에서 임시예약 성공 감지: 사용자{}, 스케줄{}", memberNo, scheduleId);
+                
+                // 성공 상태를 최상위로 복사
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("tempReservationSuccess", true);
+                response.put("tempReservationId", queuePosition.get("tempReservationId"));
+                response.put("scheduleId", queuePosition.get("scheduleId"));
+                response.put("message", queuePosition.get("message"));
+                
+                return ResponseEntity.ok(response);
+            }
             
             // 활성 사용자 수
             Long activeMembers = reservationRedisService.getActiveMemberCount(courseSeq);
@@ -650,15 +682,25 @@ public class ReservationController {
      */
     @PostMapping("/join-schedule-queue")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> joinScheduleQueue(@RequestBody Map<String, Object> data) {
+    public ResponseEntity<Map<String, Object>> joinScheduleQueue(@RequestBody Map<String, Object> data, HttpServletRequest request) {
         try {
             Long courseSeq = Long.valueOf(data.get("courseSeq").toString());
             Long scheduleId = Long.valueOf(data.get("scheduleId").toString());
             
-            //  실제 로그인 사용자의 memberNo 사용
-            long memberNo = returnMemberNo();
-            if (memberNo == 0) {
-                return ResponseEntity.ok(Map.of("success", false, "message", "로그인이 필요합니다."));
+            // testUser 파라미터 체크 (부하테스트용)
+            String testUserParam = request.getParameter("testUser");
+            long memberNo;
+            
+            if (testUserParam != null) {
+                // 테스트 모드: testUser 파라미터 사용
+                memberNo = Long.parseLong(testUserParam);
+                log.debug("테스트 모드 스케줄 대기열 - testUser: {}, courseSeq: {}, scheduleId: {}", memberNo, courseSeq, scheduleId);
+            } else {
+                // 실제 로그인 사용자의 memberNo 사용
+                memberNo = returnMemberNo();
+                if (memberNo == 0) {
+                    return ResponseEntity.ok(Map.of("success", false, "message", "로그인이 필요합니다."));
+                }
             }
             
             // 하트비트 업데이트
@@ -667,7 +709,7 @@ public class ReservationController {
             // 스케줄 대기열에 추가
             Map<String, Object> result = reservationRedisService.addToScheduleQueue(courseSeq, scheduleId, (int) memberNo);
             
-            log.info(" 스케줄 대기열 추가 요청 - courseSeq: {}, scheduleId: {}, memberNo: {}",
+            log.info("스케줄 대기열 추가 요청 - courseSeq: {}, scheduleId: {}, memberNo: {}",
                 courseSeq, scheduleId, memberNo);
             
             return ResponseEntity.ok(result);

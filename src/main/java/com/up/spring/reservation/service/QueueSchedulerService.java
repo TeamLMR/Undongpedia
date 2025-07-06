@@ -28,11 +28,19 @@ public class QueueSchedulerService {
     // 활성 강의 관리를 위한 Redis Set 키
     private static final String ACTIVE_COURSES_KEY = "active:courses";
     
-    // 대기열 처리 주기를 1분으로 조정 (테스트용)
-    @Scheduled(fixedDelayString = "${queue.scheduler.interval:600000}")
+    // 대기열 처리 주기를 2분으로 조정 (서버 부하 감소)
+    @Scheduled(fixedDelayString = "${queue.scheduler.interval:120000}")
     public void processAllQueues() {
-        log.info("==대기열 처리 시작 (1분 주기)==");
+        log.info("==대기열 처리 시작 (2분 주기)==");
         try {
+            // Redis 연결 상태 확인
+            try {
+                redisTemplate.hasKey("health-check");
+            } catch (Exception e) {
+                log.warn("Redis 연결 불안정 - 대기열 처리 건너뜀: {}", e.getMessage());
+                return;
+            }
+            
             // SCAN 대신 Set에서 활성 강의 목록 조회
             Set<Object> activeCourseIds = redisTemplate.opsForSet().members(ACTIVE_COURSES_KEY);
             
@@ -43,10 +51,9 @@ public class QueueSchedulerService {
             
             log.info("활성 강의 {}개 처리 시작", activeCourseIds.size());
             
-            // 병렬 처리로 성능 향상 (최대 50개 강의)
+            // 순차 처리로 Redis 부하 감소 (최대 10개 강의)
             activeCourseIds.stream()
-                .limit(50)
-                .parallel()
+                .limit(10)
                 .forEach(courseIdObj -> {
                     try {
                         Long courseSeq = Long.valueOf(courseIdObj.toString());
@@ -285,11 +292,19 @@ public class QueueSchedulerService {
         }
     }
 
-    // 정리 작업 주기를 30분으로 설정 (테스트용)
-    @Scheduled(fixedRate = 30 * 60 * 1000)
+    // 정리 작업 주기를 1시간으로 설정 (서버 부하 감소)
+    @Scheduled(fixedRate = 60 * 60 * 1000)
     public void performHeavyCleanupTasks() {
-        log.info("==작업 정리 시작(주기 30분)==");
+        log.info("==작업 정리 시작(주기 1시간)==");
         try {
+            // Redis 연결 상태 확인
+            try {
+                redisTemplate.hasKey("health-check");
+            } catch (Exception e) {
+                log.warn("Redis 연결 불안정 - 정리 작업 건너뜀: {}", e.getMessage());
+                return;
+            }
+            
             cleanupExpiredTemporaryReservations();
             cleanupOldHeartbeats();
             cleanupEmptyQueues();
@@ -297,7 +312,7 @@ public class QueueSchedulerService {
             // 대기열 활성화 캐시 정리
             reservationRedisService.cleanupQueueActivationCache();
             
-            log.info("==작업 정리 완료(주기 30분)==");
+            log.info("==작업 정리 완료(주기 1시간)==");
         } catch (Exception e) {
             log.error("정리 작업 중 오류 발생", e);
         }
@@ -307,22 +322,25 @@ public class QueueSchedulerService {
         int cleanedCount = 0;
         ScanOptions scanOptions = ScanOptions.scanOptions()
                 .match("temp_reservation:*")
-                .count(100)
+                .count(20)  // 스캔 크기 대폭 감소
                 .build();
 
         try (Cursor<String> cursor = redisTemplate.scan(scanOptions)) {
-            while (cursor.hasNext()) {
+            while (cursor.hasNext() && cleanedCount < 100) {  // 최대 100개만 처리
                 String key = cursor.next();
-                Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
-                if (/*ttl != null*/ ttl <= 0) {
-                    redisTemplate.delete(key);
-                    cleanedCount++;
-                }
-                if (cleanedCount >= 1000) {
-                    log.warn("너무 많이 지웠지롱");
-                    break;
+                try {
+                    Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+                    if (ttl <= 0) {
+                        redisTemplate.delete(key);
+                        cleanedCount++;
+                    }
+                } catch (Exception e) {
+                    log.warn("키 정리 실패: {}", key, e);
+                    break;  // 에러 발생 시 중단
                 }
             }
+        } catch (Exception e) {
+            log.error("임시예약 정리 중 오류: {}", e.getMessage());
         }
         if (cleanedCount > 0) {
             log.info("만료된 임시예약 {} 개 정리", cleanedCount);
