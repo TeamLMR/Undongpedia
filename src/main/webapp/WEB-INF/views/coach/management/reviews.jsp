@@ -125,7 +125,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-around">
                                     <div class="stat-icon bg-primary text-white me-3">
-                                        <i class="bi bi-person"></i>
+                                        <i class="bi bi-star"></i>
                                     </div>
                                     <div>
                                         <h6 class="text-muted mb-1">전체 리뷰 평균</h6>
