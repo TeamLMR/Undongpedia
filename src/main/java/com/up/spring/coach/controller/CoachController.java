@@ -1,5 +1,6 @@
 package com.up.spring.coach.controller;
 
+import com.up.spring.coach.model.dto.CoachPayment;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.coach.model.service.CoachService;
@@ -585,6 +586,39 @@ public class CoachController {
 
     @RequestMapping("/payment")
     public String coursePayment(Model model) {
+        List<Map<String, Object>> salesList = coachService.getMonthlyEarnings(returnMemberNo()); // 위 SQL 실행
+
+        Map<Integer, Integer> monthlyTotals = new LinkedHashMap<>();
+
+        // 1~12월 기본값 0으로 초기화
+        for (int i = 1; i <= 12; i++) {
+            monthlyTotals.put(i, 0);
+        }
+        for (Map<String, Object> row : salesList) {
+            int monthIndex = Integer.parseInt((String) row.get("MONTH"));
+            log.debug("monthIndex: " + monthIndex);
+            int total = ((Number) row.get("TOTAL")).intValue();
+            monthlyTotals.put(monthIndex, total);
+        }
+
+        int max = 0;
+        int maxMonth = 0;
+        for (Map.Entry<Integer, Integer> entry : monthlyTotals.entrySet()) {
+            if (entry.getValue() > max) {
+                max = entry.getValue();
+                maxMonth = entry.getKey();
+            }
+        }
+
+        model.addAttribute("max", max);
+        model.addAttribute("maxMonth", maxMonth);
+        model.addAttribute("monthlyTotals", monthlyTotals);
+        model.addAttribute("salesList", salesList);
+
+        List<CoachPayment> payments = coachService.selectPaymentListByMemberNo(returnMemberNo());
+        model.addAttribute("payments", payments);
+        log.debug("payments: " + payments);
+
         return "/coach/management/payment";
     }
 

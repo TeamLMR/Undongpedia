@@ -125,7 +125,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-around">
                                     <div class="stat-icon bg-primary text-white me-3">
-                                        <i class="bi bi-person"></i>
+                                        <i class="bi bi-star"></i>
                                     </div>
                                     <div>
                                         <h6 class="text-muted mb-1">전체 리뷰 평균</h6>
@@ -296,7 +296,7 @@
                                     <i class="bi bi-chat-square-text text-muted" style="font-size: 4rem;"></i>
                                     <h5 class="mt-4 mb-2">아직 작성된 리뷰가 없습니다</h5>
                                     <p class="text-muted mb-4">수강생들이 코스를 수강하고 리뷰를 작성하면 여기에 표시됩니다.</p>
-                                    <a href="#" class="btn btn-primary">
+                                    <a href="${pageContext.request.contextPath}/coach/addCourse" class="btn btn-primary">
                                         <i class="bi bi-plus-circle me-2"></i>새 코스 만들기
                                     </a>
                                 </div>

@@ -1,5 +1,6 @@
 package com.up.spring.coach.model.dao;
 
+import com.up.spring.coach.model.dto.CoachPayment;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface CoachDao {
+    List<CoachPayment> selectPaymentListByMemberNo(SqlSession sqlSession, long memberNo);
     List<Category> getCategoryAll(SqlSession sqlSession);
     Long insertTempCourse(SqlSession sqlSession, Course course);
     List<Section> getSectionList(SqlSession sqlSession, Long courseSeq);
