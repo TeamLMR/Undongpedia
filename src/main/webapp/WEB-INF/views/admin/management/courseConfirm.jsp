@@ -126,7 +126,7 @@
                 html += '<p><strong>코스 소개:</strong></p>';
                 html += '<div class="border p-2 mb-3" style="overflow:scroll"' + course.courseContent + '</div>';
 
-                html += '<img src="' + course.courseThumbnail + '" class="img-fluid mb-3" alt="썸네일"/>';
+                html += '<img src="${pageContext.request.contextPath}' + course.courseThumbnail + '" class="img-fluid mb-3" alt="썸네일"/>';
 
                 html += '<hr><h5>섹션 및 커리큘럼</h5>';
                 sections.forEach(function (section, i) {
