@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.kafka.core.KafkaTemplate;
 
 @Controller
 @Slf4j
@@ -47,6 +48,7 @@ public class MemberController {
     private final PasswordUpdateService passwordUpdateService;
     private final EmailService emailService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${x.naver.client.id}")
     private String naverClientId;
@@ -54,6 +56,9 @@ public class MemberController {
     @Value("${x.naver.client.secret}")
     private String naverClientSecret;
     private final CourseService courseService;
+
+    @Value("${kafka.topic.user-events}")
+    private String userEventsTopic;
 
     public long returnMemberNo(){
         Member m = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -201,6 +206,20 @@ public class MemberController {
         if (result == 1) {
             model.addAttribute("msg", "신청이 완료되었습니다.");
             model.addAttribute("loc", "/mypage");
+
+            // 관리자에게 코치 승인 요청 알림 이벤트 발행
+            try {
+                java.util.Map<String, Object> event = new java.util.HashMap<>();
+                long ts = System.currentTimeMillis();
+                event.put("memberNo", 1L);
+                event.put("eventType", "COACH_APPROVAL_REQUESTED:" + ts);
+                event.put("title", "새 코치 승인 요청");
+                event.put("message", "새로운 코치 승인 요청이 도착했습니다.");
+                event.put("link", "admin/coachConfirm");
+                kafkaTemplate.send(userEventsTopic, "coachApply:" + coachApply.getMemberNo(), event);
+            } catch (Exception e) {
+                log.error("코치 승인 요청 알림 이벤트 발행 실패 memberNo={} ", coachApply.getMemberNo(), e);
+            }
         }else {
             model.addAttribute("msg", "신청에 실패했습니다.");
             model.addAttribute("loc", "/mypage");

@@ -1,7 +1,6 @@
 package com.up.spring.payment.controller;
 
 import com.up.spring.member.model.dto.Member;
-import com.up.spring.member.model.service.MemberService;
 import com.up.spring.payment.model.dto.*;
 import com.up.spring.payment.model.service.CartService;
 import com.up.spring.payment.model.service.OfflineCartService;
@@ -486,6 +485,7 @@ public class PaymentController {
                         log.debug("isInsertSuccess:{}", isInsertSuccess);
                         log.debug("isCartDeleteSuccess:{}", isCartDeleteSuccess);
                         log.info("온라인 장바구니 {}개, 오프라인 장바구니 {}개 결제 완료", cartList.size(), offlineCartList.size());
+
                         loc = "redirect:/mypage";
                     }
                 }

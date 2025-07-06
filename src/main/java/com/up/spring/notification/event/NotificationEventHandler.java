@@ -40,11 +40,16 @@ public class NotificationEventHandler {
             Acknowledgment ack,
             ConsumerRecord<String, Object> record) {
         try {
+            log.info("카프카 이벤트 수신 - topic: {}, payload: {}", topic, payload);
+            
             Notification notification = mapToNotification(topic, payload);
             if (notification == null) {
+                log.warn("알림 생성 실패 - topic: {}, payload: {}", topic, payload);
                 ack.acknowledge();
                 return;
             }
+            
+            log.info("알림 생성 성공 - memberNo: {}, type: {}", notification.getMemberNo(), notification.getNotificationType());
             notificationService.insertNotification(notification);
 
             int unread = notificationService.countUnread(notification.getMemberNo());
@@ -53,6 +58,7 @@ public class NotificationEventHandler {
                     "notifications:" + notification.getMemberNo(),
                     message
             );
+            log.info("Redis 알림 전송 완료 - memberNo: {}", notification.getMemberNo());
             ack.acknowledge();
 
         } catch (Exception e) {

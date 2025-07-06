@@ -1704,9 +1704,9 @@ window.leaveQueue = function() {
     }
     
     // 페이지 로드 시 테스트 버튼 추가
-    if (window.location.hostname === 'localhost') {
-        setTimeout(addTestButton, 1000);
-    }
+    // if (window.location.hostname === 'localhost') {
+    //     setTimeout(addTestButton, 1000);
+    // }
 });
 function showToast(message, type = 'info') {
   const toastHtml = `

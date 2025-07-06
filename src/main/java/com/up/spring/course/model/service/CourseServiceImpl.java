@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,10 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseDao courseDao;
     private final SqlSession sqlSession;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Value("${kafka.topic.user-events}")
+    private String userEventsTopic;
 
     @Override
     public Course searchById(long courseSeq) {
@@ -34,7 +40,28 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public int courseApplyConfirm(long courseSeq) {
-        return courseDao.courseApplyConfirm(sqlSession, courseSeq);
+        int result = courseDao.courseApplyConfirm(sqlSession, courseSeq);
+
+        if (result > 0) {
+            Course course = courseDao.searchById(sqlSession, courseSeq);
+            if (course != null) {
+                try {
+                    java.util.Map<String, Object> event = new java.util.HashMap<>();
+                    event.put("memberNo", course.getMemberNo());
+                    long ts = System.currentTimeMillis();
+                    event.put("eventType", "COURSE_APPROVED:" + ts);
+                    event.put("title", "코스 승인 완료");
+                    event.put("message", "코스 '" + course.getCourseTitle() + "' 이(가) 승인되었습니다.");
+                    event.put("link", "coach/coursemanager");
+                    kafkaTemplate.send(userEventsTopic, "courseApproved:" + courseSeq, event);
+                } catch (Exception e) {
+                    // 로깅만 수행하고 비즈니스 로직은 계속 진행
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override

@@ -159,10 +159,11 @@ public class CoachServiceImpl implements CoachService {
         try {
             java.util.Map<String, Object> event = new java.util.HashMap<>();
             event.put("memberNo", 1L);
-            event.put("eventType", "COURSE_APPROVAL_REQUESTED");
+            long ts = System.currentTimeMillis();
+            event.put("eventType", "COURSE_APPROVAL_REQUESTED:" + ts);
             event.put("title", "새 코스 승인 요청");
             event.put("message", "새로운 코스( " + course.getCourseTitle() + " ) 승인 요청이 도착했습니다.");
-            event.put("link", "/admin/courseConfirm?courseSeq=" + courseSeq);
+            event.put("link", "admin/courseConfirm");
             kafkaTemplate.send(userEventsTopic, String.valueOf(courseSeq), event);
         } catch (Exception e) {
             log.error("코스 승인 요청 알림 이벤트 발행 실패 courseSeq={} ", courseSeq, e);
@@ -242,6 +243,25 @@ public class CoachServiceImpl implements CoachService {
         params.put("coaSeq", coaSeq);
         params.put("status", status);
         coachDao.updateCoachApplyStatus(sqlSession, params);
+
+        // 승인 시 신청자에게 알림 전송
+        if ("Y".equals(status)) {
+            CoachApply apply = coachDao.selectCoachApplyDetail(sqlSession, coaSeq);
+            if (apply != null) {
+                try {
+                    java.util.Map<String, Object> event = new java.util.HashMap<>();
+                    event.put("memberNo", apply.getMemberNo());
+                    long ts = System.currentTimeMillis();
+                    event.put("eventType", "COACH_APPROVED:" + ts);
+                    event.put("title", "코치 승인 완료");
+                    event.put("message", "코치 신청이 승인되었습니다. 축하합니다!");
+                    event.put("link", "coach/dashboard");
+                    kafkaTemplate.send(userEventsTopic, "coachApproved:" + coaSeq, event);
+                } catch (Exception e) {
+                    log.error("코치 승인 알림 이벤트 발행 실패 coaSeq={} ", coaSeq, e);
+                }
+            }
+        }
     }
 
     @Override
@@ -251,13 +271,19 @@ public class CoachServiceImpl implements CoachService {
 
         // 관리자(memberNo=1)에게 코치 승인 요청 알림 이벤트 발행
         try {
+            log.info("코치 승인 요청 알림 이벤트 발행 시작 - userEventsTopic: {}", userEventsTopic);
+            
             java.util.Map<String, Object> event = new java.util.HashMap<>();
             event.put("memberNo", 1L);
-            event.put("eventType", "COACH_APPROVAL_REQUESTED");
+            long ts2 = System.currentTimeMillis();
+            event.put("eventType", "COACH_APPROVAL_REQUESTED:" + ts2);
             event.put("title", "새 코치 승인 요청");
             event.put("message", "새로운 코치 승인 요청이 도착했습니다.");
-            event.put("link", "/admin/coachConfirm?ts=" + System.currentTimeMillis());
+            event.put("link", "admin/coachConfirm");
+            
+            log.info("이벤트 데이터: {}", event);
             kafkaTemplate.send(userEventsTopic, "coachApply:" + coachApply.getMemberNo(), event);
+            log.info("코치 승인 요청 알림 이벤트 발행 완료");
         } catch (Exception e) {
             log.error("코치 승인 요청 알림 이벤트 발행 실패 memberNo={} ", coachApply.getMemberNo(), e);
         }

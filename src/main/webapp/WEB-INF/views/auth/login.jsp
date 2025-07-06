@@ -14,7 +14,7 @@
     // 쿠키 배열이 null이 아닌 경우 쿠키를 탐색
     if (cookies != null) {
         for (Cookie cookie : cookies) {
-            System.out.println("cc = " + cookie.getName());
+//            System.out.println("cc = " + cookie.getName());
             if ("ambassador_token".equals(cookie.getName())) {
                 ambassadorToken = cookie.getValue();
             }
