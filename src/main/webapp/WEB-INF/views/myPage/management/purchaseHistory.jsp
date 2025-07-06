@@ -4,8 +4,8 @@
 
 <div class="container px-3 px-md-5 my-5">
     <h2 class="fw-bold mb-5">구매내역</h2>
+        <c:if test="${not empty groupedOrdersMap}">
 
-    <c:if test="${not empty groupedOrdersMap}">
         <c:forEach var="entry" items="${groupedOrdersMap}">
             <c:set var="paymentId" value="${entry.key}" />
             <c:set var="groupedOrders" value="${entry.value}" />
@@ -58,7 +58,15 @@
                     <div class="col-2 d-flex justify-content-end align-items-end border-right" >
                         <div class="gap-2 mt-3 d-flex flex-column" style="min-width: 80px;">
                             <c:if test="${groupedOrders[0].ordersStatus eq 'PAID' && groupedOrders[0].cancelYn eq 'N'}">
-                                <button id="${groupedOrders[0].ordersSeq}" class="btn btn-outline-danger btn-sm cancel-paid-btn">전체 취소</button>
+                                <c:if test="${not empty myCourse}">
+                                    <c:forEach var="c" items="${myCourse}">
+                                        <c:if test="${groupedOrders[0].courseSeq eq c.COURSE_SEQ}">
+                                            <c:if test="${c.PROGRESS == 0}">
+                                                <button id="${groupedOrders[0].ordersSeq}" class="btn btn-outline-danger btn-sm cancel-paid-btn">전체 취소</button>
+                                            </c:if>
+                                        </c:if>
+                                    </c:forEach>
+                                </c:if>
                             </c:if>
                             <button id="${paymentId}" class="btn btn-outline-secondary btn-sm receipt-btn">거래명세서</button>
                         </div>

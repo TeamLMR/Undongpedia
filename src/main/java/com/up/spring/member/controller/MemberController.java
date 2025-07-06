@@ -32,6 +32,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -81,12 +82,20 @@ public class MemberController {
     public String purchaseHistory(Model model){
         long memberNo = returnMemberNo();
         if  (memberNo != 0) {
+
             List<Orders> ordersList =  orderService.selectOrdersByMember(memberNo);
             if (ordersList != null && !ordersList.isEmpty()){
                 Map<String, List<Orders>> groupOrdersMap = ordersList.stream()
-                        .collect(Collectors.groupingBy(o -> o.getDetail().getOrdersPaymentId()));
+                        .collect(Collectors.groupingBy(
+                                o -> o.getDetail().getOrdersPaymentId(),
+                                LinkedHashMap::new,
+                                Collectors.toList()
+                        ));
                 model.addAttribute("groupedOrdersMap", groupOrdersMap);
             }
+
+            List<Map<String, Object>> myCourse = courseService.getMyLearningCourse(memberNo);
+            model.addAttribute("myCourse", myCourse);
         }
         return "myPage/management/purchaseHistory";
     }
@@ -95,6 +104,7 @@ public class MemberController {
     public String course(Model model){
         long memberNo = returnMemberNo();
         List<Map<String, Object>> myCourse = courseService.getMyLearningCourse(memberNo);
+        log.debug("myCourse : {}", myCourse);
         model.addAttribute("myCourse", myCourse);
         return "myPage/management/learning";
     }

@@ -116,7 +116,7 @@
                  LEFT JOIN ORDER_DETAILS d ON o.ORDERS_SEQ = d.ORDERS_SEQ
                  LEFT JOIN COURSE c ON o.COURSE_SEQ = c.COURSE_SEQ
         WHERE o.MEMBER_NO = #{memberNo}
-        ORDER BY o.ORDERS_TIMESTAMP DESC
+        ORDER BY o.CREATED_AT DESC
     </select>
 
     <select id="isCoursePaidByMember" parameterType="orders" resultType="_int">
