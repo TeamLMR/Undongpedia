@@ -1,6 +1,7 @@
 package com.up.spring.coach.model.service;
 
 import com.up.spring.coach.model.dao.CoachDao;
+import com.up.spring.coach.model.dto.CoachPayment;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
@@ -25,6 +26,11 @@ public class CoachServiceImpl implements CoachService {
     private final CoachDao coachDao;
     private final SqlSession sqlSession;
     private static final Logger log = LoggerFactory.getLogger(CoachServiceImpl.class);
+
+    @Override
+    public List<CoachPayment> selectPaymentListByMemberNo(long memberNo) {
+        return coachDao.selectPaymentListByMemberNo(sqlSession, memberNo);
+    }
 
     @Override
     public Curriculum selectCurrByCurrSeq(long currSeq) {

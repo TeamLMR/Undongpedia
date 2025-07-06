@@ -8,7 +8,13 @@
         <result column="CATE_ICON" property="cateIcon"/>
         <result column="CATE_DESC" property="cateDesc"/>
     </resultMap>
-
+    <resultMap id="coachPaymentList" type="coachPayment">
+        <id column="COURSE_SEQ" property="courseSeq"/>
+        <result column="COURSE_TITLE" property="courseTitle"/>
+        <result column="COURSE_PRICE" property="coursePrice"/>
+        <result column="MEMBER_COUNT" property="memberCount"/>
+        <result column="ORDER_COUNT" property="orderCount"/>
+    </resultMap>
     <resultMap id="sectionMap" type="section">
         <id column="SECTION_SEQ" property="sectionSeq" />
         <result column="SECTION_TITLE" property="sectionTitle" />
@@ -258,4 +264,18 @@
             APPROVE_DATE = SYSDATE
         WHERE COA_SEQ = #{coaSeq}
     </update>
+
+    <select id="selectPaymentListByMemberNo" parameterType="_long" resultMap="coachPaymentList">
+        SELECT
+            o.COURSE_SEQ,
+            c.COURSE_TITLE,
+            C.COURSE_PRICE,
+            COUNT(DISTINCT o.MEMBER_NO) AS MEMBER_COUNT,
+            COUNT(*) AS ORDER_COUNT
+        FROM ORDERS o
+                 JOIN COURSE c ON o.COURSE_SEQ = c.COURSE_SEQ
+        WHERE o.ORDERS_STATUS = 'PAID' AND o.MEMBER_NO = #{memberNo}
+        GROUP BY o.COURSE_SEQ, c.COURSE_TITLE, C.COURSE_PRICE
+        ORDER BY ORDER_COUNT DESC
+    </select>
 </mapper>

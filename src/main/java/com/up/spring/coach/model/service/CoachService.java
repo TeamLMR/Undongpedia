@@ -1,5 +1,6 @@
 package com.up.spring.coach.model.service;
 
+import com.up.spring.coach.model.dto.CoachPayment;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface CoachService {
+    List<CoachPayment> selectPaymentListByMemberNo(long memberNo);
+
     List<Category> getCategoryAll ();
     Long insertTempCourse (Course course);
     List<Section> getSectionList (Long courseSeq);

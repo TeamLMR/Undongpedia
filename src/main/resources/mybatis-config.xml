@@ -19,5 +19,6 @@
         <typeAlias type="com.up.spring.payment.model.dto.OrderDetails" alias="orderDetails"/>
         <typeAlias type="com.up.spring.payment.model.dto.OrdersInvoice" alias="ordersInvoice"/>
         <typeAlias type="com.up.spring.payment.model.dto.OfflineCart" alias="offlineCart"/>
+        <typeAlias type="com.up.spring.coach.model.dto.CoachPayment" alias="coachPayment"/>
     </typeAliases>
 </configuration>

@@ -1,5 +1,6 @@
 package com.up.spring.coach.model.dao;
 
+import com.up.spring.coach.model.dto.CoachPayment;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.course.model.dto.Course;
 import com.up.spring.course.model.dto.Curriculum;
@@ -17,6 +18,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CoachDaoImpl implements CoachDao {
     private final SqlSession sqlSession;
+
+    @Override
+    public List<CoachPayment> selectPaymentListByMemberNo(SqlSession sqlSession, long memberNo) {
+        return sqlSession.selectList("selectPaymentListByMemberNo", memberNo);
+    }
 
     @Override
     public Curriculum selectCurrByCurrSeq(SqlSession sqlSession, long currSeq) {
