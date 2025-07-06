@@ -3,10 +3,7 @@ package com.up.spring.coach.controller;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.coach.model.service.CoachService;
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.CourseSchedule;
-import com.up.spring.course.model.dto.Curriculum;
-import com.up.spring.course.model.dto.Section;
+import com.up.spring.course.model.dto.*;
 import com.up.spring.course.model.service.CourseService;
 import com.up.spring.course.model.service.CourseScheduleService;
 import com.up.spring.member.model.dto.Member;
@@ -76,7 +73,7 @@ public class CoachController {
         return result;
     }
     @PostMapping("/deletecurr")
-    public String deleteCurriculum(@RequestParam("deleteCurrSeq")long delCurrSeq, @RequestParam("courseSeq")long courseSeq, HttpSession session, RedirectAttributes redirectAttributes){
+    public String deleteCurriculum(@RequestParam("deleteCurrSeq")long delCurrSeq, @RequestParam("courseSeq")long courseSeq, HttpSession session, RedirectAttributes redirectAttributes, HttpServletRequest request){
         String loc = "redirect:/coach/coursemanager";
         //1. 코스 정보가 있는지
         Course course = isExistCourse(courseSeq);
@@ -89,10 +86,16 @@ public class CoachController {
                 int deleteResult = result.get("deleteResult");
                 int updateResult = result.get("updateResult");
 
-                if (deleteResult > 0 && updateResult > 0) {
+                if (deleteResult > 0) {
                     session.setAttribute("tempCourseSeq", course.getCourseSeq());
                     redirectAttributes.addAttribute("courseSeq", courseSeq);
+                    String referer = request.getHeader("Referer");
+                    log.debug("referer:{}", referer);
                     loc = "redirect:/coach/modifycoursesection";
+                    /*임시.. add로 넘어가게*/
+                    if(referer != null && referer.contains("/addCourseSection")){
+                        loc = "redirect:/coach/addCourseSection";
+                    }
                 } else {
                     redirectAttributes.addAttribute("result", "fail");
                     redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
@@ -111,7 +114,7 @@ public class CoachController {
 
 
     @PostMapping("/deletesection")
-    public String deleteSection(@RequestParam("deleteSectionSeq")long delSectionSeq, @RequestParam("courseSeq")long courseSeq, RedirectAttributes redirectAttributes, HttpSession session){
+    public String deleteSection(@RequestParam("deleteSectionSeq")long delSectionSeq, @RequestParam("courseSeq")long courseSeq, RedirectAttributes redirectAttributes, HttpServletRequest request, HttpSession session){
         String loc = "redirect:/coach/coursemanager";
         //1. 코스 정보가 있는지
         Course course = isExistCourse(courseSeq);
@@ -134,6 +137,13 @@ public class CoachController {
                     session.setAttribute("tempCourseSeq", course.getCourseSeq());
                     redirectAttributes.addAttribute("courseSeq", courseSeq);
                     loc = "redirect:/coach/modifycoursesection";
+
+                    String referer = request.getHeader("Referer");
+                    log.debug("referer:{}", referer);
+                    /*임시.. add로 넘어가게*/
+                    if(referer != null && referer.contains("/addCourseSection")){
+                        loc = "redirect:/coach/addCourseSection";
+                    }
                 } else {
                     redirectAttributes.addAttribute("result", "fail");
                     redirectAttributes.addAttribute("msg", "삭제가 불가합니다.");
@@ -539,7 +549,33 @@ public class CoachController {
 
     @RequestMapping("/coursereview")
     public String courseReview(Model model) {
-        return "/coach/management/reviews";
+        String loc = "/";
+        long memberNo = returnMemberNo();
+        if (returnMemberNo() != 0) {
+            Map<Course,List<Review>> resultMap = new HashMap<>();
+
+            //1. 해당 관리자가 가지고 있는 course들을 묶어서 가져온다
+            List<Course> courseList = courseService.searchCourseListByMemberNo(memberNo);
+            //2. courseSeq를 가진 reviewList를 날짜순으로 정렬해서 가져온다
+            if (!courseList.isEmpty()) {
+                log.debug("courseList: " + courseList);
+                for (Course course : courseList) {
+                    List<Review> reviewList = courseService.getReviewListByCourseSeq(course.getCourseSeq());
+                    if (!reviewList.isEmpty()) {
+                        log.debug("reviewList: " + reviewList);
+                        resultMap.put(course, reviewList);
+                    }
+                }
+            }
+            log.debug("resultMap: " + resultMap);
+            model.addAttribute("resultMap", resultMap);
+            //3. 페이지로 보낸다
+
+            loc = "/coach/management/reviews";
+        } else {
+
+        }
+        return loc;
     }
 
     @RequestMapping("/courseqna")
