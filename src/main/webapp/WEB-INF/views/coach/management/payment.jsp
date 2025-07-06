@@ -95,29 +95,29 @@
                     <div class="row mb-4">
                         <!-- 최고 수익 달 -->
                         <div class="col-md-4 mb-3">
-                            <div class="card overview-card shadow-sm">
+                            <div class="card overview-card shadow-sm align-items-start">
                                 <div class="card-body d-flex align-items-center justify-content-between">
                                     <div class="stat-icon bg-warning text-white">
                                         <i class="bi bi-trophy-fill"></i>
                                     </div>
-                                    <div class="text-end">
+                                    <div class="mx-2 text-end">
                                         <h6 class="text-muted">최고 수익 달</h6>
-                                        <h4 class="mb-0 text-dark">
+                                        <h5 class="mb-0 text-dark">
                                             ${maxMonth}월 (₩<fmt:formatNumber value="${max}" type="number"/>)
-                                        </h4>
+                                        </h5>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card overview-card shadow-sm">
+                            <div class="card overview-card shadow-sm align-items-start">
                                 <div class="card-body d-flex align-items-center justify-content-between">
                                     <div class="stat-icon bg-success text-white">
                                         <i class="bi bi-graph-up-arrow"></i>
                                     </div>
-                                    <div class="text-end">
+                                    <div class="mx-2 text-end">
                                         <h6 class="text-muted">올해 총 수익</h6>
-                                        <h4 class="mb-0 text-dark">
+                                        <h5 class="mb-0 text-dark">
                                             <c:if test="${not empty allPaymentResult}">
                                                 <fmt:formatNumber value="${allPaymentResult}" type="currency"/>
 
@@ -125,7 +125,7 @@
                                             <c:if test="${empty allPaymentResult}">
                                                 0
                                             </c:if>
-                                        </h4>
+                                        </h5>
                                     </div>
                                 </div>
                             </div>
