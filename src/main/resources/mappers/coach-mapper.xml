@@ -269,13 +269,13 @@
         SELECT
             o.COURSE_SEQ,
             c.COURSE_TITLE,
-            C.COURSE_PRICE,
+            c.COURSE_PRICE,
             COUNT(DISTINCT o.MEMBER_NO) AS MEMBER_COUNT,
             COUNT(*) AS ORDER_COUNT
         FROM ORDERS o
                  JOIN COURSE c ON o.COURSE_SEQ = c.COURSE_SEQ
-        WHERE o.ORDERS_STATUS = 'PAID' AND o.MEMBER_NO = #{memberNo}
-        GROUP BY o.COURSE_SEQ, c.COURSE_TITLE, C.COURSE_PRICE
+        WHERE o.ORDERS_STATUS = 'PAID' AND c.MEMBER_NO = #{memberNo}
+        GROUP BY o.COURSE_SEQ, c.COURSE_TITLE, c.COURSE_PRICE
         ORDER BY ORDER_COUNT DESC
     </select>
 </mapper>
