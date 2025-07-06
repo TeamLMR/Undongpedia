@@ -38,6 +38,11 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public List<Review> getReviewListByCourseSeq(long courseSeq) {
+        return courseDao.getReviewListByCourseSeq(sqlSession, courseSeq);
+    }
+
+    @Override
     public Map<String,Object> getReviewAjax(long courseSeq, Map<String, Object> params) {
         Map<String,Object> map = new HashMap<>();
         List<Review> reviews = courseDao.getReviewList(sqlSession, courseSeq, params);

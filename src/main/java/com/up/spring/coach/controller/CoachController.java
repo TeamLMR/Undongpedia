@@ -3,10 +3,7 @@ package com.up.spring.coach.controller;
 import com.up.spring.common.model.dto.Category;
 import com.up.spring.coach.model.dto.CoachApply;
 import com.up.spring.coach.model.service.CoachService;
-import com.up.spring.course.model.dto.Course;
-import com.up.spring.course.model.dto.CourseSchedule;
-import com.up.spring.course.model.dto.Curriculum;
-import com.up.spring.course.model.dto.Section;
+import com.up.spring.course.model.dto.*;
 import com.up.spring.course.model.service.CourseService;
 import com.up.spring.course.model.service.CourseScheduleService;
 import com.up.spring.member.model.dto.Member;
@@ -552,7 +549,33 @@ public class CoachController {
 
     @RequestMapping("/coursereview")
     public String courseReview(Model model) {
-        return "/coach/management/reviews";
+        String loc = "/";
+        long memberNo = returnMemberNo();
+        if (returnMemberNo() != 0) {
+            Map<Course,List<Review>> resultMap = new HashMap<>();
+
+            //1. 해당 관리자가 가지고 있는 course들을 묶어서 가져온다
+            List<Course> courseList = courseService.searchCourseListByMemberNo(memberNo);
+            //2. courseSeq를 가진 reviewList를 날짜순으로 정렬해서 가져온다
+            if (!courseList.isEmpty()) {
+                log.debug("courseList: " + courseList);
+                for (Course course : courseList) {
+                    List<Review> reviewList = courseService.getReviewListByCourseSeq(course.getCourseSeq());
+                    if (!reviewList.isEmpty()) {
+                        log.debug("reviewList: " + reviewList);
+                        resultMap.put(course, reviewList);
+                    }
+                }
+            }
+            log.debug("resultMap: " + resultMap);
+            model.addAttribute("resultMap", resultMap);
+            //3. 페이지로 보낸다
+
+            loc = "/coach/management/reviews";
+        } else {
+
+        }
+        return loc;
     }
 
     @RequestMapping("/courseqna")
