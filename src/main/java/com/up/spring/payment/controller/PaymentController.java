@@ -11,6 +11,7 @@ import com.up.spring.course.model.service.CourseService;
 import com.up.spring.course.model.service.CourseScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import oracle.jdbc.proxy.annotation.Post;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -368,6 +369,38 @@ public class PaymentController {
         return loc;
     }
 
+    //아 이런 이름을 짓다니..
+    @RequestMapping("/payment/result-success")
+    public String paymentResultSuccess(Model model) {
+        String loc = "payment/resultSuccess";
+
+        long memberNo = returnMemberNo();
+        if (memberNo != 0) {
+            List<Orders> orders = orderService.selectOrdersByMember(memberNo);
+
+            Map<String,Course> courseMap = new HashMap<>();
+
+            //가장 최근 오더
+            if (orders != null) {
+                String paymentId = orders.get(0).getDetail().getOrdersPaymentId();
+                Map<String, Object> param = new HashMap<>();
+                param.put("memberNo", memberNo);
+                param.put("ordersPaymentId", paymentId);
+
+                List<OrdersInvoice> ordersList =  orderService.selectOrdersByPaymentIdAndMemberNo(param);
+                model.addAttribute("ordersList", ordersList);
+            }
+        }
+        return loc;
+    }
+
+    @RequestMapping("/payment/result-fail")
+    public String paymentResultFail(Model model) {
+        String loc = "payment/resultFail";
+
+        return loc;
+    }
+
     @RequestMapping("/payment/end")
     public String paymentEnd(@RequestParam("resultCode") String resultCode, @RequestParam("paymentId") String paymentId,
     @RequestParam(value = "resultMessage", required = false) String resultMessage,  @RequestParam(value = "reserveId", required = false) String reserveId, Model model) {
@@ -487,7 +520,7 @@ public class PaymentController {
                         log.debug("isCartDeleteSuccess:{}", isCartDeleteSuccess);
                         log.info("온라인 장바구니 {}개, 오프라인 장바구니 {}개 결제 완료", cartList.size(), offlineCartList.size());
 
-                        loc = "redirect:/mypage";
+                        loc = "redirect:/payment/result-success";
                     }
                 }
 
@@ -498,8 +531,7 @@ public class PaymentController {
                 } else {
                     msg  = "결제를 실패했습니다.";
                 }
-                model.addAttribute("msg", resultMessage);
-                model.addAttribute("loc", "/cart");
+                loc = "redirect:/payment/result-fail";
             }
         } else {
             msg  = "원인을 알 수 없습니다.";
