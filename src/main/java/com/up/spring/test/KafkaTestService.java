@@ -216,7 +216,12 @@ public class KafkaTestService {
                     handleReservationTurn(event);
                     break;
                 default:
-                    log.warn("알 수 없는 이벤트 타입: {}", eventType);
+                    // 이벤트 타입에 ID가 포함된 경우 처리
+                    if (eventType != null && eventType.startsWith("TEMP_RESERVATION_CREATED:")) {
+                        handleTempReservationCreated(event);
+                    } else {
+                        log.warn("알 수 없는 이벤트 타입: {}", eventType);
+                    }
             }
 
             // 메시지 처리 완료 확인

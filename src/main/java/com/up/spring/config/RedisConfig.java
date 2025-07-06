@@ -31,7 +31,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableRedisRepositories
-@PropertySource("classpath:/config/local/redis.properties")
+@PropertySource("classpath:/config/server/redis.properties")
 public class RedisConfig {
 
     @Value("${redis.host}")

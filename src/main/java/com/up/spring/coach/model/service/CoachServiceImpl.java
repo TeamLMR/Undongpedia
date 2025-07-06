@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +24,10 @@ import java.util.Map;
 public class CoachServiceImpl implements CoachService {
     private final CoachDao coachDao;
     private final SqlSession sqlSession;
-    private static final Logger log = LoggerFactory.getLogger(CoachServiceImpl.class);
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Value("${kafka.topic.user-events}")
+    private String userEventsTopic;
 
     @Override
     public Curriculum selectCurrByCurrSeq(long currSeq) {
@@ -150,7 +153,22 @@ public class CoachServiceImpl implements CoachService {
     }
     @Override
     public Long insertTempCourse(Course course) {
-        return coachDao.insertTempCourse(sqlSession, course);
+        Long courseSeq = coachDao.insertTempCourse(sqlSession, course);
+
+        // 관리자(memberNo=1)에게 코스 승인 요청 알림 이벤트 발행
+        try {
+            java.util.Map<String, Object> event = new java.util.HashMap<>();
+            event.put("memberNo", 1L);
+            event.put("eventType", "COURSE_APPROVAL_REQUESTED");
+            event.put("title", "새 코스 승인 요청");
+            event.put("message", "새로운 코스( " + course.getCourseTitle() + " ) 승인 요청이 도착했습니다.");
+            event.put("link", "/admin/courseConfirm?courseSeq=" + courseSeq);
+            kafkaTemplate.send(userEventsTopic, String.valueOf(courseSeq), event);
+        } catch (Exception e) {
+            log.error("코스 승인 요청 알림 이벤트 발행 실패 courseSeq={} ", courseSeq, e);
+        }
+
+        return courseSeq;
     }
 
     @Override
@@ -230,5 +248,18 @@ public class CoachServiceImpl implements CoachService {
     @Transactional
     public void insertCoachApply(CoachApply coachApply) {
         coachDao.insertCoachApply(sqlSession, coachApply);
+
+        // 관리자(memberNo=1)에게 코치 승인 요청 알림 이벤트 발행
+        try {
+            java.util.Map<String, Object> event = new java.util.HashMap<>();
+            event.put("memberNo", 1L);
+            event.put("eventType", "COACH_APPROVAL_REQUESTED");
+            event.put("title", "새 코치 승인 요청");
+            event.put("message", "새로운 코치 승인 요청이 도착했습니다.");
+            event.put("link", "/admin/coachConfirm?ts=" + System.currentTimeMillis());
+            kafkaTemplate.send(userEventsTopic, "coachApply:" + coachApply.getMemberNo(), event);
+        } catch (Exception e) {
+            log.error("코치 승인 요청 알림 이벤트 발행 실패 memberNo={} ", coachApply.getMemberNo(), e);
+        }
     }
 }

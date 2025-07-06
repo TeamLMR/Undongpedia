@@ -24,7 +24,7 @@ import java.util.UUID;
 
 @Configuration
 @EnableKafka
-@PropertySource("classpath:/config/local/kafka.properties")
+@PropertySource("classpath:/config/server/kafka.properties")
 public class KafkaConfig {
 
     @Value("${kafka.bootstrap-servers}")

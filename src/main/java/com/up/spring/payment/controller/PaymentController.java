@@ -592,23 +592,21 @@ public class PaymentController {
                 }
             }
             
-            // 패턴 매칭은 SCAN으로 안전하게 처리 (제한적)
-            String pattern = "course:timeslots:" + courseSeq + ":*";
-            org.springframework.data.redis.core.ScanOptions scanOptions = 
-                org.springframework.data.redis.core.ScanOptions.scanOptions()
-                    .match(pattern)
-                    .count(10) // 제한적으로만 처리
-                    .build();
+            // SCAN 사용 중단 - 직접 키만 삭제 (성능 우선)
+            String[] patternKeys = {
+                "course:timeslots:" + courseSeq + ":today",
+                "course:timeslots:" + courseSeq + ":week",
+                "course:timeslots:" + courseSeq + ":month"
+            };
             
-            try (org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(scanOptions)) {
-                int deleteCount = 0;
-                while (cursor.hasNext() && deleteCount < 20) { // 최대 20개만 삭제
-                    String key = cursor.next();
-                    redisTemplate.delete(key);
-                    deleteCount++;
-                }
-                if (deleteCount > 0) {
-                    log.debug("캐시 패턴 삭제: {} ({}개 키)", pattern, deleteCount);
+            for (String key : patternKeys) {
+                try {
+                    Boolean deleted = redisTemplate.delete(key);
+                    if (Boolean.TRUE.equals(deleted)) {
+                        log.debug("캐시 키 삭제: {}", key);
+                    }
+                } catch (Exception e) {
+                    log.warn("캐시 키 삭제 실패: {}", key, e);
                 }
             }
             

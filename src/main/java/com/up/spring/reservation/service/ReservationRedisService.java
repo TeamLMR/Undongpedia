@@ -116,36 +116,28 @@ public class ReservationRedisService {
 
 
     public boolean shouldActivateQueue(Long courseSeq) {
-        long currentTime = System.currentTimeMillis();
-        
-        // 캐시 확인 (30초 내 결과가 있으면 재사용)
+        // 캐시된 결과가 있으면 반환
         Long cacheTime = queueActivationCacheTime.get(courseSeq);
-        if (cacheTime != null && (currentTime - cacheTime) < QUEUE_ACTIVATION_CACHE_TTL) {
+        if (cacheTime != null && (System.currentTimeMillis() - cacheTime) < QUEUE_ACTIVATION_CACHE_TTL) {
             Boolean cachedResult = queueActivationCache.get(courseSeq);
             if (cachedResult != null) {
-                // 캐시 사용할 때는 로그 출력하지 않음
                 return cachedResult;
             }
         }
-        
-        // 설정 가능한 임계값 사용 (기본 5명)
-        Long activeMemberCount = getActiveMemberCount(courseSeq);
-        boolean shouldActivate = activeMemberCount >= queueActivationThreshold;
 
-        // 순환 참조 제거 - 활성 강의 등록은 별도로 처리
-        if (shouldActivate) {
-            // Redis Set에 활성 강의 직접 추가
-            redisTemplate.opsForSet().add("active:courses", courseSeq.toString());
-            redisTemplate.expire("active:courses", Duration.ofHours(24));
-            
-            // 활성화될 때만 로그 출력
-            log.info("🔥 대기열 활성화 - 강의 {}, 현재인원 {}명 (임계값: {}명)",
-                courseSeq, activeMemberCount, queueActivationThreshold);
+        // 🔥 대기열 활성화 조건을 더 엄격하게 설정
+        Long activeMemberCount = getActiveMemberCount(courseSeq);
+        boolean shouldActivate = activeMemberCount != null && activeMemberCount >= queueActivationThreshold;
+        
+        // 🔥 추가 조건: 최소 2명 이상이 활성 상태일 때만 대기열 활성화
+        if (shouldActivate && activeMemberCount < 2) {
+            shouldActivate = false;
+            log.debug("대기열 활성화 조건 미충족 - 강의: {}, 활성인원: {}, 최소요구: 2명", courseSeq, activeMemberCount);
         }
 
-        // 결과 캐싱
+        // 캐시 업데이트
         queueActivationCache.put(courseSeq, shouldActivate);
-        queueActivationCacheTime.put(courseSeq, currentTime);
+        queueActivationCacheTime.put(courseSeq, System.currentTimeMillis());
 
         // 상태 변화가 있을 때만 로그 출력 (선택사항)
         // log.debug("대기열 상태 체크 - 강의 {}, 현재인원 {}, 활성화 {}", courseSeq, activeMemberCount, shouldActivate);
@@ -157,12 +149,23 @@ public class ReservationRedisService {
     //  코스 레벨 대기열 (대기열 페이지 진입)
     public Map<String, Object> addToCourseQueue(Long courseSeq, int memberNo) {
         String queueKey = "queue:course:" + courseSeq;
+        String memberKey = String.valueOf(memberNo); // ✅ ZSET 멤버를 항상 문자열로 저장
         long timestamp = System.currentTimeMillis();
 
-        // 대기열 확인
-        Double existingScore = redisTemplate.opsForZSet().score(queueKey, memberNo);
+        // 대기열 확인 (문자열 → 정수 순으로 검사)
+        Double existingScore = redisTemplate.opsForZSet().score(queueKey, memberKey);
+        if (existingScore == null) {
+            existingScore = redisTemplate.opsForZSet().score(queueKey, memberNo);
+            if (existingScore != null) {
+                // 과거 정수형으로 저장된 멤버를 발견하면 문자열 버전으로 교체하여 일관성 유지
+                redisTemplate.opsForZSet().remove(queueKey, memberNo);
+                redisTemplate.opsForZSet().add(queueKey, memberKey, existingScore);
+                log.debug("정수형 멤버 키를 문자열로 교체 - queueKey:{}, memberNo:{}", queueKey, memberNo);
+            }
+        }
+
         if (existingScore != null) {
-            Long position = redisTemplate.opsForZSet().rank(queueKey, memberNo);
+            Long position = redisTemplate.opsForZSet().rank(queueKey, memberKey);
             Long totalInQueue = redisTemplate.opsForZSet().count(queueKey, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
             
             Map<String, Object> queueInfo = new HashMap<>();
@@ -185,16 +188,16 @@ public class ReservationRedisService {
         }
 
         // 새로 추가
-        Boolean added = redisTemplate.opsForZSet().add(queueKey, memberNo, timestamp);
+        Boolean added = redisTemplate.opsForZSet().add(queueKey, memberKey, timestamp);
         redisTemplate.expire(queueKey, Duration.ofMinutes(15));
 
         if (added == null || !added) {
             // 추가 실패 (동시성 문제로 인한 경우)
-            Long position = redisTemplate.opsForZSet().rank(queueKey, memberNo);
+            Long position = redisTemplate.opsForZSet().rank(queueKey, memberKey);
             return createResponse(true, "대기열 추가 중 충돌 발생", position != null ? position + 1 : 0);
         }
 
-        Long position = redisTemplate.opsForZSet().rank(queueKey, memberNo);
+        Long position = redisTemplate.opsForZSet().rank(queueKey, memberKey);
         Long totalInQueue = redisTemplate.opsForZSet().count(queueKey, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
 
         Map<String, Object> queueInfo = new HashMap<>();
@@ -269,7 +272,8 @@ public class ReservationRedisService {
         // 🔥 첫 번째 순서라면 즉시 임시예약 처리 (비동기)
         if (position != null && position == 0) { // Redis rank는 0부터 시작
             log.info("🎯 첫 번째 순서 즉시 처리(Async) - 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
-            asyncProcessNext(courseSeq, scheduleId);
+            // 🔥 모달창이 뜰 시간을 위해 약간의 지연 추가
+            asyncProcessNextWithDelay(courseSeq, scheduleId, 500); // 0.5초 지연
         }
 
         // WebSocket으로 대기열 업데이트 전송
@@ -281,12 +285,35 @@ public class ReservationRedisService {
     // 코스 대기열 조회
     public Map<String, Object> getCourseQueuePosition(Long courseSeq, int memberNo) {
         String queueKey = "queue:course:" + courseSeq;
-        return getQueuePositionInternal(queueKey, memberNo, "COURSE");
+        return getQueuePositionInternal(queueKey, String.valueOf(memberNo), "COURSE");
     }
 
     // 스케줄 대기열 조회
     public Map<String, Object> getScheduleQueuePosition(Long courseSeq, Long scheduleId, int memberNo) {
         String queueKey = "queue:course:" + courseSeq + ":schedule:" + scheduleId;
+        
+        // 🔥 먼저 임시예약 성공 상태 확인
+        String successKey = "temp_success:" + courseSeq + ":" + scheduleId + ":" + memberNo;
+        Map<String, Object> successData = (Map<String, Object>) redisTemplate.opsForValue().get(successKey);
+        
+        if (successData != null) {
+            log.info("🎯 임시예약 성공 상태 발견: 사용자{}, 스케줄{}, 데이터: {}", memberNo, scheduleId, successData);
+            
+            // 성공 상태 삭제 (한 번만 사용)
+            redisTemplate.delete(successKey);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "임시예약이 완료되었습니다. 장바구니로 이동합니다.");
+            response.put("tempReservationSuccess", true);
+            response.put("tempReservationId", successData.get("tempReservationId"));
+            response.put("scheduleId", successData.get("scheduleId"));
+            
+            log.info("🎯 임시예약 성공 응답 생성: {}", response);
+            
+            return response;
+        }
+        
         return getQueuePositionInternal(queueKey, String.valueOf(memberNo), "SCHEDULE");
     }
 
@@ -313,7 +340,28 @@ public class ReservationRedisService {
     // 코스 대기열에서 제거
     public void removeFromCourseQueue(Long courseSeq, int memberNo) {
         String queueKey = "queue:course:" + courseSeq;
-        Long removed = redisTemplate.opsForZSet().remove(queueKey, memberNo);
+        String memberKey = String.valueOf(memberNo);
+        
+        // 🔥 디버깅을 위한 Redis 상태 확인
+        Double score = redisTemplate.opsForZSet().score(queueKey, memberKey);
+        log.debug("🔍 Redis 조회 - 키: {}, 멤버: {}, 존재여부: {}", queueKey, memberKey, score != null);
+        
+        if (score == null) {
+            // String으로 찾지 못했으면 int로도 확인
+            score = redisTemplate.opsForZSet().score(queueKey, memberNo);
+            log.debug("🔍 Redis 조회 (int) - 키: {}, 멤버: {}, 존재여부: {}", queueKey, memberNo, score != null);
+        }
+        
+        // 🔥 String으로 변환하여 제거 시도 (Redis에 저장된 형태와 일치시키기 위해)
+        Long removed = redisTemplate.opsForZSet().remove(queueKey, memberKey);
+        log.debug("🔍 String 제거 시도 - 키: {}, 멤버: {}, 결과: {}", queueKey, memberKey, removed);
+        
+        // 🔥 만약 String으로 제거되지 않으면 int로도 시도
+        if (removed == null || removed == 0) {
+            removed = redisTemplate.opsForZSet().remove(queueKey, memberNo);
+            log.debug("🔍 int 제거 시도 - 키: {}, 멤버: {}, 결과: {}", queueKey, memberNo, removed);
+        }
+        
         if (removed != null && removed > 0) {
             log.info("코스 대기열 제거 - 강의{}, 사용자{}", courseSeq, memberNo);
             
@@ -330,6 +378,13 @@ public class ReservationRedisService {
             
             // 남은 사용자들에게 실시간 대기열 업데이트 전송 (코스 레벨)
             broadcastCourseQueueUpdate(courseSeq);
+        } else {
+            log.warn("코스 대기열 제거 실패 - 강의{}, 사용자{} (Redis에 존재하지 않음)", courseSeq, memberNo);
+            
+            // 🔥 Redis 전체 상태 확인 (디버깅용)
+            Long totalMembers = redisTemplate.opsForZSet().zCard(queueKey);
+            Set<Object> allMembers = redisTemplate.opsForZSet().range(queueKey, 0, 9);
+            log.debug("🔍 Redis 전체 상태 - 총 멤버: {}, 상위 10명: {}", totalMembers, allMembers);
         }
     }
 
@@ -392,21 +447,36 @@ public class ReservationRedisService {
             if (removed != null && removed > 0) {
                 log.info("✅ 즉시 임시예약 성공 - 대기열에서 제거: 강의{}, 스케줄{}, 사용자{}", courseSeq, scheduleId, memberNo);
                 
-                // WebSocket으로 임시예약 성공 메시지 전송
+                // 🔥 임시예약 성공 상태를 Redis에 저장 (WebSocket 연결 전에도 확인 가능)
                 if (tempResult.get("data") != null) {
                     Map<String, Object> data = (Map<String, Object>) tempResult.get("data");
                     String tempReservationId = (String) data.get("tempReservationId");
                     
-                    queueWebSocketHandler.sendTempReservationSuccess(
-                        String.valueOf(courseSeq), 
-                        String.valueOf(memberNo), 
-                        tempReservationId, 
-                        scheduleId
-                    );
+                    // 성공 상태 저장 (5분간 유효)
+                    String successKey = "temp_success:" + courseSeq + ":" + scheduleId + ":" + memberNo;
+                    Map<String, Object> successData = new HashMap<>();
+                    successData.put("tempReservationId", tempReservationId);
+                    successData.put("scheduleId", scheduleId);
+                    successData.put("timestamp", System.currentTimeMillis());
+                    redisTemplate.opsForValue().set(successKey, successData, Duration.ofMinutes(5));
+                    
+                    log.info("🎯 임시예약 성공 상태 저장: {}", successKey);
+                    
+                    // 🔥 WebSocket 메시지 전송을 비동기로 처리 (연결 지연 대비)
+                    try {
+                        queueWebSocketHandler.sendTempReservationSuccess(
+                            String.valueOf(courseSeq), 
+                            String.valueOf(memberNo), 
+                            tempReservationId, 
+                            scheduleId
+                        );
+                    } catch (Exception e) {
+                        log.warn("WebSocket 메시지 전송 실패 (Redis 플래그로 대체): {}", e.getMessage());
+                    }
                 }
                 
-                // 🔥 재귀적으로 다음 사용자도 처리 (연쇄 처리)
-                processNextInScheduleQueue(courseSeq, scheduleId);
+                // 🔥 다음 사용자는 스케줄러가 처리하도록 위임 (재귀 방지)
+                log.info("✅ 임시예약 완료 - 다음 사용자는 스케줄러가 처리: 강의{}, 스케줄{}", courseSeq, scheduleId);
             }
         } else {
             // 임시예약 실패 (좌석 마감 등)
@@ -1013,6 +1083,16 @@ public class ReservationRedisService {
     public void asyncProcessNext(Long courseSeq, Long scheduleId) {
         try {
             Thread.sleep(100); // Redis 업데이트 완료 대기
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        processNextInScheduleQueue(courseSeq, scheduleId);
+    }
+
+    @org.springframework.scheduling.annotation.Async("reservationExecutor")
+    public void asyncProcessNextWithDelay(Long courseSeq, Long scheduleId, long delayMillis) {
+        try {
+            Thread.sleep(delayMillis); // 지연 추가
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

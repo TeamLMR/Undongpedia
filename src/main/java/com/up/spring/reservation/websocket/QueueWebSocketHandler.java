@@ -40,6 +40,9 @@ public class QueueWebSocketHandler implements WebSocketHandler {
                 "type", "connected",
                 "message", "대기열 연결 완료"
             ));
+            
+            // 🔥 연결 즉시 임시예약 성공 상태 확인 (Redis 플래그)
+            checkImmediateTempReservationSuccess(courseSeq, memberNo, session);
         } else {
             log.warn(" WebSocket 연결 실패: courseSeq={}, memberNo={}, URI={}",
                 courseSeq, memberNo, session.getUri());
@@ -188,6 +191,20 @@ public class QueueWebSocketHandler implements WebSocketHandler {
         String userKey = sessionToUser.remove(session.getId());
         if (userKey != null) {
             userSessions.remove(userKey);
+        }
+    }
+
+    /**
+     * WebSocket 연결 즉시 임시예약 성공 상태 확인
+     */
+    private void checkImmediateTempReservationSuccess(String courseSeq, String memberNo, WebSocketSession session) {
+        try {
+            // Redis에서 임시예약 성공 상태 확인
+            String successKey = "temp_success:" + courseSeq + ":*:" + memberNo;
+            // 실제로는 스케줄 ID를 알 수 없으므로, 연결 후 클라이언트에서 상태 확인하도록 함
+            log.debug("WebSocket 연결 후 임시예약 상태 확인 준비: courseSeq={}, memberNo={}", courseSeq, memberNo);
+        } catch (Exception e) {
+            log.warn("WebSocket 연결 후 임시예약 상태 확인 실패: {}", e.getMessage());
         }
     }
 }
