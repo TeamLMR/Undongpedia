@@ -152,11 +152,11 @@
                                             <c:forEach var="p" items="${payments}">
                                                 <tr>
                                                     <td class="text-start">${p.courseTitle}</td>
-                                                    <td>₩<fmt:formatNumber value="${p.coursePrice}" type="number"/></td>
+                                                    <td>₩<fmt:formatNumber value="${p.coursePrice - (p.coursePrice * p.courseDiscount/100)}" type="number"/></td>
                                                     <td>${p.memberCount}명</td>
                                                     <td>${p.orderCount}회</td>
                                                     <td class="fw-bold text-primary">
-                                                        ₩<fmt:formatNumber value="${p.coursePrice * p.orderCount}" type="number"/>
+                                                        ₩<fmt:formatNumber value="${(p.coursePrice - (p.coursePrice * p.courseDiscount/100)) * p.orderCount}" type="number"/>
                                                     </td>
                                                 </tr>
                                             </c:forEach>

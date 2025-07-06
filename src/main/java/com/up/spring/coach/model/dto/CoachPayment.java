@@ -11,6 +11,7 @@ public class CoachPayment {
     long courseSeq;
     String courseTitle;
     int coursePrice;
+    int courseDiscount;
     int memberCount;
     int orderCount;
 }
